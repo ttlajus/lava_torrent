@@ -1,0 +1,13 @@
+[package]
+name = "lava_torrent"
+version = "0.1.0"
+authors = ["ttlajus <11984992+ttlajus@users.noreply.github.com>"]
+
+[dependencies]
+itertools = "0.7.7"
+unicode-normalization = "0.1.5"
+conv = "0.3.3"
+rust-crypto = "0.2.36"
+
+[dev-dependencies]
+rand = "0.4.2"
