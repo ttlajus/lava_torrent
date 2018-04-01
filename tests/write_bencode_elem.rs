@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use rand::Rng;
 use lava_torrent::bencode::BencodeElem;
 
-const OUTPUT_ROOT: &'static str = "tests/tmp/";
+const OUTPUT_ROOT: &str = "tests/tmp/";
 
 fn rand_file_name() -> String {
     OUTPUT_ROOT.to_string() + &rand::thread_rng().gen::<u16>().to_string()
