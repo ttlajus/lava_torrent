@@ -1,3 +1,8 @@
+//! Module for bencode-related parsing/encodeing.
+//!
+//! Most of methods are associated methods of `BencodeElem`. Some general methods
+//! are placed at the module level, and they can be found in [`write`](write/index.html).
+
 use std::fmt;
 use std::convert::From;
 use std::collections::HashMap;
@@ -18,6 +23,21 @@ const INTEGER_PREFIX: u8 = b'i';
 const INTEGER_POSTFIX: u8 = b'e';
 const STRING_DELIMITER: u8 = b':';
 
+/// Represent a single bencode element.
+///
+/// There are 4 variants in the [spec], but this enum has 5 variants. The extra variant is
+/// `Bytes` (a sequence of bytes that does not represent a valid utf8
+/// string, e.g. a SHA1 block hash), which is considered to be the
+/// same as `String` in the [spec]. But they are best treated differently
+/// in actual implementations to make things easier.
+///
+/// Note that the `Integer` variant here uses `i64` explicitly instead of using a type alias like
+/// [`Integer`]. The reasoning behind this is that if you have to handle
+/// bencode directly then what you are doing is relatively low-level. In this case, exposing the
+/// underlying type might actually be better.
+///
+/// [`Integer`]: ../type.Integer.html
+/// [spec]: http://bittorrent.org/beps/bep_0003.html
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BencodeElem {
     String(String),

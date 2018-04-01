@@ -99,6 +99,10 @@ impl File {
 }
 
 impl Torrent {
+    /// Parse `bytes` and return the extracted `Torrent`.
+    ///
+    /// If `bytes` is missing any required field (e.g. `info`), or if any other
+    /// error is encountered (e.g. `IOError`), then `Err(error)` will be returned.
     pub fn read_from_bytes<B>(bytes: B) -> Result<Torrent>
     where
         B: AsRef<[u8]>,
@@ -109,6 +113,10 @@ impl Torrent {
         }
     }
 
+    /// Parse the content of the file at `path` and return the extracted `Torrent`.
+    ///
+    /// If the file at `path` is missing any required field (e.g. `info`), or if any other
+    /// error is encountered (e.g. `IOError`), then `Err(error)` will be returned.
     pub fn read_from_file<P>(path: P) -> Result<Torrent>
     where
         P: AsRef<Path>,

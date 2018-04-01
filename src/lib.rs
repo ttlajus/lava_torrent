@@ -1,7 +1,103 @@
-// read (generally 3 copies): load from file + parse from bytes + re-encode info
-// write (generally 2 copies): make torrent from file + write to file
-// When bencoding torrents, converting file paths (OsStr) to utf8 strings (String) also requires copies,
-// but that should not be significant.
+//! [`lava_torrent`] is a library for parsing/encoding bencode and *.torrent* files. It is
+//! dual-licensed under Apache 2.0 and MIT. **It is not recommended to use [`lava_torrent`]
+//! in any safety-critical system at this point.**
+//!
+//! Methods for parsing and encoding are generally bound to structs
+//! (i.e. they are "associated methods"). Methods that are general
+//! enough are placed at the module-level (e.g.
+//! [`lava_torrent::bencode::write::encode_bytes()`]).
+//!
+//! # Quick Start
+//! Read a torrent and print it and its info hash.
+//!
+//! ```rust
+//! use lava_torrent::Torrent;
+//!
+//! let torrent = Torrent::read_from_file("sample.torrent").unwrap();
+//! println!("{}", torrent);
+//! println!("Info hash: {}", torrent.info_hash());
+//! ```
+//!
+//! Create a torrent from files in a directory and save the *.torrent* file.
+//!
+//! ```rust
+//! use lava_torrent::Torrent;
+//!
+//! let torrent = Torrent::create_from_file("dir/").unwrap();
+//! torrent.write_into_file("sample.torrent").unwrap();
+//! ```
+//!
+//! # Performance
+//! [`lava_torrent`] is designed with performance and maintenance cost in mind.
+//!
+//! ## Copying
+//! Parsing a *.torrent* file would take at least 3 copies:
+//! * load bencode bytes from file
+//! * parse from bytes (bytes are copied, for example, when they are converted to `String`)
+//! * re-encode `info` (the `info` dictionary has to be converted back to bencode form so that
+//! we can do things like calculating info hash)
+//!
+//! Creating a *.torrent* file and writing its bencoded form to disk would take at least 2 copies:
+//! * load file content and construct a [`Torrent`] from it
+//! * encode the resulting struct and write it to disk (note: when encoding torrents, converting
+//! file paths (`OsStr`) to utf8 strings (`String`) also requires copies, but that should
+//! not be significant)
+//!
+//! It might be possible to further reduce the number of copies, but in my opinion that would
+//! make the code harder to maintain. Unless there is evidence suggesting otherwise, I think
+//! the current balance between performance and maintenance cost is good enough. Please open
+//! a GitHub issue if you have any suggestion.
+//!
+//! ## Memory Usage
+//! The re-encoded `info` dict is stored in a field of the [`Torrent`] struct. Since this
+//! `info` dict is fairly large (it occupies the majority of a *.torrent* file), [`lava_torrent`]
+//! cannot be considered memory-efficient at this point. An alternative approach would be
+//! to calculate everything we could after re-encoding, and store the calculated results
+//! instead. However, I think the current approach of storing the encoded `info` dict is
+//! more convenient and extensible.
+//!
+//! Of course, on modern computers this bit of memory inefficiency is mostly irrelevant.
+//! But on embedded devices this might actually matter.
+//!
+//! # Correctness
+//! [`lava_torrent`] is written without using any existing parser or parser generator.
+//! The [BitTorrent specification] is also rather vague on certain points. Thus, bugs
+//! should not be a surprise. If you do find one, please open a GitHub issue.
+//!
+//! That said, a lot of unit tests and several integration tests are written to minimize the
+//! possibility of incorrect behaviors.
+//!
+//! ## Known Issues
+//! 1. [BEP 3] specifies that a bencode integer has no
+//! size limit. This is a reasonable choice as it allows the protocol to be used
+//! in the future when file sizes grow significantly. However, using a 64-bit signed
+//! integer to represent a bencode integer should be more-than sufficient even in 2018.
+//! Therefore, while technically we should use something like
+//! [`bigint`] to represent bencode integers,
+//! `i64` is used in the current implementation. If a bencode integer larger than
+//! [`i64::max_value()`]
+//! is found, an `Error` will be returned.
+//!
+//! # Other Stuff
+//! - Feature Request: To request a feature please open a GitHub issue (please
+//! try to request only 1 feature per issue).
+//! - Contribute: PR is always welcome.
+//! - What's with "lava": Originally I intended to start a project for downloading/crawling
+//! stuff. When downloading files, a stream of bits will be moving around--like lava.
+//! - Other "lava" crates: The landscape for downloading/crawling stuff is fairly mature
+//! at this point, which means reinventing the wheels now is rather pointless... So this
+//! might be the only crate published under the "lava" name.
+//! - Similar crates: [bip-rs]
+//!
+//! [`lava_torrent`]: index.html
+//! [`lava_torrent::bencode::write::encode_bytes()`]: bencode/write/fn.encode_bytes.html
+//! [`Torrent`]: struct.Torrent.html
+//! [BitTorrent specification]: http://bittorrent.org/beps/bep_0003.html
+//! [BEP 3]: http://bittorrent.org/beps/bep_0003.html
+//! [`bigint`]: https://github.com/rust-num/num-bigint
+//! [`i64::max_value()`]: https://doc.rust-lang.org/stable/std/primitive.i64.html#method.max_value
+//! [bip-rs]: https://github.com/GGist/bip-rs
+
 extern crate conv;
 extern crate crypto;
 extern crate itertools;
@@ -25,44 +121,84 @@ mod write;
 
 const PIECE_STRING_LENGTH: usize = 20;
 
+/// Custom `Result` type.
 pub type Result<T> = std::result::Result<T, Error>;
+/// Corresponds to a bencode dictionary.
 pub type Dictionary = HashMap<String, BencodeElem>;
+/// Corresponds to the `announce-list` in [BEP 12](http://bittorrent.org/beps/bep_0012.html).
 pub type AnnounceList = Vec<Vec<String>>;
+/// A piece in `pieces`--the SHA1 hash of a torrent block.
 pub type Piece = Vec<u8>;
+/// Corresponds to a bencode integer. The underlying type is `i64`.
+/// Technically a bencode integer has no size limit, but it is not
+/// so in the current implementation. By using a type alias it is
+/// easier to change the underlying type in the future.
 pub type Integer = i64;
 
+/// Custom `Error` type.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Error {
     kind: ErrorKind,
     msg: Cow<'static, str>,
 }
 
+/// Works with [`Error`](struct.Error.html) to differentiate between different kinds of errors.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum ErrorKind {
+    /// The bencode is found to be bad before we can parse the torrent,
+    /// so the torrent may or may not be malformed.
     MalformedBencode,
+    /// IO error occured. The bencode and the torrent may or may not
+    /// be malformed (as we can't verify that).
     IOError,
-    MalformedTorrent, // bencode is fine, but parsed data is gibberish
+    /// Bencode is fine, but parsed data is gibberish, so we can't extract
+    /// a torrent from it.
+    MalformedTorrent,
 }
 
+/// A file contained in a torrent. Modeled after the specifications
+/// in [BEP 3](http://bittorrent.org/beps/bep_0003.html). Unknown/extension
+/// fields will be placed in `extra_fields`. If you need
+/// any of those extra fields you would have to parse it yourself.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct File {
-    pub length: Integer,                  // in bytes
-    pub path: PathBuf,                    // relative to `Torrent.name`
-    pub extra_fields: Option<Dictionary>, // fields not defined in BEP 3
+    /// File size in bytes.
+    pub length: Integer,
+    /// File path, relative to [`Torrent`](struct.Torrent.html)'s `name` field.
+    pub path: PathBuf,
+    /// Fields not defined in [BEP 3](http://bittorrent.org/beps/bep_0003.html).
+    pub extra_fields: Option<Dictionary>,
 }
 
+/// Everything found in a *.torrent* file. Modeled after the specifications
+/// in [BEP 3](http://bittorrent.org/beps/bep_0003.html) and
+///  [BEP 12](http://bittorrent.org/beps/bep_0012.html). Unknown/extension
+/// fields will be placed in `extra_fields` (if the unknown
+/// fields are found in the `info` dictionary then they are placed in
+/// `extra_info_fields`). If you need any of those extra fields you would
+/// have to parse it yourself.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Torrent {
+    /// URL of the torrent's tracker.
     pub announce: String,
-    pub announce_list: Option<AnnounceList>,   // BEP 12
-    pub length: Integer,                       // total size in bytes
-    pub files: Option<Vec<File>>,              // if single file then `name` is file name
-    pub name: String,                          // suggested directory name
-    pub piece_length: Integer,                 // block size in bytes
-    pub pieces: Vec<Piece>,                    // SHA1 hashs of blocks
-    pub extra_fields: Option<Dictionary>,      // top-level fields not defined in BEP 3
-    pub extra_info_fields: Option<Dictionary>, // fields in `info` not defined in BEP 3
-    encoded_info: Vec<u8>,                     // bencoded `info` dict
+    /// Announce list as defined in [BEP 12](http://bittorrent.org/beps/bep_0012.html).
+    pub announce_list: Option<AnnounceList>,
+    /// Total torrent size in bytes (i.e. sum of all files' sizes).
+    pub length: Integer,
+    /// If the torrent contains only 1 file then `files` is `None`.
+    pub files: Option<Vec<File>>,
+    /// If the torrent contains only 1 file then `name` is the file name.
+    /// Otherwise it's the suggested root directory's name.
+    pub name: String,
+    /// Block size in bytes.
+    pub piece_length: Integer,
+    /// SHA1 hashs of each block.
+    pub pieces: Vec<Piece>,
+    /// Top-level fields not defined in [BEP 3](http://bittorrent.org/beps/bep_0003.html).
+    pub extra_fields: Option<Dictionary>,
+    /// Fields in `info` not defined in [BEP 3](http://bittorrent.org/beps/bep_0003.html).
+    pub extra_info_fields: Option<Dictionary>,
+    encoded_info: Vec<u8>, // bencoded `info` dict
 }
 
 impl Error {
@@ -70,6 +206,7 @@ impl Error {
         Error { kind, msg }
     }
 
+    /// Return the kind of this error.
     pub fn kind(&self) -> ErrorKind {
         self.kind
     }
@@ -102,8 +239,12 @@ impl From<std::io::Error> for Error {
 }
 
 impl File {
-    // caller has to ensure that `parent` is an absolute path and
-    // that it is the parent of `self.path`
+    /// Construct the `File`'s absolute path using `parent`.
+    ///
+    /// Caller has to ensure that `parent` is an absolute path.
+    /// Otherwise an error would be returned.
+    ///
+    /// This method effectively appends/joins `self.path` to `parent`.
     pub fn absolute_path<P>(&self, parent: P) -> Result<PathBuf>
     where
         P: AsRef<Path>,
@@ -121,6 +262,8 @@ impl File {
 }
 
 impl Torrent {
+    /// Calculate the `Torrent`'s info hash as defined in
+    /// [BEP 3](http://bittorrent.org/beps/bep_0003.html).
     pub fn info_hash(&self) -> String {
         let mut hasher = Sha1::new();
         hasher.input(&self.encoded_info);

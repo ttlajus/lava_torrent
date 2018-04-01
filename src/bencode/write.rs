@@ -1,3 +1,5 @@
+//! Module for bencode-related encodeing.
+
 use std::io::Write;
 use std::fs::File;
 use std::path::Path;
@@ -6,6 +8,7 @@ use std::hash::BuildHasher;
 use {Error, ErrorKind, Result};
 use super::*;
 
+/// Encode `string` and write the result to `dst`.
 pub fn write_string<W>(string: &str, dst: &mut W) -> Result<()>
 where
     W: Write,
@@ -16,6 +19,7 @@ where
     Ok(())
 }
 
+/// Encode `bytes` and write the result to `dst`.
 pub fn write_bytes<W>(bytes: &[u8], dst: &mut W) -> Result<()>
 where
     W: Write,
@@ -26,6 +30,7 @@ where
     Ok(())
 }
 
+/// Encode `int` and write the result to `dst`.
 pub fn write_integer<W>(int: &i64, dst: &mut W) -> Result<()>
 where
     W: Write,
@@ -36,6 +41,7 @@ where
     Ok(())
 }
 
+/// Encode `list` and write the result to `dst`.
 pub fn write_list<W>(list: &[BencodeElem], dst: &mut W) -> Result<()>
 where
     W: Write,
@@ -48,6 +54,7 @@ where
     Ok(())
 }
 
+/// Encode `dict` and write the result to `dst`.
 pub fn write_dictionary<W, S>(dict: &HashMap<String, BencodeElem, S>, dst: &mut W) -> Result<()>
 where
     W: Write,
@@ -67,30 +74,35 @@ where
     Ok(())
 }
 
+/// Encode `string` and return the result in a `Vec`.
 pub fn encode_string(string: &str) -> Vec<u8> {
     let mut encoded = Vec::with_capacity(string.len() + 2);
     write_string(string, &mut encoded).expect("Write to vec failed!");
     encoded
 }
 
+/// Encode `bytes` and return the result in a `Vec`.
 pub fn encode_bytes(bytes: &[u8]) -> Vec<u8> {
     let mut encoded = Vec::with_capacity(bytes.len() + 2);
     write_bytes(bytes, &mut encoded).expect("Write to vec failed!");
     encoded
 }
 
+/// Encode `int` and return the result in a `Vec`.
 pub fn encode_integer(int: &i64) -> Vec<u8> {
     let mut encoded = Vec::new();
     write_integer(int, &mut encoded).expect("Write to vec failed!");
     encoded
 }
 
+/// Encode `list` and return the result in a `Vec`.
 pub fn encode_list(list: &[BencodeElem]) -> Vec<u8> {
     let mut encoded = Vec::new();
     write_list(list, &mut encoded).expect("Write to vec failed!");
     encoded
 }
 
+/// Encode `dict` and return the result in a `Vec`.
 pub fn encode_dictionary<S>(dict: &HashMap<String, BencodeElem, S>) -> Vec<u8>
 where
     S: BuildHasher,
@@ -101,6 +113,7 @@ where
 }
 
 impl BencodeElem {
+    /// Encode `self` and write the result to `dst`.
     pub fn write_into<W>(&self, dst: &mut W) -> Result<()>
     where
         W: Write,
@@ -114,8 +127,12 @@ impl BencodeElem {
         }
     }
 
-    // "This function will create a file if it does
-    // not exist, and will truncate it if it does."
+    /// Encode `self` and write the result to `path`.
+    ///
+    /// `path` must be the path to a file.
+    ///
+    /// "This function will create a file if it does
+    /// not exist, and will truncate it if it does."
     pub fn write_into_file<P>(&self, path: P) -> Result<()>
     where
         P: AsRef<Path>,
@@ -133,6 +150,7 @@ impl BencodeElem {
         }
     }
 
+    /// Encode `self` and return the result in a `Vec`.
     pub fn encode(&self) -> Vec<u8> {
         match *self {
             BencodeElem::String(ref string) => encode_string(string),
