@@ -62,6 +62,14 @@ impl<'a> Iterator for ByteBuffer<'a> {
 }
 
 impl BencodeElem {
+    /// Parse `bytes` and return all `BencodeElem` found.
+    ///
+    /// If `bytes` is empty, then `Ok(vec)` will be returned, but
+    /// `vec` would be empty as well.
+    ///
+    /// If `bytes` contains any malfored bencode, or if any other
+    /// error is encountered (e.g. `IOError`), then `Err(error)`
+    /// will be returned.
     pub fn from_bytes<B>(bytes: B) -> Result<Vec<BencodeElem>>
     where
         B: AsRef<[u8]>,
@@ -77,6 +85,14 @@ impl BencodeElem {
         Ok(elements)
     }
 
+    /// Parse the content of the file at `path` and return all `BencodeElem` found.
+    ///
+    /// If the file at `path` is empty, then `Ok(vec)` will be returned, but
+    /// `vec` would be empty as well.
+    ///
+    /// If the file at `path` contains any malfored bencode, or if any other
+    /// error is encountered (e.g. `IOError`), then `Err(error)`
+    /// will be returned.
     pub fn from_file<P>(path: P) -> Result<Vec<BencodeElem>>
     where
         P: AsRef<Path>,

@@ -38,6 +38,7 @@ impl File {
 }
 
 impl Torrent {
+    /// Encode `self` as bencode and write the result to `dst`.
     pub fn write_into<W>(self, dst: &mut W) -> Result<()>
     where
         W: Write,
@@ -102,8 +103,12 @@ impl Torrent {
         BencodeElem::Dictionary(result).write_into(dst)
     }
 
-    // "This function will create a file if it does
-    // not exist, and will truncate it if it does."
+    /// Encode `self` as bencode and write the result to `path`.
+    ///
+    /// `path` must be the path to a file.
+    ///
+    /// "This function will create a file if it does
+    /// not exist, and will truncate it if it does."
     pub fn write_into_file<P>(self, path: P) -> Result<()>
     where
         P: AsRef<Path>,
@@ -121,6 +126,7 @@ impl Torrent {
         }
     }
 
+    /// Encode `self` as bencode and return the result in a `Vec`.
     pub fn encode(self) -> Result<Vec<u8>> {
         let mut result = Vec::new();
         self.write_into(&mut result)?;
