@@ -103,10 +103,67 @@ impl File {
 impl Torrent {
     /// Calculate the `Torrent`'s info hash as defined in
     /// [BEP 3](http://bittorrent.org/beps/bep_0003.html).
+    ///
+    /// Note that the calculated info hash is not cached.
+    /// So if this method is called multiple times, multiple
+    /// calculations will be performed. To avoid that, the
+    /// caller should cache the return value as needed.
     pub fn info_hash(&self) -> String {
         let mut hasher = Sha1::new();
         hasher.input(&self.encoded_info);
         hasher.result_str()
+    }
+
+    /// Calculate the `Torrent`'s magnet link as defined in
+    /// [BEP 9](http://bittorrent.org/beps/bep_0009.html).
+    ///
+    /// The `dn` parameter is set to `self.name`.
+    ///
+    /// Either `self.announce` or all trackers in `self.announce_list` will be used,
+    /// meaning that there might be multiple `tr` entries. We don't use both because
+    /// per [BEP 12](http://bittorrent.org/beps/bep_0012.html):
+    /// "If the client is compatible with the multitracker specification, and if the
+    /// `announce-list` key is present, the client will ignore the `announce` key
+    /// and only use the URLs in `announce-list`."
+    ///
+    /// The `x.pe` parameter (for peer addresses) is currently not supported.
+    pub fn magnet_link(&self) -> String {
+        if let Some(ref list) = self.announce_list {
+            format!(
+                "magnet:?xt=urn:btih:{}&dn={}{}",
+                self.info_hash(),
+                self.name,
+                list.iter().format_with("", |tier, f| f(&format_args!(
+                    "{}",
+                    tier.iter()
+                        .format_with("", |url, f| f(&format_args!("&tr={}", url)))
+                ))),
+            )
+        } else {
+            format!(
+                "magnet:?xt=urn:btih:{}&dn={}&tr={}",
+                self.info_hash(),
+                self.name,
+                self.announce,
+            )
+        }
+    }
+
+    /// Check if this torrent is private as defined in
+    /// [BEP 27](http://bittorrent.org/beps/bep_0027.html).
+    ///
+    /// Returns `true` if `private` maps to a bencode integer `1`.
+    /// Returns `false` otherwise.
+    pub fn is_private(&self) -> bool {
+        if let Some(ref dict) = self.extra_info_fields {
+            match dict.get("private") {
+                Some(&BencodeElem::Integer(val)) => val == 1,
+                Some(_) => false,
+                None => false,
+            }
+        } else {
+            false
+        }
     }
 }
 
@@ -232,7 +289,10 @@ mod file_tests {
 
 #[cfg(test)]
 mod torrent_tests {
+    // @note: `magnet_link()` is not tested as it is
+    // best left to integration tests (in `tests/`).
     use super::*;
+    use std::iter::FromIterator;
 
     #[test]
     fn info_hash_ok() {
@@ -253,6 +313,104 @@ mod torrent_tests {
             torrent.info_hash(),
             "600ccd1b71569232d01d110bc63e906beab04d8c".to_string(),
         );
+    }
+
+    #[test]
+    fn is_private_ok() {
+        let torrent = Torrent {
+            announce: "url".to_string(),
+            announce_list: None,
+            length: 4,
+            files: None,
+            name: "sample".to_string(),
+            piece_length: 2,
+            pieces: vec![vec![1, 2], vec![3, 4]],
+            extra_fields: None,
+            extra_info_fields: Some(HashMap::from_iter(
+                vec![("private".to_string(), bencode_elem!(1))].into_iter(),
+            )),
+            encoded_info: vec![b'd', b'e'],
+        };
+
+        assert!(torrent.is_private());
+    }
+
+    #[test]
+    fn is_private_no_extra_fields() {
+        let torrent = Torrent {
+            announce: "url".to_string(),
+            announce_list: None,
+            length: 4,
+            files: None,
+            name: "sample".to_string(),
+            piece_length: 2,
+            pieces: vec![vec![1, 2], vec![3, 4]],
+            extra_fields: None,
+            extra_info_fields: None,
+            encoded_info: vec![b'd', b'e'],
+        };
+
+        assert!(!torrent.is_private());
+    }
+
+    #[test]
+    fn is_private_no_key() {
+        let torrent = Torrent {
+            announce: "url".to_string(),
+            announce_list: None,
+            length: 4,
+            files: None,
+            name: "sample".to_string(),
+            piece_length: 2,
+            pieces: vec![vec![1, 2], vec![3, 4]],
+            extra_fields: None,
+            extra_info_fields: Some(HashMap::from_iter(
+                vec![("privatee".to_string(), bencode_elem!(1))].into_iter(),
+            )),
+            encoded_info: vec![b'd', b'e'],
+        };
+
+        assert!(!torrent.is_private());
+    }
+
+    #[test]
+    fn is_private_incorrect_val_type() {
+        let torrent = Torrent {
+            announce: "url".to_string(),
+            announce_list: None,
+            length: 4,
+            files: None,
+            name: "sample".to_string(),
+            piece_length: 2,
+            pieces: vec![vec![1, 2], vec![3, 4]],
+            extra_fields: None,
+            extra_info_fields: Some(HashMap::from_iter(
+                vec![("privatee".to_string(), bencode_elem!("1"))].into_iter(),
+            )),
+            encoded_info: vec![b'd', b'e'],
+        };
+
+        assert!(!torrent.is_private());
+    }
+
+    #[test]
+    fn is_private_incorrect_val() {
+        let torrent = Torrent {
+            announce: "url".to_string(),
+            announce_list: None,
+            length: 4,
+            files: None,
+            name: "sample".to_string(),
+            piece_length: 2,
+            pieces: vec![vec![1, 2], vec![3, 4]],
+            extra_fields: None,
+            extra_info_fields: Some(HashMap::from_iter(
+                vec![("privatee".to_string(), bencode_elem!(2))].into_iter(),
+            )),
+            encoded_info: vec![b'd', b'e'],
+        };
+
+        assert!(!torrent.is_private());
     }
 }
 
