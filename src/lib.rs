@@ -139,7 +139,7 @@ pub struct Error {
 }
 
 /// Works with [`Error`](struct.Error.html) to differentiate between different kinds of errors.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ErrorKind {
     /// The bencode is found to be bad before we can parse the torrent,
     /// so the torrent may or may not be malformed.
