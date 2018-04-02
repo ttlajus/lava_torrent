@@ -188,7 +188,7 @@ impl Torrent {
                 Some(BencodeElem::Dictionary(mut info)) => {
                     // 3rd-level items
                     // re-encode `info` and save it for other uses (e.g. info hash)
-                    let encoded_info = bencode::write::encode_dictionary(&info);
+                    let encoded_info = ::bencode::write::encode_dictionary(&info);
                     // handle `files` separately because `extract_length()` needs it
                     let files = Self::extract_files(&mut info)?;
 

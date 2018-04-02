@@ -6,8 +6,8 @@ use std::io::{BufReader, Read};
 use std::collections::HashMap;
 use std::iter::FromIterator;
 use conv::ValueFrom;
-use lava_torrent::{File, Torrent};
 use lava_torrent::bencode::BencodeElem;
+use lava_torrent::torrent::v1::{File, Torrent};
 
 #[test]
 fn read_from_bytes() {

@@ -113,7 +113,7 @@ impl Torrent {
     where
         P: AsRef<Path>,
     {
-        match std::fs::File::create(&path) {
+        match ::std::fs::File::create(&path) {
             Ok(mut file) => {
                 self.write_into(&mut file)?;
                 file.sync_all()?;

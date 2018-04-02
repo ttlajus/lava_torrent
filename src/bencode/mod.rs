@@ -36,7 +36,7 @@ const STRING_DELIMITER: u8 = b':';
 /// bencode directly then what you are doing is relatively low-level. In this case, exposing the
 /// underlying type might actually be better.
 ///
-/// [`Integer`]: ../type.Integer.html
+/// [`Integer`]: ../torrent/v1/type.Integer.html
 /// [spec]: http://bittorrent.org/beps/bep_0003.html
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BencodeElem {
