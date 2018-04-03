@@ -187,8 +187,6 @@ impl Torrent {
             match info {
                 Some(BencodeElem::Dictionary(mut info)) => {
                     // 3rd-level items
-                    // re-encode `info` and save it for other uses (e.g. info hash)
-                    let encoded_info = ::bencode::write::encode_dictionary(&info);
                     // handle `files` separately because `extract_length()` needs it
                     let files = Self::extract_files(&mut info)?;
 
@@ -202,7 +200,6 @@ impl Torrent {
                         pieces: Self::extract_pieces(&mut info)?,
                         extra_fields,
                         extra_info_fields: Self::extract_extra_fields(info),
-                        encoded_info,
                     })
                 }
                 Some(_) => Err(Error::new(
@@ -660,7 +657,6 @@ mod torrent_read_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: None,
-            encoded_info: Vec::new(),
         };
 
         // use `clone()` here so we can test that `torrent` is not modified
@@ -683,7 +679,6 @@ mod torrent_read_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: None,
-            encoded_info: Vec::new(),
         };
 
         match torrent.validate() {
@@ -704,7 +699,6 @@ mod torrent_read_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: None,
-            encoded_info: Vec::new(),
         };
 
         match torrent.validate() {
@@ -725,7 +719,6 @@ mod torrent_read_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: None,
-            encoded_info: Vec::new(),
         };
 
         match torrent.validate() {
@@ -770,18 +763,6 @@ mod torrent_read_tests {
                     ],
                     extra_fields: None,
                     extra_info_fields: None,
-                    encoded_info: bencode_elem!({
-                        ("name", "??"),
-                        ("length", 2),
-                        ("piece length", 2),
-                        (
-                            "pieces",
-                            (0x00, 0x01, 0x02, 0x03, 0x04,
-                                0x05, 0x06, 0x07, 0x08, 0x09,
-                                0x0a, 0x0b, 0x0c, 0x0d, 0x0e,
-                                0x0f, 0x10, 0x11, 0x12, 0x13)
-                        ),
-                    }).encode(),
                 }
             ),
             Err(_) => assert!(false),

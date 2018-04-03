@@ -24,9 +24,9 @@
 //! Create a torrent ([v1]) from files in a directory and save the *.torrent* file.
 //!
 //! ```no_run
-//! use lava_torrent::torrent::v1::Torrent;
+//! use lava_torrent::torrent::v1::TorrentBuilder;
 //!
-//! let torrent = Torrent::create_from_file("dir/").unwrap();
+//! let torrent = TorrentBuilder::new("announce".to_string(), "dir/", 1048576).build().unwrap();
 //! torrent.write_into_file("sample.torrent").unwrap();
 //! ```
 //!
@@ -34,11 +34,9 @@
 //! [`lava_torrent`] is designed with performance and maintenance cost in mind.
 //!
 //! ## Copying
-//! Parsing a *.torrent* ([v1]) file would take at least 3 copies:
+//! Parsing a *.torrent* ([v1]) file would take at least 2 copies:
 //! - load bencode bytes from file
 //! - parse from bytes (bytes are copied, for example, when they are converted to `String`)
-//! - re-encode `info` (the `info` dictionary has to be converted back to bencode form so that
-//! we can do things like calculating info hash)
 //!
 //! Creating a *.torrent* ([v1]) file and writing its bencoded form to disk
 //! would take at least 2 copies:
@@ -51,17 +49,6 @@
 //! make the code harder to maintain. Unless there is evidence suggesting otherwise, I think
 //! the current balance between performance and maintenance cost is good enough. Please open
 //! a GitHub issue if you have any suggestion.
-//!
-//! ## Memory Usage
-//! The re-encoded `info` dict is stored in a field of the [`Torrent`] struct. Since this
-//! `info` dict is fairly large (it occupies the majority of a *.torrent* file), [`lava_torrent`]
-//! cannot be considered memory-efficient at this point. An alternative approach would be
-//! to calculate everything we could after re-encoding, and store the calculated results
-//! instead. However, I think the current approach of storing the encoded `info` dict is
-//! more convenient and extensible.
-//!
-//! Of course, on modern computers this bit of memory inefficiency is mostly irrelevant.
-//! But on embedded devices this might actually matter.
 //!
 //! # Correctness
 //! [`lava_torrent`] is written without using any existing parser or parser generator.
@@ -81,6 +68,11 @@
 //! `i64` is used in the current implementation. If a bencode integer larger than
 //! [`i64::max_value()`]
 //! is found, an `Error` will be returned.
+//!
+//! 2. Several private methods will panic if something that "just won't happen"
+//! happens. For the purpose of full disclosure this behavior is mentioned here,
+//! but in reality panic should never be triggered. If you want to locate these
+//! private methods try searching for "panic", "unwrap", and "expect" in `*.rs` files.
 //!
 //! # Implemented BEPs
 //! NOTE: Only the parsing/encoding aspects are implemented.
@@ -144,12 +136,15 @@ pub enum ErrorKind {
     /// The bencode is found to be bad before we can parse the torrent,
     /// so the torrent may or may not be malformed.
     MalformedBencode,
-    /// IO error occured. The bencode and the torrent may or may not
+    /// IO error occurred. The bencode and the torrent may or may not
     /// be malformed (as we can't verify that).
     IOError,
     /// Bencode is fine, but parsed data is gibberish, so we can't extract
     /// a torrent from it.
     MalformedTorrent,
+    /// `TorrentBuilder` encounters problems when building `Torrent`. For
+    /// instance, a field is set to an empty string by the caller.
+    TorrentBuilderFailure,
 }
 
 impl Error {
@@ -181,10 +176,7 @@ impl std::error::Error for Error {
 
 impl From<std::io::Error> for Error {
     // @todo: better conversion (e.g. save cause)?
-    fn from(_: std::io::Error) -> Error {
-        Error::new(
-            ErrorKind::IOError,
-            Cow::Borrowed("IO error when writing bencode/torrent."),
-        )
+    fn from(e: std::io::Error) -> Error {
+        Error::new(ErrorKind::IOError, Cow::Owned(format!("IO error: {}.", e)))
     }
 }
