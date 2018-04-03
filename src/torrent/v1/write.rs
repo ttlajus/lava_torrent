@@ -3,37 +3,25 @@ use bencode::BencodeElem;
 use super::*;
 
 impl File {
-    fn into_bencode_elem(self) -> Result<BencodeElem> {
+    pub(crate) fn into_bencode_elem(self) -> BencodeElem {
         let mut result: HashMap<String, BencodeElem> = HashMap::new();
 
         result.insert("length".to_string(), BencodeElem::Integer(self.length));
         result.insert(
             "path".to_string(),
-            BencodeElem::List({
-                let mut list = Vec::new();
-                for component in &self.path {
-                    match component.to_str() {
-                        Some(string) => list.push(BencodeElem::String(string.to_string())),
-                        None => {
-                            return Err(Error::new(
-                                ErrorKind::MalformedTorrent,
-                                Cow::Owned(format!(
-                                    "Path component [{:?}] is not valid UTF8.",
-                                    component
-                                )),
-                            ));
-                        }
-                    }
-                }
-                list
-            }),
+            BencodeElem::List(
+                self.path
+                    .iter()
+                    .map(|component| BencodeElem::String(component.to_string_lossy().into_owned()))
+                    .collect(),
+            ),
         );
 
         if let Some(extra_fields) = self.extra_fields {
             result.extend(extra_fields);
         }
 
-        Ok(BencodeElem::Dictionary(result))
+        BencodeElem::Dictionary(result)
     }
 }
 
@@ -68,13 +56,12 @@ impl Torrent {
         if let Some(files) = self.files {
             info.insert(
                 "files".to_string(),
-                BencodeElem::List({
-                    let mut list = Vec::new();
-                    for file in files {
-                        list.push(file.into_bencode_elem()?);
-                    }
-                    list
-                }),
+                BencodeElem::List(
+                    files
+                        .into_iter()
+                        .map(|file| file.into_bencode_elem())
+                        .collect(),
+                ),
             );
         } else {
             info.insert("length".to_string(), BencodeElem::Integer(self.length));
@@ -147,13 +134,10 @@ mod file_write_tests {
             extra_fields: None,
         };
 
-        match file.into_bencode_elem() {
-            Ok(encoded) => assert_eq!(
-                encoded,
-                bencode_elem!({ ("length", 42), ("path", ["dir1", "dir2", "file"]) })
-            ),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            file.into_bencode_elem(),
+            bencode_elem!({ ("length", 42), ("path", ["dir1", "dir2", "file"]) }),
+        )
     }
 
     #[test]
@@ -166,17 +150,14 @@ mod file_write_tests {
             )),
         };
 
-        match file.into_bencode_elem() {
-            Ok(elem) => assert_eq!(
-                elem,
-                bencode_elem!({
-                    ("length", 42),
-                    ("path", ["dir1", "dir2", "file"]),
-                    ("comment", "no comment"),
-                })
-            ),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            file.into_bencode_elem(),
+            bencode_elem!({
+                ("length", 42),
+                ("path", ["dir1", "dir2", "file"]),
+                ("comment", "no comment"),
+            })
+        )
     }
 }
 
@@ -199,7 +180,6 @@ mod torrent_write_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: None,
-            encoded_info: Vec::new(),
         };
         let mut result = Vec::new();
 
@@ -235,7 +215,6 @@ mod torrent_write_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: None,
-            encoded_info: Vec::new(),
         };
         let mut result = Vec::new();
 
@@ -274,7 +253,6 @@ mod torrent_write_tests {
                 ].into_iter(),
             )),
             extra_info_fields: None,
-            encoded_info: Vec::new(),
         };
         let mut result = Vec::new();
 
@@ -314,7 +292,6 @@ mod torrent_write_tests {
                     ("comment1".to_string(), bencode_elem!("no comment")),
                 ].into_iter(),
             )),
-            encoded_info: Vec::new(),
         };
         let mut result = Vec::new();
 
@@ -360,7 +337,6 @@ mod torrent_write_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: None,
-            encoded_info: Vec::new(),
         };
         let mut result = Vec::new();
 
@@ -396,7 +372,6 @@ mod torrent_write_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: None,
-            encoded_info: Vec::new(),
         };
 
         match torrent.encode() {
@@ -431,7 +406,6 @@ mod torrent_write_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: None,
-            encoded_info: Vec::new(),
         };
 
         match torrent.encode() {
@@ -469,7 +443,6 @@ mod torrent_write_tests {
                 ].into_iter(),
             )),
             extra_info_fields: None,
-            encoded_info: Vec::new(),
         };
 
         match torrent.encode() {
@@ -508,7 +481,6 @@ mod torrent_write_tests {
                     ("comment1".to_string(), bencode_elem!("no comment")),
                 ].into_iter(),
             )),
-            encoded_info: Vec::new(),
         };
 
         match torrent.encode() {
@@ -553,7 +525,6 @@ mod torrent_write_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: None,
-            encoded_info: Vec::new(),
         };
 
         match torrent.encode() {

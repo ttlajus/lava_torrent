@@ -13,6 +13,7 @@ use {Error, ErrorKind, Result};
 
 mod read;
 mod write;
+mod build;
 
 const PIECE_STRING_LENGTH: usize = 20;
 
@@ -74,7 +75,35 @@ pub struct Torrent {
     pub extra_fields: Option<Dictionary>,
     /// Fields in `info` not defined in [BEP 3](http://bittorrent.org/beps/bep_0003.html).
     pub extra_info_fields: Option<Dictionary>,
-    encoded_info: Vec<u8>, // bencoded `info` dict
+}
+
+/// Struct type for creating `Torrent`s from files.
+///
+/// This struct is used for **creating** `Torrent`s, so that you can
+/// encode/serialize them to *.torrent* files. If you want to read
+/// existing *.torrent* files then use [`Torrent::read_from_file()`]
+/// or [`Torrent::read_from_bytes()`].
+///
+/// Required fields: `announce`, `path`, and `piece_length`.
+/// They are set when calling the constructor [`new()`].
+///
+/// Optional fields can be set by calling the corresponding methods
+///  (e.g. [`set_announce()`]). Fields can be updated in the same way.
+///
+/// [`Torrent::read_from_file()`]: struct.Torrent.html#method.read_from_file
+/// [`Torrent::read_from_bytes()`]: struct.Torrent.html#method.read_from_bytes
+/// [`new()`]: #method.new
+/// [`set_announce()`]: #method.set_announce
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct TorrentBuilder {
+    announce: String,
+    announce_list: Option<AnnounceList>,
+    name: Option<String>,
+    path: PathBuf,
+    piece_length: Integer,
+    extra_fields: Option<Dictionary>,
+    extra_info_fields: Option<Dictionary>,
+    is_private: bool,
 }
 
 impl File {
@@ -101,6 +130,61 @@ impl File {
 }
 
 impl Torrent {
+    /// Construct the `info` dict based on the fields of `self`.
+    ///
+    /// Certain operations on torrents, such as calculating info
+    /// hashs, require the extracted `info` dict. This
+    /// convenience method does that.
+    ///
+    /// Note that the `info` dict
+    /// is constructed each time this method is called (i.e.
+    /// the return value is not cached). If caching is needed
+    /// then the caller should handle that.
+    ///
+    /// Since `self` is taken by reference, and the result is
+    /// returned by value, certain values will be cloned. Please
+    /// be aware of this overhead.
+    pub fn construct_info(&self) -> BencodeElem {
+        let mut info: HashMap<String, BencodeElem> = HashMap::new();
+
+        if let Some(ref files) = self.files {
+            info.insert(
+                "files".to_string(),
+                BencodeElem::List(
+                    files
+                        .clone()
+                        .into_iter()
+                        .map(|file| file.into_bencode_elem())
+                        .collect(),
+                ),
+            );
+        } else {
+            info.insert("length".to_string(), BencodeElem::Integer(self.length));
+        }
+
+        info.insert("name".to_string(), BencodeElem::String(self.name.clone()));
+        info.insert(
+            "piece length".to_string(),
+            BencodeElem::Integer(self.piece_length),
+        );
+        info.insert(
+            "pieces".to_string(),
+            BencodeElem::Bytes(
+                self.pieces
+                    .clone()
+                    .into_iter()
+                    .flat_map(|piece| piece)
+                    .collect(),
+            ),
+        );
+
+        if let Some(ref extra_info_fields) = self.extra_info_fields {
+            info.extend(extra_info_fields.clone());
+        }
+
+        BencodeElem::Dictionary(info)
+    }
+
     /// Calculate the `Torrent`'s info hash as defined in
     /// [BEP 3](http://bittorrent.org/beps/bep_0003.html).
     ///
@@ -110,7 +194,7 @@ impl Torrent {
     /// caller should cache the return value as needed.
     pub fn info_hash(&self) -> String {
         let mut hasher = Sha1::new();
-        hasher.input(&self.encoded_info);
+        hasher.input(&self.construct_info().encode());
         hasher.result_str()
     }
 
@@ -306,12 +390,11 @@ mod torrent_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: None,
-            encoded_info: vec![b'd', b'e'],
         };
 
         assert_eq!(
             torrent.info_hash(),
-            "600ccd1b71569232d01d110bc63e906beab04d8c".to_string(),
+            "074f42efaf8267f137f114f722d4e7d1dcbfbda5".to_string(),
         );
     }
 
@@ -329,7 +412,6 @@ mod torrent_tests {
             extra_info_fields: Some(HashMap::from_iter(
                 vec![("private".to_string(), bencode_elem!(1))].into_iter(),
             )),
-            encoded_info: vec![b'd', b'e'],
         };
 
         assert!(torrent.is_private());
@@ -347,7 +429,6 @@ mod torrent_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: None,
-            encoded_info: vec![b'd', b'e'],
         };
 
         assert!(!torrent.is_private());
@@ -367,7 +448,6 @@ mod torrent_tests {
             extra_info_fields: Some(HashMap::from_iter(
                 vec![("privatee".to_string(), bencode_elem!(1))].into_iter(),
             )),
-            encoded_info: vec![b'd', b'e'],
         };
 
         assert!(!torrent.is_private());
@@ -387,7 +467,6 @@ mod torrent_tests {
             extra_info_fields: Some(HashMap::from_iter(
                 vec![("privatee".to_string(), bencode_elem!("1"))].into_iter(),
             )),
-            encoded_info: vec![b'd', b'e'],
         };
 
         assert!(!torrent.is_private());
@@ -407,7 +486,6 @@ mod torrent_tests {
             extra_info_fields: Some(HashMap::from_iter(
                 vec![("privatee".to_string(), bencode_elem!(2))].into_iter(),
             )),
-            encoded_info: vec![b'd', b'e'],
         };
 
         assert!(!torrent.is_private());
@@ -476,7 +554,6 @@ mod torrent_display_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: None,
-            encoded_info: Vec::new(),
         };
 
         assert_eq!(
@@ -504,7 +581,6 @@ mod torrent_display_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: None,
-            encoded_info: Vec::new(),
         };
 
         assert_eq!(
@@ -535,7 +611,6 @@ mod torrent_display_tests {
                 ].into_iter(),
             )),
             extra_info_fields: None,
-            encoded_info: Vec::new(),
         };
 
         assert_eq!(
@@ -567,7 +642,6 @@ mod torrent_display_tests {
                     ("comment1".to_string(), bencode_elem!("no comment")),
                 ].into_iter(),
             )),
-            encoded_info: Vec::new(),
         };
 
         assert_eq!(
@@ -605,7 +679,6 @@ mod torrent_display_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: None,
-            encoded_info: Vec::new(),
         };
 
         assert_eq!(
