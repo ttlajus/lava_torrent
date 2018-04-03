@@ -63,7 +63,7 @@ where
     // "Keys must be strings and appear in sorted order
     // (sorted as raw strings, not alphanumerics)."
     let mut sorted = dict.iter().collect::<Vec<(&String, &BencodeElem)>>();
-    sorted.sort_by(|&(k1, _), &(k2, _)| k1.as_bytes().cmp(k2.as_bytes()));
+    sorted.sort_by_key(|&(key, _)| key.as_bytes());
 
     dst.write_all(&[DICTIONARY_PREFIX])?;
     for (key, val) in sorted {
