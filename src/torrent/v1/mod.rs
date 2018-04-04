@@ -373,10 +373,32 @@ mod file_tests {
 
 #[cfg(test)]
 mod torrent_tests {
-    // @note: `magnet_link()` is not tested as it is
-    // best left to integration tests (in `tests/`).
     use super::*;
     use std::iter::FromIterator;
+
+    #[test]
+    fn construct_info_ok() {
+        let torrent = Torrent {
+            announce: "url".to_string(),
+            announce_list: None,
+            length: 4,
+            files: None,
+            name: "sample".to_string(),
+            piece_length: 2,
+            pieces: vec![vec![1, 2], vec![3, 4]],
+            extra_fields: None,
+            extra_info_fields: None,
+        };
+
+        assert_eq!(
+            torrent.construct_info(),
+            bencode_elem!({
+                ("length", 4),
+                ("name", "sample"),
+                ("piece length", 2),
+                ("pieces", (1, 2, 3, 4))}),
+        );
+    }
 
     #[test]
     fn info_hash_ok() {
@@ -395,6 +417,53 @@ mod torrent_tests {
         assert_eq!(
             torrent.info_hash(),
             "074f42efaf8267f137f114f722d4e7d1dcbfbda5".to_string(),
+        );
+    }
+
+    #[test]
+    fn magnet_link_ok() {
+        let torrent = Torrent {
+            announce: "url".to_string(),
+            announce_list: None,
+            length: 4,
+            files: None,
+            name: "sample".to_string(),
+            piece_length: 2,
+            pieces: vec![vec![1, 2], vec![3, 4]],
+            extra_fields: None,
+            extra_info_fields: None,
+        };
+
+        assert_eq!(
+            torrent.magnet_link(),
+            "magnet:?xt=urn:btih:074f42efaf8267f137f114f722d4e7d1dcbfbda5\
+             &dn=sample&tr=url"
+                .to_string()
+        );
+    }
+
+    #[test]
+    fn magnet_link_with_announce_list() {
+        let torrent = Torrent {
+            announce: "url".to_string(),
+            announce_list: Some(vec![
+                vec!["url1".to_string()],
+                vec!["url2".to_string(), "url3".to_string()],
+            ]),
+            length: 4,
+            files: None,
+            name: "sample".to_string(),
+            piece_length: 2,
+            pieces: vec![vec![1, 2], vec![3, 4]],
+            extra_fields: None,
+            extra_info_fields: None,
+        };
+
+        assert_eq!(
+            torrent.magnet_link(),
+            "magnet:?xt=urn:btih:074f42efaf8267f137f114f722d4e7d1dcbfbda5\
+             &dn=sample&tr=url1&tr=url2&tr=url3"
+                .to_string()
         );
     }
 
