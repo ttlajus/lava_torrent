@@ -71,6 +71,7 @@ fn read_from_bytes() {
                  &tr=http://ipv6.torrent.ubuntu.com:6969/announce"
                     .to_string(),
             );
+            assert!(!parsed.is_private());
         }
         Err(_) => assert!(false),
     }
@@ -170,6 +171,7 @@ fn read_from_bytes_multiple_files() {
                  &tr=http://linuxtracker.org:2710/00000000000000000000000000000000/announce"
                     .to_string(),
             );
+            assert!(!parsed.is_private());
         }
         Err(_) => assert!(false),
     }
