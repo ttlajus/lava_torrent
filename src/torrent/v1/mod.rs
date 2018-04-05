@@ -90,6 +90,9 @@ pub struct Torrent {
 /// Optional fields can be set by calling the corresponding methods
 ///  (e.g. [`set_announce()`]). Fields can be updated in the same way.
 ///
+/// **Symbolic links and \*nix hidden files/dirs are ignored.** Reasoning:
+///
+///
 /// [`Torrent::read_from_file()`]: struct.Torrent.html#method.read_from_file
 /// [`Torrent::read_from_bytes()`]: struct.Torrent.html#method.read_from_bytes
 /// [`new()`]: #method.new
