@@ -1,4 +1,4 @@
-//! Module for bencode-related parsing/encodeing.
+//! Module for bencode-related parsing/encoding.
 //!
 //! Most of methods are associated methods of `BencodeElem`. Some general methods
 //! are placed at the module level, and they can be found in [`write`](write/index.html).

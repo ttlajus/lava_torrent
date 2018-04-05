@@ -1,4 +1,4 @@
-//! Module for bencode-related encodeing.
+//! Module for bencode-related encoding.
 
 use std::io::Write;
 use std::fs::File;

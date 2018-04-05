@@ -1,5 +1,5 @@
 //! Module for `.torrent` files ([v1](http://bittorrent.org/beps/bep_0003.html))
-//! related parsing/encodeing.
+//! related parsing/encoding.
 
 use std::fmt;
 use std::borrow::Cow;
@@ -49,7 +49,7 @@ pub struct File {
 ///
 /// Modeled after the specifications
 /// in [BEP 3](http://bittorrent.org/beps/bep_0003.html) and
-///  [BEP 12](http://bittorrent.org/beps/bep_0012.html). Unknown/extension
+/// [BEP 12](http://bittorrent.org/beps/bep_0012.html). Unknown/extension
 /// fields will be placed in `extra_fields` (if the unknown
 /// fields are found in the `info` dictionary then they are placed in
 /// `extra_info_fields`). If you need any of those extra fields you would
@@ -77,7 +77,7 @@ pub struct Torrent {
     pub extra_info_fields: Option<Dictionary>,
 }
 
-/// Struct type for creating `Torrent`s from files.
+/// Struct type for creating `Torrent`s from files. ***Experimental/Unstable***
 ///
 /// This struct is used for **creating** `Torrent`s, so that you can
 /// encode/serialize them to *.torrent* files. If you want to read
@@ -90,13 +90,26 @@ pub struct Torrent {
 /// Optional fields can be set by calling the corresponding methods
 ///  (e.g. [`set_announce()`]). Fields can be updated in the same way.
 ///
-/// **Symbolic links and \*nix hidden files/dirs are ignored.** Reasoning:
+/// # Notes
+/// **Symbolic links and \*nix hidden files/dirs are ignored.**
 ///
+/// Reasoning:
+/// when handling these special "files", there are many decisions to make:
+/// - Should they be ignored, included, or selectively ignored/included?
+/// - Should symbolic links be followed?
+/// - Should included/ignored entries be marked specially (e.g. [BEP 47])?
+/// - Should users be allowed to configure the settings?
+/// - If users can configure the settings, what would be the ideal defaults?
+/// - ...
+///
+/// Apparently it's not easy to make these decisions, especially when a module
+/// is still in experimental status. Therefore these files are ignored for now.
 ///
 /// [`Torrent::read_from_file()`]: struct.Torrent.html#method.read_from_file
 /// [`Torrent::read_from_bytes()`]: struct.Torrent.html#method.read_from_bytes
 /// [`new()`]: #method.new
 /// [`set_announce()`]: #method.set_announce
+/// [BEP 47]: http://bittorrent.org/beps/bep_0047.html
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct TorrentBuilder {
     announce: String,
