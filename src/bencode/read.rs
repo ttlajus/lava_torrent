@@ -67,7 +67,7 @@ impl BencodeElem {
     /// If `bytes` is empty, then `Ok(vec)` will be returned, but
     /// `vec` would be empty as well.
     ///
-    /// If `bytes` contains any malfored bencode, or if any other
+    /// If `bytes` contains any malformed bencode, or if any other
     /// error is encountered (e.g. `IOError`), then `Err(error)`
     /// will be returned.
     pub fn from_bytes<B>(bytes: B) -> Result<Vec<BencodeElem>>
@@ -90,7 +90,7 @@ impl BencodeElem {
     /// If the file at `path` is empty, then `Ok(vec)` will be returned, but
     /// `vec` would be empty as well.
     ///
-    /// If the file at `path` contains any malfored bencode, or if any other
+    /// If the file at `path` contains any malformed bencode, or if any other
     /// error is encountered (e.g. `IOError`), then `Err(error)`
     /// will be returned.
     pub fn from_file<P>(path: P) -> Result<Vec<BencodeElem>>

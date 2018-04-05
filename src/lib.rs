@@ -1,16 +1,7 @@
 //! [`lava_torrent`] is a library for parsing/encoding bencode and *.torrent* files. It is
-//! dual-licensed under Apache 2.0 and MIT. **It is not recommended to use [`lava_torrent`]
-//! in any safety-critical system at this point.**
+//! dual-licensed under [Apache 2.0] and [MIT].
 //!
-//! Currently, only [v1] torrents are supported. [Merkle tree torrents] can be supported
-//! if there's enough demand. [v2] torrents might be supported once it's stablized.
-//!
-//! Methods for parsing and encoding are generally bound to structs
-//! (i.e. they are "associated methods"). Methods that are general
-//! enough are placed at the module-level (e.g.
-//! [`lava_torrent::bencode::write::encode_bytes()`]).
-//!
-//! # Quick Start
+//! # *Quick Start*
 //! Read a torrent ([v1]) and print it and its info hash.
 //!
 //! ```no_run
@@ -22,6 +13,7 @@
 //! ```
 //!
 //! Create a torrent ([v1]) from files in a directory and save the *.torrent* file.
+//! ***Experimental/Unstable***
 //!
 //! ```no_run
 //! use lava_torrent::torrent::v1::TorrentBuilder;
@@ -30,7 +22,23 @@
 //! torrent.write_into_file("sample.torrent").unwrap();
 //! ```
 //!
-//! # Performance
+//! # *Overview*
+//! - **It is not recommended to use [`lava_torrent`] in any critical system at this point.**
+//! - Currently, only [v1] torrents are supported. [Merkle tree torrents] can be supported
+//! if there's enough demand. [v2] torrents might be supported once it's stabilized.
+//! - Methods for parsing and encoding are generally bound to structs (i.e. they are
+//! "associated methods"). Methods that are general enough are placed at the module-level (e.g.
+//! [`lava_torrent::bencode::write::encode_bytes()`]).
+//!
+//! ## Functionality
+//! - bencode parsing/encoding (i.e. "bencoding/bdecoding") => [`BencodeElem`]
+//! - torrent parsing/encoding (based on [`BencodeElem`]) => [`Torrent`]
+//!
+//! ## Unstable Functionality
+//! - torrent creation (***Experimental/Unstable***, currently multi-file torrents creation
+//! is still in development, and the code is not yet optimized) => [`TorrentBuilder`]
+//!
+//! # *Performance*
 //! [`lava_torrent`] is designed with performance and maintenance cost in mind.
 //!
 //! ## Copying
@@ -50,7 +58,7 @@
 //! the current balance between performance and maintenance cost is good enough. Please open
 //! a GitHub issue if you have any suggestion.
 //!
-//! # Correctness
+//! # *Correctness*
 //! [`lava_torrent`] is written without using any existing parser or parser generator.
 //! The [BitTorrent specification] is also rather vague on certain points. Thus, bugs
 //! should not be a surprise. If you do find one, please open a GitHub issue.
@@ -74,14 +82,14 @@
 //! but in reality panic should never be triggered. If you want to locate these
 //! private methods try searching for "panic", "unwrap", and "expect" in `*.rs` files.
 //!
-//! # Implemented BEPs
+//! # *Implemented BEPs*
 //! NOTE: Only the parsing/encoding aspects are implemented.
 //! - [BEP 3]
 //! - [BEP 9] \(partial, only implemented magnet url v1)
 //! - [BEP 12]
 //! - [BEP 27]
 //!
-//! # Other Stuff
+//! # *Other Stuff*
 //! - Feature Request: To request a feature please open a GitHub issue (please
 //! try to request only 1 feature per issue).
 //! - Contribute: PR is always welcome.
@@ -93,11 +101,15 @@
 //! - Similar crates: [bip-rs]
 //!
 //! [`lava_torrent`]: index.html
+//! [Apache 2.0]: https://www.apache.org/licenses/LICENSE-2.0
+//! [MIT]: https://opensource.org/licenses/MIT
 //! [v1]: http://bittorrent.org/beps/bep_0003.html
 //! [Merkle tree torrents]: http://bittorrent.org/beps/bep_0030.html
 //! [v2]: http://bittorrent.org/beps/bep_0052.html
 //! [`lava_torrent::bencode::write::encode_bytes()`]: bencode/write/fn.encode_bytes.html
+//! [`BencodeElem`]: bencode/enum.BencodeElem.html
 //! [`Torrent`]: torrent/v1/struct.Torrent.html
+//! [`TorrentBuilder`]: torrent/v1/struct.TorrentBuilder.html
 //! [BitTorrent specification]: http://bittorrent.org/beps/bep_0003.html
 //! [BEP 3]: http://bittorrent.org/beps/bep_0003.html
 //! [`bigint`]: https://github.com/rust-num/num-bigint
