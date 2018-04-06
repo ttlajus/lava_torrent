@@ -913,8 +913,7 @@ mod torrent_read_tests {
                     vec!["url3".to_string(), "url4".to_string()],
                 ]
             ),
-            Ok(_) => assert!(false),
-            Err(_) => assert!(false),
+            _ => assert!(false),
         }
     }
 
@@ -967,8 +966,7 @@ mod torrent_read_tests {
                     }
                 );
             }
-            Ok(_) => assert!(false),
-            Err(_) => assert!(false),
+            _ => assert!(false),
         }
     }
 
