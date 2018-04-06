@@ -403,7 +403,9 @@ mod torrent_tests {
             piece_length: 2,
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
-            extra_info_fields: None,
+            extra_info_fields: Some(HashMap::from_iter(
+                vec![("key".to_string(), bencode_elem!("val"))].into_iter(),
+            )),
         };
 
         assert_eq!(
@@ -412,7 +414,9 @@ mod torrent_tests {
                 ("length", 4),
                 ("name", "sample"),
                 ("piece length", 2),
-                ("pieces", (1, 2, 3, 4))}),
+                ("pieces", (1, 2, 3, 4)),
+                ("key", "val"),
+            }),
         );
     }
 
@@ -531,7 +535,7 @@ mod torrent_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: Some(HashMap::from_iter(
-                vec![("privatee".to_string(), bencode_elem!(1))].into_iter(),
+                vec![("".to_string(), bencode_elem!(1))].into_iter(),
             )),
         };
 
@@ -550,7 +554,7 @@ mod torrent_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: Some(HashMap::from_iter(
-                vec![("privatee".to_string(), bencode_elem!("1"))].into_iter(),
+                vec![("private".to_string(), bencode_elem!("1"))].into_iter(),
             )),
         };
 
@@ -569,7 +573,7 @@ mod torrent_tests {
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: Some(HashMap::from_iter(
-                vec![("privatee".to_string(), bencode_elem!(2))].into_iter(),
+                vec![("private".to_string(), bencode_elem!(2))].into_iter(),
             )),
         };
 

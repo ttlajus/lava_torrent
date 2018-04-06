@@ -815,7 +815,7 @@ mod torrent_read_tests {
     fn from_parsed_info_not_dict() {
         // "announce" is needed here because it is parsed before "info"
         // missing "announce-list" is fine as that won't trigger an error
-        let parsed = vec![bencode_elem!({ ("announce", "url"), ("info", {}) })];
+        let parsed = vec![bencode_elem!({ ("announce", "url"), ("info", []) })];
 
         match Torrent::from_parsed(parsed) {
             Ok(_) => assert!(false),
