@@ -570,9 +570,20 @@ mod bencode_elem_read_tests {
     }
 
     #[test]
-    fn decode_dictionary_non_string_key() {
+    fn decode_dictionary_non_string_key_1() {
         let bytes = "i4e3:moo4:spam4:eggse".as_bytes();
         match BencodeElem::decode_dictionary(&mut ByteBuffer::new(bytes)) {
+            Ok(_) => assert!(false),
+            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedBencode),
+        }
+    }
+
+    #[test]
+    fn decode_dictionary_non_string_key_2() {
+        let mut bytes = vec![b'4', b':', 0xff, 0xf8, 0xff, 0xee];
+        bytes.extend("3:moo4:spam4:eggse".as_bytes());
+
+        match BencodeElem::decode_dictionary(&mut ByteBuffer::new(&bytes)) {
             Ok(_) => assert!(false),
             Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedBencode),
         }
