@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::io::{BufWriter, Write};
 use bencode::BencodeElem;
 use super::*;
 
@@ -101,8 +101,8 @@ impl Torrent {
         P: AsRef<Path>,
     {
         match ::std::fs::File::create(&path) {
-            Ok(mut file) => {
-                self.write_into(&mut file)?;
+            Ok(file) => {
+                self.write_into(&mut BufWriter::new(&file))?;
                 file.sync_all()?;
                 Ok(())
             }

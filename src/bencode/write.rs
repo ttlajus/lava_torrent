@@ -1,6 +1,6 @@
 //! Module for bencode-related encoding.
 
-use std::io::Write;
+use std::io::{BufWriter, Write};
 use std::fs::File;
 use std::path::Path;
 use std::borrow::Cow;
@@ -138,8 +138,8 @@ impl BencodeElem {
         P: AsRef<Path>,
     {
         match File::create(&path) {
-            Ok(mut file) => {
-                self.write_into(&mut file)?;
+            Ok(file) => {
+                self.write_into(&mut BufWriter::new(&file))?;
                 file.sync_all()?;
                 Ok(())
             }
