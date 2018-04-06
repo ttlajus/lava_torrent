@@ -4,12 +4,14 @@ version = "0.1.0"
 authors = ["ttlajus <11984992+ttlajus@users.noreply.github.com>"]
 description = "A library for parsing/encoding bencode and .torrent files."
 repository = "https://github.com/ttlajus/lava_torrent"
+readme = "README.md"
 keywords = ["bittorrent", "bencode"]
 categories = ["parsing", "encoding"]
 license = "MIT OR Apache-2.0"
 
 [badges]
-travis-ci = {repository = "ttlajus/lava_torrent"}
+travis-ci = { repository = "ttlajus/lava_torrent" }
+codecov = { repository = "ttlajus/lava_torrent" }
 
 [dependencies]
 itertools = "0.7.7"
