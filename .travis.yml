@@ -1,12 +1,17 @@
 language: rust
 sudo: false
+
 rust:
   - nightly
   - beta
   - stable
+
 matrix:
   allow_failures:
     - rust: nightly
+
 branches:
   only:
     - master
+
+before_script: mkdir -p tests/tmp
