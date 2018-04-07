@@ -472,28 +472,35 @@ impl TorrentBuilder {
             }
         };
 
-        // read file content
+        // read file content + calculate pieces/hashs
         let mut file = BufReader::new(::std::fs::File::open(&path)?);
-        let mut bytes = Vec::with_capacity(length);
-        let bytes_read = file.read_to_end(&mut bytes)?;
-
-        // calculate pieces/hashs
+        let mut piece = Vec::with_capacity(piece_length);
         let mut pieces = Vec::with_capacity(length / piece_length + 1);
-        if bytes_read != length {
+        let mut total_read = 0;
+
+        let mut hasher = Sha1::new();
+        loop {
+            if total_read >= length {
+                break;
+            } else {
+                total_read += file.by_ref()
+                    .take(piece_length as u64) // usize => u64 should be safe
+                    .read_to_end(&mut piece)?;
+            }
+
+            // @todo: is this vector pre-filling avoidable?
+            let mut output = vec![0; PIECE_STRING_LENGTH];
+            hasher.input(&piece);
+            hasher.result(output.as_mut_slice());
+            pieces.push(output);
+            hasher.reset();
+            piece.clear();
+        }
+        if total_read != length {
             return Err(Error::new(
                 ErrorKind::IOError,
                 Cow::Borrowed("# of bytes read from file != file size."),
             ));
-        } else {
-            let mut hasher = Sha1::new();
-            for chunk in bytes.chunks(piece_length) {
-                // @todo: is this vector pre-filling avoidable?
-                let mut output = vec![0; PIECE_STRING_LENGTH];
-                hasher.input(chunk);
-                hasher.result(output.as_mut_slice());
-                pieces.push(output);
-                hasher.reset();
-            }
         }
 
         // convert usize => i64
@@ -588,9 +595,8 @@ mod torrent_builder_tests {
     // @note: `build()` is not tested here as it is
     // best left to integration tests (in `tests/`)
     //
-    // `read_file()` and `read_dir()` are
-    // also not tested here, as they are implicitly
-    // tested with `build()`
+    // `read_dir()` is also not tested here, as it is
+    // implicitly tested with `build()`
     //
     // also note that conversion failures in `read_file()`
     // due to overflow are not tested at the moment, as
@@ -1143,6 +1149,34 @@ mod torrent_builder_tests {
     }
 
     #[test]
+    fn read_file_ok() {
+        // byte_sequence contains 256 bytes ranging from 0x0 to 0xff
+        let (length, pieces) = TorrentBuilder::read_file("tests/files/byte_sequence", 64).unwrap();
+        assert_eq!(length, 256);
+        assert_eq!(
+            pieces,
+            vec![
+                vec![
+                    198, 19, 141, 81, 79, 250, 33, 53, 191, 206, 14, 208, 184, 250, 198, 86, 105,
+                    145, 126, 199,
+                ],
+                vec![
+                    8, 244, 44, 162, 89, 207, 18, 29, 46, 169, 205, 139, 108, 91, 36, 200, 109,
+                    115, 61, 183,
+                ],
+                vec![
+                    156, 122, 162, 177, 31, 39, 9, 152, 166, 59, 27, 23, 149, 207, 243, 137, 10,
+                    78, 181, 111,
+                ],
+                vec![
+                    185, 161, 57, 156, 18, 128, 41, 140, 193, 70, 116, 118, 156, 255, 135, 160,
+                    167, 133, 230, 171,
+                ],
+            ]
+        );
+    }
+
+    #[test]
     fn list_dir_ok() {
         let mut entries = TorrentBuilder::list_dir("tests/files").unwrap();
         entries.sort();
@@ -1150,6 +1184,7 @@ mod torrent_builder_tests {
         assert_eq!(
             entries,
             vec![
+                PathBuf::from("tests/files/byte_sequence"),
                 PathBuf::from("tests/files/tails-amd64-3.6.1.torrent"),
                 PathBuf::from("tests/files/ubuntu-16.04.4-desktop-amd64.iso.torrent"),
                 // no [.hidden] and [symlink]
