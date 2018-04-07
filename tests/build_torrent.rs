@@ -34,12 +34,18 @@ fn build_single_file_ok() {
         )
         .add_extra_field(
             "creation date".to_string(),
-            BencodeElem::Integer(1522837988),
+            BencodeElem::Integer(1523074739),
         )
         .build()
         .unwrap()
         .write_into_file(&output_name)
         .unwrap();
+
+    // compare against a sample file created by qBittorrent
+    assert_eq!(
+        Torrent::read_from_file(output_name).unwrap(),
+        Torrent::read_from_file("tests/samples/tails-amd64-3.6.1.torrent.torrent").unwrap(),
+    );
 }
 
 #[test]
