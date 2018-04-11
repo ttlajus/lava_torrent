@@ -366,10 +366,10 @@ mod file_tests {
             extra_fields: None,
         };
 
-        match file.absolute_path("/root") {
-            Ok(joined) => assert_eq!(joined, PathBuf::from("/root/dir1/file")),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            file.absolute_path("/root").unwrap(),
+            PathBuf::from("/root/dir1/file")
+        );
     }
 
     #[test]

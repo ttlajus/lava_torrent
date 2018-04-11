@@ -445,19 +445,16 @@ mod file_read_tests {
             ("comment", "no comment"),
         });
 
-        match File::extract_file(file) {
-            Ok(f) => assert_eq!(
-                f,
-                File {
-                    length: 42,
-                    path: PathBuf::from("root/.bashrc"),
-                    extra_fields: Some(HashMap::from_iter(
-                        vec![("comment".to_string(), bencode_elem!("no comment"))].into_iter()
-                    )),
-                }
-            ),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            File::extract_file(file).unwrap(),
+            File {
+                length: 42,
+                path: PathBuf::from("root/.bashrc"),
+                extra_fields: Some(HashMap::from_iter(
+                    vec![("comment".to_string(), bencode_elem!("no comment"))].into_iter()
+                )),
+            }
+        );
     }
 
     #[test]
@@ -474,11 +471,7 @@ mod file_read_tests {
     fn extract_file_length_ok() {
         let mut dict =
             HashMap::from_iter(vec![("length".to_string(), bencode_elem!(42))].into_iter());
-
-        match File::extract_file_length(&mut dict) {
-            Ok(len) => assert_eq!(len, 42),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(File::extract_file_length(&mut dict).unwrap(), 42);
     }
 
     #[test]
@@ -519,10 +512,10 @@ mod file_read_tests {
             vec![("path".to_string(), bencode_elem!(["root", ".bashrc"]))].into_iter(),
         );
 
-        match File::extract_file_path(&mut dict) {
-            Ok(path) => assert_eq!(path, PathBuf::from("root/.bashrc")),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            File::extract_file_path(&mut dict).unwrap(),
+            PathBuf::from("root/.bashrc")
+        );
     }
 
     #[test]
@@ -661,10 +654,7 @@ mod torrent_read_tests {
 
         // use `clone()` here so we can test that `torrent` is not modified
         // accidentally by `validate()`
-        match torrent.clone().validate() {
-            Ok(validated) => assert_eq!(validated, torrent),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(torrent.clone().validate().unwrap(), torrent);
     }
 
     #[test]
@@ -745,28 +735,25 @@ mod torrent_read_tests {
             }),
         ];
 
-        match Torrent::from_parsed(dict) {
-            Ok(torrent) => assert_eq!(
-                torrent,
-                Torrent {
-                    announce: "url".to_string(),
-                    announce_list: None,
-                    length: 2,
-                    files: None,
-                    name: "??".to_string(),
-                    piece_length: 2,
-                    pieces: vec![
-                        vec![
-                            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
-                            0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13,
-                        ],
+        assert_eq!(
+            Torrent::from_parsed(dict).unwrap(),
+            Torrent {
+                announce: "url".to_string(),
+                announce_list: None,
+                length: 2,
+                files: None,
+                name: "??".to_string(),
+                piece_length: 2,
+                pieces: vec![
+                    vec![
+                        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
+                        0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13,
                     ],
-                    extra_fields: None,
-                    extra_info_fields: None,
-                }
-            ),
-            Err(_) => assert!(false),
-        }
+                ],
+                extra_fields: None,
+                extra_info_fields: None,
+            }
+        );
     }
 
     #[test]
@@ -828,10 +815,10 @@ mod torrent_read_tests {
         let mut dict =
             HashMap::from_iter(vec![("announce".to_string(), bencode_elem!("url"))].into_iter());
 
-        match Torrent::extract_announce(&mut dict) {
-            Ok(url) => assert_eq!(url, "url".to_string()),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            Torrent::extract_announce(&mut dict).unwrap(),
+            "url".to_string()
+        );
     }
 
     #[test]
@@ -865,16 +852,15 @@ mod torrent_read_tests {
     fn extract_announce_list_tier_ok() {
         let tier = bencode_elem!(["url1", "url2"]);
 
-        match Torrent::extract_announce_list_tier(tier) {
-            Ok(urls) => assert_eq!(urls, vec!["url1".to_string(), "url2".to_string()]),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            Torrent::extract_announce_list_tier(tier).unwrap(),
+            vec!["url1".to_string(), "url2".to_string()]
+        );
     }
 
     #[test]
     fn extract_announce_list_tier_not_list() {
         let tier = bencode_elem!({});
-
         match Torrent::extract_announce_list_tier(tier) {
             Ok(_) => assert!(false),
             Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
@@ -905,26 +891,19 @@ mod torrent_read_tests {
             ].into_iter(),
         );
 
-        match Torrent::extract_announce_list(&mut dict) {
-            Ok(Some(list)) => assert_eq!(
-                list,
-                vec![
-                    vec!["url1".to_string(), "url2".to_string()],
-                    vec!["url3".to_string(), "url4".to_string()],
-                ]
-            ),
-            _ => assert!(false),
-        }
+        assert_eq!(
+            Torrent::extract_announce_list(&mut dict).unwrap(),
+            Some(vec![
+                vec!["url1".to_string(), "url2".to_string()],
+                vec!["url3".to_string(), "url4".to_string()],
+            ])
+        );
     }
 
     #[test]
     fn extract_announce_list_missing() {
         let mut dict = HashMap::new();
-
-        match Torrent::extract_announce_list(&mut dict) {
-            Ok(out) => assert_eq!(out, None),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(Torrent::extract_announce_list(&mut dict).unwrap(), None);
     }
 
     #[test]
@@ -983,11 +962,7 @@ mod torrent_read_tests {
     #[test]
     fn extract_files_missing() {
         let mut dict = HashMap::new();
-
-        match Torrent::extract_files(&mut dict) {
-            Ok(out) => assert_eq!(out, None),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(Torrent::extract_files(&mut dict).unwrap(), None);
     }
 
     #[test]
@@ -1004,11 +979,7 @@ mod torrent_read_tests {
     fn extract_length_ok() {
         let mut dict =
             HashMap::from_iter(vec![("length".to_string(), bencode_elem!(42))].into_iter());
-
-        match Torrent::extract_length(&mut dict, &None) {
-            Ok(len) => assert_eq!(len, 42),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(Torrent::extract_length(&mut dict, &None).unwrap(), 42);
     }
 
     #[test]
@@ -1061,10 +1032,7 @@ mod torrent_read_tests {
             },
         ]);
 
-        match Torrent::extract_length(&mut dict, &files) {
-            Ok(len) => assert_eq!(len, 100),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(Torrent::extract_length(&mut dict, &files).unwrap(), 100);
     }
 
     #[test]
@@ -1094,10 +1062,10 @@ mod torrent_read_tests {
         let mut dict =
             HashMap::from_iter(vec![("name".to_string(), bencode_elem!("not name"))].into_iter());
 
-        match Torrent::extract_name(&mut dict) {
-            Ok(name) => assert_eq!(name, "not name".to_string()),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            Torrent::extract_name(&mut dict).unwrap(),
+            "not name".to_string()
+        );
     }
 
     #[test]
@@ -1131,11 +1099,7 @@ mod torrent_read_tests {
     fn extract_piece_length_ok() {
         let mut dict =
             HashMap::from_iter(vec![("piece length".to_string(), bencode_elem!(1))].into_iter());
-
-        match Torrent::extract_piece_length(&mut dict) {
-            Ok(len) => assert_eq!(len, 1),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(Torrent::extract_piece_length(&mut dict).unwrap(), 1);
     }
 
     #[test]
@@ -1184,20 +1148,16 @@ mod torrent_read_tests {
             ].into_iter(),
         );
 
-        match Torrent::extract_pieces(&mut dict) {
-            Ok(pieces) => {
-                assert_eq!(pieces.len(), 1);
-                assert_eq!(pieces[0].len(), PIECE_STRING_LENGTH);
-                assert_eq!(
-                    pieces[0],
-                    vec![
-                        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
-                        0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13,
-                    ]
-                );
-            }
-            Err(_) => assert!(false),
-        }
+        let pieces = Torrent::extract_pieces(&mut dict).unwrap();
+        assert_eq!(pieces.len(), 1);
+        assert_eq!(pieces[0].len(), PIECE_STRING_LENGTH);
+        assert_eq!(
+            pieces[0],
+            vec![
+                0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d,
+                0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13,
+            ]
+        );
     }
 
     #[test]

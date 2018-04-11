@@ -927,11 +927,9 @@ mod torrent_builder_tests {
     fn validate_announce_ok() {
         let builder = TorrentBuilder::new("url".to_string(), "dir/", 42);
 
-        match builder.validate_announce() {
-            // validation methods should not modify builder
-            Ok(_) => assert_eq!(builder, TorrentBuilder::new("url".to_string(), "dir/", 42)),
-            Err(_) => assert!(false),
-        }
+        builder.validate_announce().unwrap();
+        // validation methods should not modify builder
+        assert_eq!(builder, TorrentBuilder::new("url".to_string(), "dir/", 42));
     }
 
     #[test]
@@ -949,26 +947,22 @@ mod torrent_builder_tests {
         let builder = TorrentBuilder::new("url".to_string(), "dir/", 42)
             .set_announce_list(vec![vec!["url2".to_string()]]);
 
-        match builder.validate_announce_list() {
-            // validation methods should not modify builder
-            Ok(_) => assert_eq!(
-                builder,
-                TorrentBuilder::new("url".to_string(), "dir/", 42)
-                    .set_announce_list(vec![vec!["url2".to_string()]])
-            ),
-            Err(_) => assert!(false),
-        }
+        builder.validate_announce_list().unwrap();
+        // validation methods should not modify builder
+        assert_eq!(
+            builder,
+            TorrentBuilder::new("url".to_string(), "dir/", 42)
+                .set_announce_list(vec![vec!["url2".to_string()]])
+        );
     }
 
     #[test]
     fn validate_announce_list_none() {
         let builder = TorrentBuilder::new("url".to_string(), "dir/", 42);
 
-        match builder.validate_announce_list() {
-            // validation methods should not modify builder
-            Ok(_) => assert_eq!(builder, TorrentBuilder::new("url".to_string(), "dir/", 42)),
-            Err(_) => assert!(false),
-        }
+        builder.validate_announce_list().unwrap();
+        // validation methods should not modify builder
+        assert_eq!(builder, TorrentBuilder::new("url".to_string(), "dir/", 42));
     }
 
     #[test]
@@ -1008,25 +1002,21 @@ mod torrent_builder_tests {
         let builder =
             TorrentBuilder::new("url".to_string(), "dir/", 42).set_name("sample".to_string());
 
-        match builder.validate_name() {
-            // validation methods should not modify builder
-            Ok(_) => assert_eq!(
-                builder,
-                TorrentBuilder::new("url".to_string(), "dir/", 42).set_name("sample".to_string())
-            ),
-            Err(_) => assert!(false),
-        }
+        builder.validate_name().unwrap();
+        // validation methods should not modify builder
+        assert_eq!(
+            builder,
+            TorrentBuilder::new("url".to_string(), "dir/", 42).set_name("sample".to_string())
+        );
     }
 
     #[test]
     fn validate_name_none() {
         let builder = TorrentBuilder::new("url".to_string(), "dir/", 42);
 
-        match builder.validate_name() {
-            // validation methods should not modify builder
-            Ok(_) => assert_eq!(builder, TorrentBuilder::new("url".to_string(), "dir/", 42)),
-            Err(_) => assert!(false),
-        }
+        builder.validate_name().unwrap();
+        // validation methods should not modify builder
+        assert_eq!(builder, TorrentBuilder::new("url".to_string(), "dir/", 42));
     }
 
     #[test]
@@ -1045,11 +1035,9 @@ mod torrent_builder_tests {
         path.push("target");
         let builder = TorrentBuilder::new("url".to_string(), &path, 42);
 
-        match builder.validate_path() {
-            // validation methods should not modify builder
-            Ok(_) => assert_eq!(builder, TorrentBuilder::new("url".to_string(), path, 42),),
-            Err(_) => assert!(false),
-        }
+        builder.validate_path().unwrap();
+        // validation methods should not modify builder
+        assert_eq!(builder, TorrentBuilder::new("url".to_string(), path, 42));
     }
 
     #[test]
@@ -1102,14 +1090,12 @@ mod torrent_builder_tests {
     fn validate_piece_length_ok() {
         let builder = TorrentBuilder::new("url".to_string(), "target/", 1024);
 
-        match builder.validate_piece_length() {
-            // validation methods should not modify builder
-            Ok(_) => assert_eq!(
-                builder,
-                TorrentBuilder::new("url".to_string(), "target/", 1024),
-            ),
-            Err(_) => assert!(false),
-        }
+        builder.validate_piece_length().unwrap();
+        // validation methods should not modify builder
+        assert_eq!(
+            builder,
+            TorrentBuilder::new("url".to_string(), "target/", 1024),
+        );
     }
 
     #[test]
@@ -1137,29 +1123,25 @@ mod torrent_builder_tests {
         let builder = TorrentBuilder::new("url".to_string(), "target/", 42)
             .add_extra_field("k1".to_string(), bencode_elem!("v1"));
 
-        match builder.validate_extra_fields() {
-            // validation methods should not modify builder
-            Ok(_) => assert_eq!(
-                builder,
-                TorrentBuilder::new("url".to_string(), "target/", 42)
-                    .add_extra_field("k1".to_string(), bencode_elem!("v1")),
-            ),
-            Err(_) => assert!(false),
-        }
+        builder.validate_extra_fields().unwrap();
+        // validation methods should not modify builder
+        assert_eq!(
+            builder,
+            TorrentBuilder::new("url".to_string(), "target/", 42)
+                .add_extra_field("k1".to_string(), bencode_elem!("v1")),
+        );
     }
 
     #[test]
     fn validate_extra_fields_none() {
         let builder = TorrentBuilder::new("url".to_string(), "target/", 42);
 
-        match builder.validate_extra_fields() {
-            // validation methods should not modify builder
-            Ok(_) => assert_eq!(
-                builder,
-                TorrentBuilder::new("url".to_string(), "target/", 42),
-            ),
-            Err(_) => assert!(false),
-        }
+        builder.validate_extra_fields().unwrap();
+        // validation methods should not modify builder
+        assert_eq!(
+            builder,
+            TorrentBuilder::new("url".to_string(), "target/", 42),
+        );
     }
 
     #[test]
@@ -1178,29 +1160,25 @@ mod torrent_builder_tests {
         let builder = TorrentBuilder::new("url".to_string(), "target/", 42)
             .add_extra_info_field("k1".to_string(), bencode_elem!("v1"));
 
-        match builder.validate_extra_info_fields() {
-            // validation methods should not modify builder
-            Ok(_) => assert_eq!(
-                builder,
-                TorrentBuilder::new("url".to_string(), "target/", 42)
-                    .add_extra_info_field("k1".to_string(), bencode_elem!("v1")),
-            ),
-            Err(_) => assert!(false),
-        }
+        builder.validate_extra_info_fields().unwrap();
+        // validation methods should not modify builder
+        assert_eq!(
+            builder,
+            TorrentBuilder::new("url".to_string(), "target/", 42)
+                .add_extra_info_field("k1".to_string(), bencode_elem!("v1")),
+        );
     }
 
     #[test]
     fn validate_extra_info_fields_none() {
         let builder = TorrentBuilder::new("url".to_string(), "target/", 42);
 
-        match builder.validate_extra_info_fields() {
-            // validation methods should not modify builder
-            Ok(_) => assert_eq!(
-                builder,
-                TorrentBuilder::new("url".to_string(), "target/", 42),
-            ),
-            Err(_) => assert!(false),
-        }
+        builder.validate_extra_info_fields().unwrap();
+        // validation methods should not modify builder
+        assert_eq!(
+            builder,
+            TorrentBuilder::new("url".to_string(), "target/", 42),
+        );
     }
 
     #[test]

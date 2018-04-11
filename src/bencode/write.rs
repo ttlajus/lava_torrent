@@ -173,48 +173,40 @@ mod bencode_elem_write_tests {
     #[test]
     fn write_string_ok() {
         let mut vec = Vec::new();
-        match write_string(&"spam".to_string(), &mut vec) {
-            Ok(_) => assert_eq!(vec, "4:spam".as_bytes().to_vec()),
-            Err(_) => assert!(false),
-        }
+        write_string(&"spam".to_string(), &mut vec).unwrap();
+        assert_eq!(vec, "4:spam".as_bytes().to_vec());
     }
 
     #[test]
     fn write_bytes_ok() {
         let mut vec = Vec::new();
-        match write_bytes(&[0x01, 0x02, 0x03, 0x04], &mut vec) {
-            Ok(_) => assert_eq!(vec, vec![b'4', b':', 0x01, 0x02, 0x03, 0x04]),
-            Err(_) => assert!(false),
-        }
+        write_bytes(&[0x01, 0x02, 0x03, 0x04], &mut vec).unwrap();
+        assert_eq!(vec, vec![b'4', b':', 0x01, 0x02, 0x03, 0x04]);
     }
 
     #[test]
     fn write_integer_ok() {
         let mut vec = Vec::new();
-        match write_integer(&42, &mut vec) {
-            Ok(_) => assert_eq!(vec, vec![b'i', b'4', b'2', b'e']),
-            Err(_) => assert!(false),
-        }
+        write_integer(&42, &mut vec).unwrap();
+        assert_eq!(vec, vec![b'i', b'4', b'2', b'e']);
     }
 
     #[test]
     fn write_list_ok() {
         let mut vec = Vec::new();
-        match write_list(&vec![bencode_elem!(42), bencode_elem!("spam")], &mut vec) {
-            Ok(_) => assert_eq!(
-                vec,
-                vec![
-                    b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e'
-                ]
-            ),
-            Err(_) => assert!(false),
-        }
+        write_list(&vec![bencode_elem!(42), bencode_elem!("spam")], &mut vec).unwrap();
+        assert_eq!(
+            vec,
+            vec![
+                b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e'
+            ]
+        );
     }
 
     #[test]
     fn write_dictionary_ok() {
         let mut vec = Vec::new();
-        match write_dictionary::<_, RandomState>(
+        write_dictionary::<_, RandomState>(
             &HashMap::from_iter(
                 vec![
                     ("spam".to_string(), bencode_elem!(42)),
@@ -222,16 +214,14 @@ mod bencode_elem_write_tests {
                 ].into_iter(),
             ),
             &mut vec,
-        ) {
-            Ok(_) => assert_eq!(
-                vec,
-                vec![
-                    b'd', b'3', b':', b'c', b'o', b'w', b'3', b':', b'm', b'o', b'o', b'4', b':',
-                    b's', b'p', b'a', b'm', b'i', b'4', b'2', b'e', b'e',
-                ]
-            ),
-            Err(_) => assert!(false),
-        }
+        ).unwrap();
+        assert_eq!(
+            vec,
+            vec![
+                b'd', b'3', b':', b'c', b'o', b'w', b'3', b':', b'm', b'o', b'o', b'4', b':', b's',
+                b'p', b'a', b'm', b'i', b'4', b'2', b'e', b'e',
+            ]
+        );
     }
 
     #[test]
@@ -284,57 +274,51 @@ mod bencode_elem_write_tests {
     #[test]
     fn bencode_elem_write_string_ok() {
         let mut vec = Vec::new();
-        match bencode_elem!("spam").write_into(&mut vec) {
-            Ok(_) => assert_eq!(vec, "4:spam".as_bytes().to_vec()),
-            Err(_) => assert!(false),
-        }
+        bencode_elem!("spam").write_into(&mut vec).unwrap();
+        assert_eq!(vec, "4:spam".as_bytes().to_vec());
     }
 
     #[test]
     fn bencode_elem_write_bytes_ok() {
         let mut vec = Vec::new();
-        match bencode_elem!((0x01, 0x02, 0x03, 0x04)).write_into(&mut vec) {
-            Ok(_) => assert_eq!(vec, vec![b'4', b':', 0x01, 0x02, 0x03, 0x04]),
-            Err(_) => assert!(false),
-        }
+        bencode_elem!((0x01, 0x02, 0x03, 0x04))
+            .write_into(&mut vec)
+            .unwrap();
+        assert_eq!(vec, vec![b'4', b':', 0x01, 0x02, 0x03, 0x04]);
     }
 
     #[test]
     fn bencode_elem_write_integer_ok() {
         let mut vec = Vec::new();
-        match bencode_elem!(42).write_into(&mut vec) {
-            Ok(_) => assert_eq!(vec, vec![b'i', b'4', b'2', b'e']),
-            Err(_) => assert!(false),
-        }
+        bencode_elem!(42).write_into(&mut vec).unwrap();
+        assert_eq!(vec, vec![b'i', b'4', b'2', b'e']);
     }
 
     #[test]
     fn bencode_elem_write_list_ok() {
         let mut vec = Vec::new();
-        match bencode_elem!([42, "spam"]).write_into(&mut vec) {
-            Ok(_) => assert_eq!(
-                vec,
-                vec![
-                    b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e'
-                ]
-            ),
-            Err(_) => assert!(false),
-        }
+        bencode_elem!([42, "spam"]).write_into(&mut vec).unwrap();
+        assert_eq!(
+            vec,
+            vec![
+                b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e'
+            ]
+        );
     }
 
     #[test]
     fn bencode_elem_write_dictionary_ok() {
         let mut vec = Vec::new();
-        match bencode_elem!({ ("spam", 42), ("cow", "moo") }).write_into(&mut vec) {
-            Ok(_) => assert_eq!(
-                vec,
-                vec![
-                    b'd', b'3', b':', b'c', b'o', b'w', b'3', b':', b'm', b'o', b'o', b'4', b':',
-                    b's', b'p', b'a', b'm', b'i', b'4', b'2', b'e', b'e',
-                ]
-            ),
-            Err(_) => assert!(false),
-        }
+        bencode_elem!({ ("spam", 42), ("cow", "moo") })
+            .write_into(&mut vec)
+            .unwrap();
+        assert_eq!(
+            vec,
+            vec![
+                b'd', b'3', b':', b'c', b'o', b'w', b'3', b':', b'm', b'o', b'o', b'4', b':', b's',
+                b'p', b'a', b'm', b'i', b'4', b'2', b'e', b'e',
+            ]
+        );
     }
 
     #[test]
