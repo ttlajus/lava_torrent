@@ -8,7 +8,7 @@ use lava_torrent::bencode::BencodeElem;
 use lava_torrent::torrent::v1::{Torrent, TorrentBuilder};
 
 const OUTPUT_ROOT: &str = "tests/tmp/";
-const PIECE_LENGTH: i64 = 16 * 1024; // 1024 KiB
+const PIECE_LENGTH: i64 = 32 * 1024; // 1024 KiB
 
 fn rand_file_name() -> String {
     OUTPUT_ROOT.to_string() + &rand::thread_rng().gen::<u16>().to_string()
@@ -29,19 +29,21 @@ fn build_single_file_ok() {
     // weird things when `builder` is not declared separately
     builder
         .add_extra_field(
-            "created by".to_string(),
-            BencodeElem::String("qBittorrent v4.0.4".to_string()),
+            "creation date".to_string(),
+            BencodeElem::Integer(1523448537),
         )
         .add_extra_field(
-            "creation date".to_string(),
-            BencodeElem::Integer(1523074739),
+            "encoding".to_string(),
+            BencodeElem::String("UTF-8".to_string()),
         )
+        .add_extra_info_field("private".to_string(), BencodeElem::Integer(0))
         .build()
         .unwrap()
         .write_into_file(&output_name)
         .unwrap();
 
-    // compare against a sample file created by qBittorrent
+    println!("{:?}", Torrent::read_from_file(&output_name).unwrap());
+    // compare against a sample file created by Deluge
     assert_eq!(
         Torrent::read_from_file(output_name).unwrap(),
         Torrent::read_from_file("tests/samples/tails-amd64-3.6.1.torrent.torrent").unwrap(),
@@ -61,17 +63,24 @@ fn build_multi_file_ok() {
     // weird things when `builder` is not declared separately
     builder
         .add_extra_field(
-            "created by".to_string(),
-            BencodeElem::String("qBittorrent v4.0.4".to_string()),
+            "creation date".to_string(),
+            BencodeElem::Integer(1523448582),
         )
         .add_extra_field(
-            "creation date".to_string(),
-            BencodeElem::Integer(1522892260),
+            "encoding".to_string(),
+            BencodeElem::String("UTF-8".to_string()),
         )
+        .add_extra_info_field("private".to_string(), BencodeElem::Integer(0))
         .build()
         .unwrap()
         .write_into_file(&output_name)
         .unwrap();
+
+    // compare against a sample file created by Deluge
+    assert_eq!(
+        Torrent::read_from_file(output_name).unwrap(),
+        Torrent::read_from_file("tests/samples/files.torrent").unwrap(),
+    );
 }
 
 #[test]
