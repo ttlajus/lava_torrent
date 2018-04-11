@@ -107,10 +107,7 @@ impl Torrent {
     where
         B: AsRef<[u8]>,
     {
-        match BencodeElem::from_bytes(bytes) {
-            Ok(parsed) => Self::from_parsed(parsed)?.validate(),
-            Err(e) => Err(e),
-        }
+        Self::from_parsed(BencodeElem::from_bytes(bytes)?)?.validate()
     }
 
     /// Parse the content of the file at `path` and return the extracted `Torrent`.
@@ -121,10 +118,7 @@ impl Torrent {
     where
         P: AsRef<Path>,
     {
-        match BencodeElem::from_file(path) {
-            Ok(parsed) => Self::from_parsed(parsed)?.validate(),
-            Err(e) => Err(e),
-        }
+        Self::from_parsed(BencodeElem::from_file(path)?)?.validate()
     }
 
     // @note: Most of validation is done when bdecoding and parsing torrent,
