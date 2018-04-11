@@ -42,7 +42,6 @@ fn build_single_file_ok() {
         .write_into_file(&output_name)
         .unwrap();
 
-    println!("{:?}", Torrent::read_from_file(&output_name).unwrap());
     // compare against a sample file created by Deluge
     assert_eq!(
         Torrent::read_from_file(output_name).unwrap(),
@@ -64,7 +63,7 @@ fn build_multi_file_ok() {
     builder
         .add_extra_field(
             "creation date".to_string(),
-            BencodeElem::Integer(1523448582),
+            BencodeElem::Integer(1523449884),
         )
         .add_extra_field(
             "encoding".to_string(),

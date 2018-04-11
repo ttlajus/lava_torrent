@@ -524,33 +524,84 @@ impl TorrentBuilder {
     where
         P: AsRef<Path>,
     {
-        let mut entries = Self::list_dir(path)?;
-        let mut total_length = 0;
-        let mut files = Vec::new();
-        let mut all_pieces = Vec::new();
+        // convert i64 => usize
+        // @todo: switch to `usize::try_from()` when it's stable
+        let piece_length = match usize::value_from(piece_length) {
+            Ok(n) => n,
+            Err(_) => {
+                return Err(Error::new(
+                    ErrorKind::IOError,
+                    Cow::Borrowed("Piece length does not fit into usize."),
+                ));
+            }
+        };
 
-        entries.sort();
-        for entry in entries {
-            let (length, pieces) = Self::read_file(&entry, piece_length)?;
+        let entries = Self::list_dir(path)?;
+        let total_length = entries.iter().fold(0, |acc, &(_, len)| acc + len);
+        let mut files = Vec::with_capacity(entries.len());
+        let mut pieces = Vec::with_capacity(total_length / piece_length + 1);
+
+        let mut piece = Vec::new();
+        let mut hasher = Sha1::new();
+        for (path, length) in entries {
+            let mut file = BufReader::new(::std::fs::File::open(&path)?);
+            let mut file_remaining = length;
+
+            loop {
+                let piece_filled = piece.len();
+                let piece_reamining = piece_length - piece_filled;
+                let to_read = if file_remaining < piece_reamining {
+                    file_remaining
+                } else {
+                    piece_reamining
+                };
+
+                // @todo: can we avoid allocating a new vec?
+                let mut bytes = Vec::with_capacity(to_read);
+                // usize to u64 conversion should be safe
+                file.by_ref().take(to_read as u64).read_to_end(&mut bytes)?;
+                piece.extend(bytes);
+                file_remaining -= to_read;
+
+                // piece filled
+                if piece.len() == piece_length {
+                    // @todo: is this vector pre-filling avoidable?
+                    let mut output = vec![0; PIECE_STRING_LENGTH];
+                    hasher.input(&piece);
+                    hasher.result(output.as_mut_slice());
+                    pieces.push(output);
+                    hasher.reset();
+                    piece.clear();
+                }
+
+                if file_remaining == 0 {
+                    break;
+                }
+            }
 
             files.push(File {
-                length,
-                path: PathBuf::from(Self::last_component(entry)?),
+                length: length as i64, // @todo: better conversion
+                path: PathBuf::from(Self::last_component(path)?),
                 extra_fields: None,
             });
-
-            total_length += length;
-            all_pieces.extend(pieces);
         }
+        // final piece
+        // @todo: is this vector pre-filling avoidable?
+        let mut output = vec![0; PIECE_STRING_LENGTH];
+        hasher.input(&piece);
+        hasher.result(output.as_mut_slice());
+        pieces.push(output);
+        hasher.reset();
+        piece.clear();
 
-        Ok((total_length, files, all_pieces))
+        Ok((total_length as i64, files, pieces)) // @todo: better conversion
     }
 
     // this method is recursive, i.e. entries in subdirectories
     // are also returned
     //
     // symbolic links and *nix hidden files/dirs are ignored
-    fn list_dir<P>(path: P) -> Result<Vec<PathBuf>>
+    fn list_dir<P>(path: P) -> Result<Vec<(PathBuf, usize)>>
     where
         P: AsRef<Path>,
     {
@@ -568,10 +619,25 @@ impl TorrentBuilder {
             if metadata.is_dir() {
                 entries.extend(Self::list_dir(path)?);
             } else if metadata.is_file() {
-                entries.push(path);
+                // convert u64 => usize
+                // @todo: switch to `usize::try_from()` when it's stable
+                let file_len = match usize::value_from(metadata.len()) {
+                    Ok(n) => n,
+                    Err(_) => {
+                        return Err(Error::new(
+                            ErrorKind::IOError,
+                            Cow::Owned(format!(
+                                "Size of [{}] does not fit into usize.",
+                                path.display()
+                            )),
+                        ));
+                    }
+                };
+                entries.push((path, file_len));
             } // symbolic links are ignored
         }
 
+        entries.sort_by(|&(ref p1, _), &(ref p2, _)| p1.cmp(p2));
         Ok(entries)
     }
 
@@ -1178,34 +1244,34 @@ mod torrent_builder_tests {
 
     #[test]
     fn list_dir_ok() {
-        let mut entries = TorrentBuilder::list_dir("tests/files").unwrap();
-        entries.sort();
-
         assert_eq!(
-            entries,
+            TorrentBuilder::list_dir("tests/files").unwrap(),
             vec![
                 PathBuf::from("tests/files/byte_sequence"),
                 PathBuf::from("tests/files/tails-amd64-3.6.1.torrent"),
                 PathBuf::from("tests/files/ubuntu-16.04.4-desktop-amd64.iso.torrent"),
                 // no [.hidden] and [symlink]
-            ]
+            ].iter()
+                .map(PathBuf::from)
+                .map(|p| (p.clone(), p.metadata().unwrap().len() as usize))
+                .collect::<Vec<(PathBuf, usize)>>()
         );
     }
 
     #[test]
     fn list_dir_with_subdir() {
-        let mut entries = TorrentBuilder::list_dir("src/torrent").unwrap();
-        entries.sort();
-
         assert_eq!(
-            entries,
+            TorrentBuilder::list_dir("src/torrent").unwrap(),
             vec![
                 PathBuf::from("src/torrent/mod.rs"),
                 PathBuf::from("src/torrent/v1/build.rs"),
                 PathBuf::from("src/torrent/v1/mod.rs"),
                 PathBuf::from("src/torrent/v1/read.rs"),
                 PathBuf::from("src/torrent/v1/write.rs"),
-            ]
+            ].iter()
+                .map(PathBuf::from)
+                .map(|p| (p.clone(), p.metadata().unwrap().len() as usize))
+                .collect::<Vec<(PathBuf, usize)>>()
         );
     }
 
