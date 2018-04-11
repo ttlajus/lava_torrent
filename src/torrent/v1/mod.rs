@@ -269,10 +269,10 @@ impl Torrent {
 
 impl fmt::Display for File {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
+        writeln!(
             f,
             "{}\n\
-             -size: {} bytes\n",
+             -size: {} bytes",
             self.path.as_path().display(),
             self.length
         )?;
@@ -289,26 +289,26 @@ impl fmt::Display for File {
             )?;
         }
 
-        write!(f, "========================================\n")
+        writeln!(f, "========================================")
     }
 }
 
 impl fmt::Display for Torrent {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}.torrent\n", self.name)?;
-        write!(f, "-announce: {}\n", self.announce)?;
+        writeln!(f, "{}.torrent", self.name)?;
+        writeln!(f, "-announce: {}", self.announce)?;
         if let Some(ref tiers) = self.announce_list {
-            write!(
+            writeln!(
                 f,
-                "-announce-list: [{}]\n",
+                "-announce-list: [{}]",
                 tiers.iter().format_with(", ", |tier, f| f(&format_args!(
                     "[{}]",
                     ::itertools::join(tier, ", ")
                 )))
             )?;
         }
-        write!(f, "-size: {} bytes\n", self.length)?;
-        write!(f, "-piece length: {} bytes\n", self.piece_length)?;
+        writeln!(f, "-size: {} bytes", self.length)?;
+        writeln!(f, "-piece length: {} bytes", self.piece_length)?;
 
         if let Some(ref fields) = self.extra_fields {
             write!(
@@ -335,15 +335,15 @@ impl fmt::Display for Torrent {
         }
 
         if let Some(ref files) = self.files {
-            write!(f, "-files:\n")?;
+            writeln!(f, "-files:")?;
             for (counter, file) in files.iter().enumerate() {
-                write!(f, "[{}] {}\n", counter + 1, file)?;
+                writeln!(f, "[{}] {}", counter + 1, file)?;
             }
         }
 
-        write!(
+        writeln!(
             f,
-            "-pieces: [{}]\n",
+            "-pieces: [{}]",
             self.pieces
                 .iter()
                 .format_with(", ", |piece, f| f(&format_args!(
