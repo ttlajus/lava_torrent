@@ -183,21 +183,19 @@ mod torrent_write_tests {
         };
         let mut result = Vec::new();
 
-        match torrent.write_into(&mut result) {
-            Ok(_) => assert_eq!(
-                result,
-                bencode_elem!({
-                    ("announce", "url"),
-                    ("info", {
-                        ("length", 4),
-                        ("name", "sample"),
-                        ("piece length", 2),
-                        ("pieces", (1, 2, 3, 4)),
-                    })
-                }).encode()
-            ),
-            Err(_) => assert!(false),
-        }
+        torrent.write_into(&mut result).unwrap();
+        assert_eq!(
+            result,
+            bencode_elem!({
+                ("announce", "url"),
+                ("info", {
+                    ("length", 4),
+                    ("name", "sample"),
+                    ("piece length", 2),
+                    ("pieces", (1, 2, 3, 4)),
+                })
+            }).encode()
+        );
     }
 
     #[test]
@@ -218,22 +216,20 @@ mod torrent_write_tests {
         };
         let mut result = Vec::new();
 
-        match torrent.write_into(&mut result) {
-            Ok(_) => assert_eq!(
-                result,
-                bencode_elem!({
-                    ("announce", "url"),
-                    ("announce-list", [["url1", "url2"], ["url3", "url4"]]),
-                    ("info", {
-                        ("length", 4),
-                        ("name", "sample"),
-                        ("piece length", 2),
-                        ("pieces", (1, 2, 3, 4)),
-                    })
-                }).encode()
-            ),
-            Err(_) => assert!(false),
-        }
+        torrent.write_into(&mut result).unwrap();
+        assert_eq!(
+            result,
+            bencode_elem!({
+                ("announce", "url"),
+                ("announce-list", [["url1", "url2"], ["url3", "url4"]]),
+                ("info", {
+                    ("length", 4),
+                    ("name", "sample"),
+                    ("piece length", 2),
+                    ("pieces", (1, 2, 3, 4)),
+                })
+            }).encode()
+        );
     }
 
     #[test]
@@ -256,23 +252,21 @@ mod torrent_write_tests {
         };
         let mut result = Vec::new();
 
-        match torrent.write_into(&mut result) {
-            Ok(_) => assert_eq!(
-                result,
-                bencode_elem!({
-                    ("announce", "url"),
-                    ("comment1", "no comment"),
-                    ("comment2", "no comment"),
-                    ("info", {
-                        ("length", 4),
-                        ("name", "sample"),
-                        ("piece length", 2),
-                        ("pieces", (1, 2, 3, 4)),
-                    })
-                }).encode()
-            ),
-            Err(_) => assert!(false),
-        }
+        torrent.write_into(&mut result).unwrap();
+        assert_eq!(
+            result,
+            bencode_elem!({
+                ("announce", "url"),
+                ("comment1", "no comment"),
+                ("comment2", "no comment"),
+                ("info", {
+                    ("length", 4),
+                    ("name", "sample"),
+                    ("piece length", 2),
+                    ("pieces", (1, 2, 3, 4)),
+                })
+            }).encode()
+        );
     }
 
     #[test]
@@ -295,23 +289,21 @@ mod torrent_write_tests {
         };
         let mut result = Vec::new();
 
-        match torrent.write_into(&mut result) {
-            Ok(_) => assert_eq!(
-                result,
-                bencode_elem!({
-                    ("announce", "url"),
-                    ("info", {
-                        ("comment1", "no comment"),
-                        ("comment2", "no comment"),
-                        ("length", 4),
-                        ("name", "sample"),
-                        ("piece length", 2),
-                        ("pieces", (1, 2, 3, 4)),
-                    })
-                }).encode()
-            ),
-            Err(_) => assert!(false),
-        }
+        torrent.write_into(&mut result).unwrap();
+        assert_eq!(
+            result,
+            bencode_elem!({
+                ("announce", "url"),
+                ("info", {
+                    ("comment1", "no comment"),
+                    ("comment2", "no comment"),
+                    ("length", 4),
+                    ("name", "sample"),
+                    ("piece length", 2),
+                    ("pieces", (1, 2, 3, 4)),
+                })
+            }).encode()
+        );
     }
 
     #[test]
@@ -340,24 +332,22 @@ mod torrent_write_tests {
         };
         let mut result = Vec::new();
 
-        match torrent.write_into(&mut result) {
-            Ok(_) => assert_eq!(
-                result,
-                bencode_elem!({
-                    ("announce", "url"),
-                    ("info", {
-                        ("files", [
-                            { ("length", 2), ("path", ["dir1", "dir2", "file1"]) },
-                            { ("length", 2), ("path", ["dir1", "dir2", "file2"]) },
-                        ]),
-                        ("name", "sample"),
-                        ("piece length", 2),
-                        ("pieces", (1, 2, 3, 4)),
-                    })
-                }).encode()
-            ),
-            Err(_) => assert!(false),
-        }
+        torrent.write_into(&mut result).unwrap();
+        assert_eq!(
+            result,
+            bencode_elem!({
+                ("announce", "url"),
+                ("info", {
+                    ("files", [
+                        { ("length", 2), ("path", ["dir1", "dir2", "file1"]) },
+                        { ("length", 2), ("path", ["dir1", "dir2", "file2"]) },
+                    ]),
+                    ("name", "sample"),
+                    ("piece length", 2),
+                    ("pieces", (1, 2, 3, 4)),
+                })
+            }).encode()
+        );
     }
 
     #[test]
@@ -374,21 +364,18 @@ mod torrent_write_tests {
             extra_info_fields: None,
         };
 
-        match torrent.encode() {
-            Ok(encoded) => assert_eq!(
-                encoded,
-                bencode_elem!({
-                    ("announce", "url"),
-                    ("info", {
-                        ("length", 4),
-                        ("name", "sample"),
-                        ("piece length", 2),
-                        ("pieces", (1, 2, 3, 4)),
-                    })
-                }).encode()
-            ),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            torrent.encode().unwrap(),
+            bencode_elem!({
+                ("announce", "url"),
+                ("info", {
+                    ("length", 4),
+                    ("name", "sample"),
+                    ("piece length", 2),
+                    ("pieces", (1, 2, 3, 4)),
+                })
+            }).encode()
+        );
     }
 
     #[test]
@@ -408,22 +395,19 @@ mod torrent_write_tests {
             extra_info_fields: None,
         };
 
-        match torrent.encode() {
-            Ok(encoded) => assert_eq!(
-                encoded,
-                bencode_elem!({
-                    ("announce", "url"),
-                    ("announce-list", [["url1", "url2"], ["url3", "url4"]]),
-                    ("info", {
-                        ("length", 4),
-                        ("name", "sample"),
-                        ("piece length", 2),
-                        ("pieces", (1, 2, 3, 4)),
-                    })
-                }).encode()
-            ),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            torrent.encode().unwrap(),
+            bencode_elem!({
+                ("announce", "url"),
+                ("announce-list", [["url1", "url2"], ["url3", "url4"]]),
+                ("info", {
+                    ("length", 4),
+                    ("name", "sample"),
+                    ("piece length", 2),
+                    ("pieces", (1, 2, 3, 4)),
+                })
+            }).encode()
+        );
     }
 
     #[test]
@@ -445,23 +429,20 @@ mod torrent_write_tests {
             extra_info_fields: None,
         };
 
-        match torrent.encode() {
-            Ok(encoded) => assert_eq!(
-                encoded,
-                bencode_elem!({
-                    ("announce", "url"),
-                    ("comment1", "no comment"),
-                    ("comment2", "no comment"),
-                    ("info", {
-                        ("length", 4),
-                        ("name", "sample"),
-                        ("piece length", 2),
-                        ("pieces", (1, 2, 3, 4)),
-                    })
-                }).encode()
-            ),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            torrent.encode().unwrap(),
+            bencode_elem!({
+                ("announce", "url"),
+                ("comment1", "no comment"),
+                ("comment2", "no comment"),
+                ("info", {
+                    ("length", 4),
+                    ("name", "sample"),
+                    ("piece length", 2),
+                    ("pieces", (1, 2, 3, 4)),
+                })
+            }).encode()
+        );
     }
 
     #[test]
@@ -483,23 +464,20 @@ mod torrent_write_tests {
             )),
         };
 
-        match torrent.encode() {
-            Ok(encoded) => assert_eq!(
-                encoded,
-                bencode_elem!({
-                    ("announce", "url"),
-                    ("info", {
-                        ("comment1", "no comment"),
-                        ("comment2", "no comment"),
-                        ("length", 4),
-                        ("name", "sample"),
-                        ("piece length", 2),
-                        ("pieces", (1, 2, 3, 4)),
-                    })
-                }).encode()
-            ),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            torrent.encode().unwrap(),
+            bencode_elem!({
+                ("announce", "url"),
+                ("info", {
+                    ("comment1", "no comment"),
+                    ("comment2", "no comment"),
+                    ("length", 4),
+                    ("name", "sample"),
+                    ("piece length", 2),
+                    ("pieces", (1, 2, 3, 4)),
+                })
+            }).encode()
+        );
     }
 
     #[test]
@@ -527,23 +505,20 @@ mod torrent_write_tests {
             extra_info_fields: None,
         };
 
-        match torrent.encode() {
-            Ok(encoded) => assert_eq!(
-                encoded,
-                bencode_elem!({
-                    ("announce", "url"),
-                    ("info", {
-                        ("files", [
-                            { ("length", 2), ("path", ["dir1", "dir2", "file1"]) },
-                            { ("length", 2), ("path", ["dir1", "dir2", "file2"]) },
-                        ]),
-                        ("name", "sample"),
-                        ("piece length", 2),
-                        ("pieces", (1, 2, 3, 4)),
-                    })
-                }).encode()
-            ),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            torrent.encode().unwrap(),
+            bencode_elem!({
+                ("announce", "url"),
+                ("info", {
+                    ("files", [
+                        { ("length", 2), ("path", ["dir1", "dir2", "file1"]) },
+                        { ("length", 2), ("path", ["dir1", "dir2", "file2"]) },
+                    ]),
+                    ("name", "sample"),
+                    ("piece length", 2),
+                    ("pieces", (1, 2, 3, 4)),
+                })
+            }).encode()
+        );
     }
 }

@@ -326,10 +326,10 @@ mod bencode_elem_read_tests {
     #[test]
     fn peek_byte_ok() {
         let bytes = "a".as_bytes();
-        match BencodeElem::peek_byte(&mut ByteBuffer::new(bytes)) {
-            Ok(c) => assert_eq!(c, b'a'),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            BencodeElem::peek_byte(&mut ByteBuffer::new(bytes)).unwrap(),
+            b'a'
+        );
     }
 
     #[test]
@@ -344,19 +344,19 @@ mod bencode_elem_read_tests {
     #[test]
     fn decode_integer_ok() {
         let bytes = "0e".as_bytes();
-        match BencodeElem::decode_integer(&mut ByteBuffer::new(bytes), INTEGER_POSTFIX) {
-            Ok(i) => assert_eq!(i, bencode_elem!(0_i64)),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            BencodeElem::decode_integer(&mut ByteBuffer::new(bytes), INTEGER_POSTFIX).unwrap(),
+            bencode_elem!(0_i64)
+        );
     }
 
     #[test]
     fn decode_integer_ok_2() {
         let bytes = "-4e".as_bytes();
-        match BencodeElem::decode_integer(&mut ByteBuffer::new(bytes), INTEGER_POSTFIX) {
-            Ok(i) => assert_eq!(i, bencode_elem!(-4_i64)),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            BencodeElem::decode_integer(&mut ByteBuffer::new(bytes), INTEGER_POSTFIX).unwrap(),
+            bencode_elem!(-4_i64)
+        );
     }
 
     #[test]
@@ -434,10 +434,10 @@ mod bencode_elem_read_tests {
     #[test]
     fn decode_string_ok() {
         let bytes = "4:spam".as_bytes();
-        match BencodeElem::decode_string(&mut ByteBuffer::new(bytes)) {
-            Ok(s) => assert_eq!(s, bencode_elem!("spam")),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            BencodeElem::decode_string(&mut ByteBuffer::new(bytes)).unwrap(),
+            bencode_elem!("spam")
+        );
     }
 
     #[test]
@@ -488,37 +488,37 @@ mod bencode_elem_read_tests {
     #[test]
     fn decode_string_as_bytes() {
         let bytes = vec![b'4', b':', 0xff, 0xf8, 0xff, 0xee]; // bad UTF8 gives bytes
-        match BencodeElem::decode_string(&mut ByteBuffer::new(&bytes)) {
-            Ok(bytes) => assert_eq!(bytes, bencode_elem!((0xff, 0xf8, 0xff, 0xee))),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            BencodeElem::decode_string(&mut ByteBuffer::new(&bytes)).unwrap(),
+            bencode_elem!((0xff, 0xf8, 0xff, 0xee))
+        );
     }
 
     #[test]
     fn decode_list_ok() {
         let bytes = "4:spam4:eggse".as_bytes();
-        match BencodeElem::decode_list(&mut ByteBuffer::new(bytes)) {
-            Ok(l) => assert_eq!(l, bencode_elem!(["spam", "eggs"])),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            BencodeElem::decode_list(&mut ByteBuffer::new(bytes)).unwrap(),
+            bencode_elem!(["spam", "eggs"])
+        );
     }
 
     #[test]
     fn decode_list_nested() {
         let bytes = "4:spaml6:cheesee4:eggse".as_bytes();
-        match BencodeElem::decode_list(&mut ByteBuffer::new(bytes)) {
-            Ok(l) => assert_eq!(l, bencode_elem!(["spam", ["cheese"], "eggs"])),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            BencodeElem::decode_list(&mut ByteBuffer::new(bytes)).unwrap(),
+            bencode_elem!(["spam", ["cheese"], "eggs"])
+        );
     }
 
     #[test]
     fn decode_list_empty() {
         let bytes = "e".as_bytes();
-        match BencodeElem::decode_list(&mut ByteBuffer::new(bytes)) {
-            Ok(l) => assert_eq!(l, bencode_elem!([])),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            BencodeElem::decode_list(&mut ByteBuffer::new(bytes)).unwrap(),
+            bencode_elem!([])
+        );
     }
 
     #[test]
@@ -533,31 +533,28 @@ mod bencode_elem_read_tests {
     #[test]
     fn decode_dictionary_ok() {
         let bytes = "3:cow3:moo4:spam4:eggse".as_bytes();
-        match BencodeElem::decode_dictionary(&mut ByteBuffer::new(bytes)) {
-            Ok(d) => assert_eq!(d, bencode_elem!({ ("cow", "moo"), ("spam", "eggs") })),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            BencodeElem::decode_dictionary(&mut ByteBuffer::new(bytes)).unwrap(),
+            bencode_elem!({ ("cow", "moo"), ("spam", "eggs") })
+        );
     }
 
     #[test]
     fn decode_dictionary_nested() {
         let bytes = "3:cowd3:mooi4ee4:spam4:eggse".as_bytes();
-        match BencodeElem::decode_dictionary(&mut ByteBuffer::new(bytes)) {
-            Ok(d) => assert_eq!(
-                d,
-                bencode_elem!({ ("cow", { ("moo", 4_i64) }), ("spam", "eggs") })
-            ),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            BencodeElem::decode_dictionary(&mut ByteBuffer::new(bytes)).unwrap(),
+            bencode_elem!({ ("cow", { ("moo", 4_i64) }), ("spam", "eggs") })
+        );
     }
 
     #[test]
     fn decode_dictionary_empty() {
         let bytes = "e".as_bytes();
-        match BencodeElem::decode_dictionary(&mut ByteBuffer::new(bytes)) {
-            Ok(d) => assert_eq!(d, bencode_elem!({})),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            BencodeElem::decode_dictionary(&mut ByteBuffer::new(bytes)).unwrap(),
+            bencode_elem!({})
+        );
     }
 
     #[test]
@@ -604,45 +601,45 @@ mod bencode_elem_read_tests {
     #[test]
     fn parse_integer_ok() {
         let bytes = "i0e".as_bytes();
-        match BencodeElem::parse(&mut ByteBuffer::new(bytes)) {
-            Ok(i) => assert_eq!(i, bencode_elem!(0_i64)),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            BencodeElem::parse(&mut ByteBuffer::new(bytes)).unwrap(),
+            bencode_elem!(0_i64)
+        );
     }
 
     #[test]
     fn parse_string_ok() {
         let bytes = "4:spam".as_bytes();
-        match BencodeElem::parse(&mut ByteBuffer::new(bytes)) {
-            Ok(s) => assert_eq!(s, bencode_elem!("spam")),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            BencodeElem::parse(&mut ByteBuffer::new(bytes)).unwrap(),
+            bencode_elem!("spam")
+        );
     }
 
     #[test]
     fn parse_bytes_ok() {
         let bytes = vec![b'4', b':', 0xff, 0xf8, 0xff, 0xee]; // bad UTF8 gives bytes
-        match BencodeElem::parse(&mut ByteBuffer::new(&bytes)) {
-            Ok(bytes) => assert_eq!(bytes, bencode_elem!((0xff, 0xf8, 0xff, 0xee))),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            BencodeElem::parse(&mut ByteBuffer::new(&bytes)).unwrap(),
+            bencode_elem!((0xff, 0xf8, 0xff, 0xee))
+        );
     }
 
     #[test]
     fn parse_list_ok() {
         let bytes = "l4:spam4:eggse".as_bytes();
-        match BencodeElem::parse(&mut ByteBuffer::new(bytes)) {
-            Ok(l) => assert_eq!(l, bencode_elem!(["spam", "eggs"])),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            BencodeElem::parse(&mut ByteBuffer::new(bytes)).unwrap(),
+            bencode_elem!(["spam", "eggs"])
+        );
     }
 
     #[test]
     fn parse_dictionary_ok() {
         let bytes = "d3:cow3:moo4:spam4:eggse".as_bytes();
-        match BencodeElem::parse(&mut ByteBuffer::new(bytes)) {
-            Ok(d) => assert_eq!(d, bencode_elem!({ ("cow", "moo"), ("spam", "eggs") })),
-            Err(_) => assert!(false),
-        }
+        assert_eq!(
+            BencodeElem::parse(&mut ByteBuffer::new(bytes)).unwrap(),
+            bencode_elem!({ ("cow", "moo"), ("spam", "eggs") })
+        );
     }
 }
