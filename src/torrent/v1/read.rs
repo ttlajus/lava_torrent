@@ -925,22 +925,18 @@ mod torrent_read_tests {
             ].into_iter(),
         );
 
-        match Torrent::extract_files(&mut dict) {
-            Ok(Some(files)) => {
-                assert_eq!(files.len(), 1);
-                assert_eq!(
-                    files[0],
-                    File {
-                        length: 42,
-                        path: PathBuf::from("root/.bashrc"),
-                        extra_fields: Some(HashMap::from_iter(
-                            vec![("comment".to_string(), bencode_elem!("no comment"))].into_iter()
-                        )),
-                    }
-                );
+        let files = Torrent::extract_files(&mut dict).unwrap().unwrap();
+        assert_eq!(files.len(), 1);
+        assert_eq!(
+            files[0],
+            File {
+                length: 42,
+                path: PathBuf::from("root/.bashrc"),
+                extra_fields: Some(HashMap::from_iter(
+                    vec![("comment".to_string(), bencode_elem!("no comment"))].into_iter()
+                )),
             }
-            _ => assert!(false),
-        }
+        );
     }
 
     #[test]
