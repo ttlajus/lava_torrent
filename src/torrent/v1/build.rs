@@ -438,39 +438,57 @@ impl TorrentBuilder {
         }
     }
 
+    fn u64_to_usize(src: u64) -> Result<usize> {
+        // @todo: switch to `usize::try_from()` when it's stable
+        match usize::value_from(src) {
+            Ok(n) => Ok(n),
+            Err(_) => Err(Error::new(
+                ErrorKind::IOError,
+                Cow::Owned(format!("[{}] does not fit into usize.", src)),
+            )),
+        }
+    }
+
+    fn usize_to_u64(src: usize) -> Result<u64> {
+        // @todo: switch to `u64::try_from()` when it's stable
+        match u64::value_from(src) {
+            Ok(n) => Ok(n),
+            Err(_) => Err(Error::new(
+                ErrorKind::IOError,
+                Cow::Owned(format!("[{}] does not fit into u64.", src)),
+            )),
+        }
+    }
+
+    fn i64_to_usize(src: i64) -> Result<usize> {
+        // @todo: switch to `usize::try_from()` when it's stable
+        match usize::value_from(src) {
+            Ok(n) => Ok(n),
+            Err(_) => Err(Error::new(
+                ErrorKind::IOError,
+                Cow::Owned(format!("[{}] does not fit into usize.", src)),
+            )),
+        }
+    }
+
+    fn usize_to_i64(src: usize) -> Result<i64> {
+        // @todo: switch to `i64::try_from()` when it's stable
+        match i64::value_from(src) {
+            Ok(n) => Ok(n),
+            Err(_) => Err(Error::new(
+                ErrorKind::IOError,
+                Cow::Owned(format!("[{}] does not fit into i64.", src)),
+            )),
+        }
+    }
+
     fn read_file<P>(path: P, piece_length: Integer) -> Result<(Integer, Vec<Piece>)>
     where
         P: AsRef<Path>,
     {
         let path = path.as_ref();
-        // convert u64 => usize
-        // @todo: switch to `usize::try_from()` when it's stable
-        let length = match usize::value_from(path.metadata()?.len()) {
-            Ok(n) => n,
-            Err(_) => {
-                return Err(Error::new(
-                    ErrorKind::IOError,
-                    Cow::Owned(format!(
-                        "Length of [{}] does not fit into usize.",
-                        path.to_string_lossy()
-                    )),
-                ));
-            }
-        };
-        // convert i64 => usize
-        // @todo: switch to `usize::try_from(len)` when it's stable
-        let piece_length = match usize::value_from(piece_length) {
-            Ok(n) => n,
-            Err(_) => {
-                return Err(Error::new(
-                    ErrorKind::IOError,
-                    Cow::Owned(format!(
-                        "piece_length [{}] does not fit into usize.",
-                        piece_length
-                    )),
-                ));
-            }
-        };
+        let length = Self::u64_to_usize(path.metadata()?.len())?;
+        let piece_length = Self::i64_to_usize(piece_length)?;
 
         // read file content + calculate pieces/hashs
         let mut file = BufReader::new(::std::fs::File::open(&path)?);
@@ -484,7 +502,7 @@ impl TorrentBuilder {
                 break;
             } else {
                 total_read += file.by_ref()
-                    .take(piece_length as u64) // usize => u64 should be safe
+                    .take(Self::usize_to_u64(piece_length)?)
                     .read_to_end(&mut piece)?;
             }
 
@@ -496,46 +514,15 @@ impl TorrentBuilder {
             hasher.reset();
             piece.clear();
         }
-        if total_read != length {
-            return Err(Error::new(
-                ErrorKind::IOError,
-                Cow::Borrowed("# of bytes read from file != file size."),
-            ));
-        }
 
-        // convert usize => i64
-        // @todo: switch to `i64::try_from(len)` when it's stable
-        let length = match i64::value_from(length) {
-            Ok(n) => n,
-            Err(_) => {
-                return Err(Error::new(
-                    ErrorKind::IOError,
-                    Cow::Owned(format!(
-                        "Length of [{}] does not fit into i64.",
-                        path.to_string_lossy()
-                    )),
-                ));
-            }
-        };
-        Ok((length, pieces))
+        Ok((Self::usize_to_i64(length)?, pieces))
     }
 
     fn read_dir<P>(path: P, piece_length: Integer) -> Result<(Integer, Vec<File>, Vec<Piece>)>
     where
         P: AsRef<Path>,
     {
-        // convert i64 => usize
-        // @todo: switch to `usize::try_from()` when it's stable
-        let piece_length = match usize::value_from(piece_length) {
-            Ok(n) => n,
-            Err(_) => {
-                return Err(Error::new(
-                    ErrorKind::IOError,
-                    Cow::Borrowed("Piece length does not fit into usize."),
-                ));
-            }
-        };
-
+        let piece_length = Self::i64_to_usize(piece_length)?;
         let entries = Self::list_dir(path)?;
         let total_length = entries.iter().fold(0, |acc, &(_, len)| acc + len);
         let mut files = Vec::with_capacity(entries.len());
@@ -548,6 +535,7 @@ impl TorrentBuilder {
             let mut file_remaining = length;
 
             loop {
+                // calculate the # of bytes to read in this iteration
                 let piece_filled = piece.len();
                 let piece_reamining = piece_length - piece_filled;
                 let to_read = if file_remaining < piece_reamining {
@@ -556,14 +544,16 @@ impl TorrentBuilder {
                     piece_reamining
                 };
 
+                // read bytes
                 // @todo: can we avoid allocating a new vec?
                 let mut bytes = Vec::with_capacity(to_read);
-                // usize to u64 conversion should be safe
-                file.by_ref().take(to_read as u64).read_to_end(&mut bytes)?;
+                file.by_ref()
+                    .take(Self::usize_to_u64(to_read)?)
+                    .read_to_end(&mut bytes)?;
                 piece.extend(bytes);
                 file_remaining -= to_read;
 
-                // piece filled
+                // if piece is completely filled, hash it
                 if piece.len() == piece_length {
                     // @todo: is this vector pre-filling avoidable?
                     let mut output = vec![0; PIECE_STRING_LENGTH];
@@ -574,33 +564,40 @@ impl TorrentBuilder {
                     piece.clear();
                 }
 
+                // done with current file
                 if file_remaining == 0 {
                     break;
                 }
             }
 
             files.push(File {
-                length: length as i64, // @todo: better conversion
+                length: Self::usize_to_i64(length)?,
                 path: PathBuf::from(Self::last_component(path)?),
                 extra_fields: None,
             });
         }
-        // final piece
-        // @todo: is this vector pre-filling avoidable?
-        let mut output = vec![0; PIECE_STRING_LENGTH];
-        hasher.input(&piece);
-        hasher.result(output.as_mut_slice());
-        pieces.push(output);
-        hasher.reset();
-        piece.clear();
 
-        Ok((total_length as i64, files, pieces)) // @todo: better conversion
+        // if piece is empty then the total file size is divisible by the piece length
+        // otherwise the last piece is partially filled and we have to hash it
+        if !piece.is_empty() {
+            // @todo: is this vector pre-filling avoidable?
+            let mut output = vec![0; PIECE_STRING_LENGTH];
+            hasher.input(&piece);
+            hasher.result(output.as_mut_slice());
+            pieces.push(output);
+            hasher.reset();
+            piece.clear();
+        }
+
+        Ok((Self::usize_to_i64(total_length)?, files, pieces))
     }
 
     // this method is recursive, i.e. entries in subdirectories
     // are also returned
     //
     // symbolic links and *nix hidden files/dirs are ignored
+    //
+    // returned vec is sorted by path
     fn list_dir<P>(path: P) -> Result<Vec<(PathBuf, usize)>>
     where
         P: AsRef<Path>,
@@ -619,21 +616,7 @@ impl TorrentBuilder {
             if metadata.is_dir() {
                 entries.extend(Self::list_dir(path)?);
             } else if metadata.is_file() {
-                // convert u64 => usize
-                // @todo: switch to `usize::try_from()` when it's stable
-                let file_len = match usize::value_from(metadata.len()) {
-                    Ok(n) => n,
-                    Err(_) => {
-                        return Err(Error::new(
-                            ErrorKind::IOError,
-                            Cow::Owned(format!(
-                                "Size of [{}] does not fit into usize.",
-                                path.display()
-                            )),
-                        ));
-                    }
-                };
-                entries.push((path, file_len));
+                entries.push((path, Self::u64_to_usize(metadata.len())?));
             } // symbolic links are ignored
         }
 
@@ -663,10 +646,6 @@ mod torrent_builder_tests {
     //
     // `read_dir()` is also not tested here, as it is
     // implicitly tested with `build()`
-    //
-    // also note that conversion failures in `read_file()`
-    // due to overflow are not tested at the moment, as
-    // there is no straightforward way to test them
     use super::*;
     use std::iter::FromIterator;
 
@@ -1189,6 +1168,44 @@ mod torrent_builder_tests {
         match builder.validate_extra_info_fields() {
             Ok(_) => assert!(false),
             Err(e) => assert_eq!(e.kind(), ErrorKind::TorrentBuilderFailure),
+        }
+    }
+
+    #[test]
+    fn u64_to_usize_ok() {
+        // @todo: add test for err
+        assert_eq!(TorrentBuilder::u64_to_usize(42).unwrap(), 42);
+    }
+
+    #[test]
+    fn usize_to_u64_ok() {
+        // @todo: add test for err
+        assert_eq!(TorrentBuilder::usize_to_u64(42).unwrap(), 42);
+    }
+
+    #[test]
+    fn i64_to_usize_ok() {
+        assert_eq!(TorrentBuilder::i64_to_usize(42).unwrap(), 42);
+    }
+
+    #[test]
+    fn i64_to_usize_err() {
+        match TorrentBuilder::i64_to_usize(-1) {
+            Ok(_) => assert!(false),
+            Err(e) => assert_eq!(e.kind(), ErrorKind::IOError),
+        }
+    }
+
+    #[test]
+    fn usize_to_i64_ok() {
+        assert_eq!(TorrentBuilder::usize_to_i64(42).unwrap(), 42);
+    }
+
+    #[test]
+    fn usize_to_i64_err() {
+        match TorrentBuilder::usize_to_i64(usize::max_value()) {
+            Ok(_) => assert!(false),
+            Err(e) => assert_eq!(e.kind(), ErrorKind::IOError),
         }
     }
 
