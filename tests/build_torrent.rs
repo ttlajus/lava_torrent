@@ -5,10 +5,10 @@ use std::path::PathBuf;
 use rand::Rng;
 use lava_torrent::ErrorKind;
 use lava_torrent::bencode::BencodeElem;
-use lava_torrent::torrent::v1::{Torrent, TorrentBuilder};
+use lava_torrent::torrent::v1::{Integer, Torrent, TorrentBuilder};
 
 const OUTPUT_ROOT: &str = "tests/tmp/";
-const PIECE_LENGTH: i64 = 32 * 1024; // 1024 KiB
+const PIECE_LENGTH: Integer = 32 * 1024; // 1024 KiB
 
 fn rand_file_name() -> String {
     OUTPUT_ROOT.to_string() + &rand::thread_rng().gen::<u16>().to_string()
