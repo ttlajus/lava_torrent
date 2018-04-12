@@ -17,16 +17,10 @@ fn bencode_elem_write_string_to_file_ok() {
     let original = BencodeElem::String("spam".to_string());
     let output = rand_file_name();
 
-    match original.write_into_file(&output) {
-        Ok(_) => match BencodeElem::from_file(&output) {
-            Ok(duplicate) => {
-                assert_eq!(duplicate.len(), 1);
-                assert_eq!(original, duplicate[0]);
-            }
-            Err(_) => assert!(false),
-        },
-        Err(_) => assert!(false),
-    }
+    original.write_into_file(&output).unwrap();
+    let duplicate = BencodeElem::from_file(&output).unwrap();
+    assert_eq!(duplicate.len(), 1);
+    assert_eq!(original, duplicate[0]);
 }
 
 #[test]
@@ -34,16 +28,10 @@ fn bencode_elem_write_bytes_to_file_ok() {
     let original = BencodeElem::Bytes(vec![0xff, 0xfe, 0xfd, 0xfc]);
     let output = rand_file_name();
 
-    match original.write_into_file(&output) {
-        Ok(_) => match BencodeElem::from_file(&output) {
-            Ok(duplicate) => {
-                assert_eq!(duplicate.len(), 1);
-                assert_eq!(original, duplicate[0]);
-            }
-            Err(_) => assert!(false),
-        },
-        Err(_) => assert!(false),
-    }
+    original.write_into_file(&output).unwrap();
+    let duplicate = BencodeElem::from_file(&output).unwrap();
+    assert_eq!(duplicate.len(), 1);
+    assert_eq!(original, duplicate[0]);
 }
 
 #[test]
@@ -51,16 +39,10 @@ fn bencode_elem_write_integer_to_file_ok() {
     let original = BencodeElem::Integer(42);
     let output = rand_file_name();
 
-    match original.write_into_file(&output) {
-        Ok(_) => match BencodeElem::from_file(&output) {
-            Ok(duplicate) => {
-                assert_eq!(duplicate.len(), 1);
-                assert_eq!(original, duplicate[0]);
-            }
-            Err(_) => assert!(false),
-        },
-        Err(_) => assert!(false),
-    }
+    original.write_into_file(&output).unwrap();
+    let duplicate = BencodeElem::from_file(&output).unwrap();
+    assert_eq!(duplicate.len(), 1);
+    assert_eq!(original, duplicate[0]);
 }
 
 #[test]
@@ -71,16 +53,10 @@ fn bencode_elem_write_list_to_file_ok() {
     ]);
     let output = rand_file_name();
 
-    match original.write_into_file(&output) {
-        Ok(_) => match BencodeElem::from_file(&output) {
-            Ok(duplicate) => {
-                assert_eq!(duplicate.len(), 1);
-                assert_eq!(original, duplicate[0]);
-            }
-            Err(_) => assert!(false),
-        },
-        Err(_) => assert!(false),
-    }
+    original.write_into_file(&output).unwrap();
+    let duplicate = BencodeElem::from_file(&output).unwrap();
+    assert_eq!(duplicate.len(), 1);
+    assert_eq!(original, duplicate[0]);
 }
 
 #[test]
@@ -93,14 +69,8 @@ fn bencode_elem_write_dictionary_to_file_ok() {
     ));
     let output = rand_file_name();
 
-    match original.write_into_file(&output) {
-        Ok(_) => match BencodeElem::from_file(&output) {
-            Ok(duplicate) => {
-                assert_eq!(duplicate.len(), 1);
-                assert_eq!(original, duplicate[0]);
-            }
-            Err(_) => assert!(false),
-        },
-        Err(_) => assert!(false),
-    }
+    original.write_into_file(&output).unwrap();
+    let duplicate = BencodeElem::from_file(&output).unwrap();
+    assert_eq!(duplicate.len(), 1);
+    assert_eq!(original, duplicate[0]);
 }

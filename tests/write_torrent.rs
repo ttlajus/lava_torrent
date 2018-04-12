@@ -18,13 +18,9 @@ fn encode_torrent_ok() {
     let mut bytes = Vec::new();
     BufReader::new(file).read_to_end(&mut bytes).unwrap();
 
-    match Torrent::read_from_bytes(&bytes) {
-        Ok(parsed) => match parsed.encode() {
-            Ok(encoded) => assert_eq!(encoded, bytes),
-            Err(_) => assert!(false),
-        },
-        Err(_) => assert!(false),
-    }
+    let parsed = Torrent::read_from_bytes(&bytes).unwrap();
+    let encoded = parsed.encode().unwrap();
+    assert_eq!(encoded, bytes);
 }
 
 #[test]
@@ -34,16 +30,10 @@ fn write_torrent_to_file_ok() {
     BufReader::new(file).read_to_end(&mut bytes).unwrap();
 
     let output = rand_file_name();
-    match Torrent::read_from_bytes(&bytes) {
-        Ok(original) => match original.clone().write_into_file(&output) {
-            Ok(_) => match Torrent::read_from_file(&output) {
-                Ok(duplicate) => assert_eq!(original, duplicate),
-                Err(_) => assert!(false),
-            },
-            Err(_) => assert!(false),
-        },
-        Err(_) => assert!(false),
-    }
+    let original = Torrent::read_from_bytes(&bytes).unwrap();
+    original.clone().write_into_file(&output).unwrap();
+    let duplicate = Torrent::read_from_file(&output).unwrap();
+    assert_eq!(original, duplicate);
 }
 
 #[test]
@@ -52,13 +42,9 @@ fn encode_torrent_multiple_files() {
     let mut bytes = Vec::new();
     BufReader::new(file).read_to_end(&mut bytes).unwrap();
 
-    match Torrent::read_from_bytes(&bytes) {
-        Ok(parsed) => match parsed.encode() {
-            Ok(encoded) => assert_eq!(encoded, bytes),
-            Err(_) => assert!(false),
-        },
-        Err(_) => assert!(false),
-    }
+    let parsed = Torrent::read_from_bytes(&bytes).unwrap();
+    let encoded = parsed.encode().unwrap();
+    assert_eq!(encoded, bytes);
 }
 
 #[test]
@@ -68,14 +54,8 @@ fn write_torrent_to_file_multiple_files() {
     BufReader::new(file).read_to_end(&mut bytes).unwrap();
 
     let output = rand_file_name();
-    match Torrent::read_from_bytes(&bytes) {
-        Ok(original) => match original.clone().write_into_file(&output) {
-            Ok(_) => match Torrent::read_from_file(&output) {
-                Ok(duplicate) => assert_eq!(original, duplicate),
-                Err(_) => assert!(false),
-            },
-            Err(_) => assert!(false),
-        },
-        Err(_) => assert!(false),
-    }
+    let original = Torrent::read_from_bytes(&bytes).unwrap();
+    original.clone().write_into_file(&output).unwrap();
+    let duplicate = Torrent::read_from_file(&output).unwrap();
+    assert_eq!(original, duplicate);
 }
