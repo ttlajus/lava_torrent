@@ -688,11 +688,11 @@ mod torrent_read_tests {
         let torrent = Torrent {
             announce: "url".to_string(),
             announce_list: None,
-            length: 0,
+            length: 1,
             files: None,
             name: "sample".to_string(),
             piece_length: i64::max_value(),
-            pieces: vec![vec![1, 2], vec![3, 4]],
+            pieces: vec![vec![1, 2], vec![3, 4], vec![5, 6]],
             extra_fields: None,
             extra_info_fields: None,
         };
