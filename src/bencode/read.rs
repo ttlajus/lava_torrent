@@ -4,62 +4,11 @@ use std::io::{BufReader, Read};
 use std::collections::HashMap;
 use std::iter::FromIterator;
 use std::borrow::Cow;
-use conv::ValueFrom;
 use unicode_normalization::UnicodeNormalization;
 use {Error, ErrorKind, Result};
+use util;
+use util::ByteBuffer;
 use super::*;
-
-struct ByteBuffer<'a> {
-    bytes: &'a [u8],
-    position: usize, // current cursor position
-    length: usize,   // total buffer length
-}
-
-impl<'a> ByteBuffer<'a> {
-    fn new(bytes: &[u8]) -> ByteBuffer {
-        ByteBuffer {
-            bytes,
-            position: 0,
-            length: bytes.len(),
-        }
-    }
-
-    fn peek(&self) -> Option<&'a u8> {
-        if self.is_empty() {
-            None
-        } else {
-            Some(&self.bytes[self.position])
-        }
-    }
-
-    fn advance(&mut self, step: usize) {
-        self.position += step;
-        if self.position > self.length {
-            self.position = self.length;
-        }
-    }
-
-    fn pos(&self) -> usize {
-        self.position
-    }
-
-    fn is_empty(&self) -> bool {
-        self.position >= self.length
-    }
-}
-
-impl<'a> Iterator for ByteBuffer<'a> {
-    type Item = &'a u8;
-
-    fn next(&mut self) -> Option<&'a u8> {
-        if self.is_empty() {
-            None
-        } else {
-            self.position += 1;
-            Some(&self.bytes[self.position - 1])
-        }
-    }
-}
 
 impl BencodeElem {
     /// Parse `bytes` and return all `BencodeElem` found.
@@ -240,8 +189,7 @@ impl BencodeElem {
     fn decode_string(bytes: &mut ByteBuffer) -> Result<BencodeElem> {
         match Self::decode_integer(bytes, STRING_DELIMITER) {
             Ok(BencodeElem::Integer(len)) => {
-                // @todo: switch to `usize::try_from(len)` when it's stable
-                if let Ok(len) = usize::value_from(len) {
+                if let Ok(len) = util::i64_to_usize(len) {
                     let string_bytes = bytes.take(len).cloned().collect();
 
                     // Since the SHA1 hash values are not valid UTF8,
@@ -265,53 +213,6 @@ impl BencodeElem {
             Ok(_) => panic!("decode_integer() did not return an integer."),
             Err(e) => Err(e),
         }
-    }
-}
-
-#[cfg(test)]
-mod byte_buffer_tests {
-    use super::*;
-
-    #[test]
-    fn byte_buffer_sanity_test() {
-        let bytes = vec![1, 2, 3];
-        let mut buffer = ByteBuffer::new(&bytes);
-
-        assert!(!buffer.is_empty());
-        assert_eq!(buffer.peek(), Some(&1));
-        assert_eq!(buffer.pos(), 0);
-        buffer.advance(1);
-
-        assert!(!buffer.is_empty());
-        assert_eq!(buffer.peek(), Some(&2));
-        assert_eq!(buffer.pos(), 1);
-        buffer.advance(2);
-
-        assert!(buffer.is_empty());
-        assert_eq!(buffer.peek(), None);
-        assert_eq!(buffer.pos(), 3);
-        buffer.advance(1);
-
-        assert!(buffer.is_empty());
-        assert_eq!(buffer.peek(), None);
-        assert_eq!(buffer.pos(), 3);
-    }
-
-    #[test]
-    fn byte_buffer_iterator_test() {
-        let bytes = vec![1, 2, 3];
-        let mut buffer = ByteBuffer::new(&bytes);
-        let mut output = Vec::new();
-
-        for byte in &mut buffer {
-            output.push(*byte);
-        }
-
-        assert!(buffer.is_empty());
-        assert_eq!(buffer.peek(), None);
-        assert_eq!(buffer.next(), None);
-        assert_eq!(buffer.pos(), 3);
-        assert_eq!(bytes, output);
     }
 }
 

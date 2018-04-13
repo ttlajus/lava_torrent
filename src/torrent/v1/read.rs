@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use std::borrow::Cow;
-use conv::ValueFrom;
 use bencode::BencodeElem;
+use util;
 use super::*;
 
 impl File {
@@ -125,37 +125,29 @@ impl Torrent {
     // so there's not much going on here. More validation could be
     // added in the future if necessary.
     fn validate(self) -> Result<Torrent> {
-        // @todo: switch to `i64::try_from(self.pieces.len())` when it's stable
-        if let Ok(pieces_len) = i64::value_from(self.pieces.len()) {
-            if let Some(total_piece_length) = self.piece_length.checked_mul(pieces_len) {
-                if total_piece_length < self.length {
-                    Err(Error::new(
-                        ErrorKind::MalformedTorrent,
-                        Cow::Owned(format!(
-                            "Total piece length {} < torrent's length {}.",
-                            total_piece_length, self.length,
-                        )),
-                    ))
-                } else if self.length <= 0 {
-                    Err(Error::new(
-                        ErrorKind::MalformedTorrent,
-                        Cow::Borrowed("\"length\" <= 0."),
-                    ))
-                } else {
-                    Ok(self)
-                }
-            } else {
+        if let Some(total_piece_length) =
+            util::i64_to_usize(self.piece_length)?.checked_mul(self.pieces.len())
+        {
+            if total_piece_length < util::i64_to_usize(self.length)? {
                 Err(Error::new(
                     ErrorKind::MalformedTorrent,
-                    Cow::Borrowed("Torrent's total piece length overflowed in i64."),
+                    Cow::Owned(format!(
+                        "Total piece length {} < torrent's length {}.",
+                        total_piece_length, self.length,
+                    )),
                 ))
+            } else if self.length <= 0 {
+                Err(Error::new(
+                    ErrorKind::MalformedTorrent,
+                    Cow::Borrowed("\"length\" <= 0."),
+                ))
+            } else {
+                Ok(self)
             }
         } else {
-            // @note: no unit test for this case as currently it's hard to construct
-            // a vector with more than `i64::max_value()` elements
             Err(Error::new(
                 ErrorKind::MalformedTorrent,
-                Cow::Borrowed("Torrent's number of pieces does not fit into i64."),
+                Cow::Borrowed("Torrent's total piece length overflowed in usize."),
             ))
         }
     }

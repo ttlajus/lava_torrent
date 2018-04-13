@@ -125,6 +125,7 @@ use std::fmt;
 use std::borrow::Cow;
 use std::convert::From;
 
+pub(crate) mod util;
 #[macro_use]
 pub mod bencode;
 pub mod torrent;
