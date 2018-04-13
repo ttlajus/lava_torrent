@@ -1,8 +1,8 @@
 use std::io::{BufReader, Read};
 use std::path::Component;
-use conv::ValueFrom;
 use crypto::sha1::Sha1;
 use crypto::digest::Digest;
+use util;
 use super::*;
 
 impl TorrentBuilder {
@@ -63,7 +63,7 @@ impl TorrentBuilder {
         let name = if let Some(name) = self.name {
             name
         } else {
-            Self::last_component(&self.path)?
+            util::last_component(&self.path)?
         };
 
         // set `private = 1` in `info` if the torrent is private
@@ -425,57 +425,13 @@ impl TorrentBuilder {
         }
     }
 
-    fn u64_to_usize(src: u64) -> Result<usize> {
-        // @todo: switch to `usize::try_from()` when it's stable
-        match usize::value_from(src) {
-            Ok(n) => Ok(n),
-            Err(_) => Err(Error::new(
-                ErrorKind::IOError,
-                Cow::Owned(format!("[{}] does not fit into usize.", src)),
-            )),
-        }
-    }
-
-    fn usize_to_u64(src: usize) -> Result<u64> {
-        // @todo: switch to `u64::try_from()` when it's stable
-        match u64::value_from(src) {
-            Ok(n) => Ok(n),
-            Err(_) => Err(Error::new(
-                ErrorKind::IOError,
-                Cow::Owned(format!("[{}] does not fit into u64.", src)),
-            )),
-        }
-    }
-
-    fn i64_to_usize(src: i64) -> Result<usize> {
-        // @todo: switch to `usize::try_from()` when it's stable
-        match usize::value_from(src) {
-            Ok(n) => Ok(n),
-            Err(_) => Err(Error::new(
-                ErrorKind::IOError,
-                Cow::Owned(format!("[{}] does not fit into usize.", src)),
-            )),
-        }
-    }
-
-    fn usize_to_i64(src: usize) -> Result<i64> {
-        // @todo: switch to `i64::try_from()` when it's stable
-        match i64::value_from(src) {
-            Ok(n) => Ok(n),
-            Err(_) => Err(Error::new(
-                ErrorKind::IOError,
-                Cow::Owned(format!("[{}] does not fit into i64.", src)),
-            )),
-        }
-    }
-
     fn read_file<P>(path: P, piece_length: Integer) -> Result<(Integer, Vec<Piece>)>
     where
         P: AsRef<Path>,
     {
         let path = path.as_ref();
-        let length = Self::u64_to_usize(path.metadata()?.len())?;
-        let piece_length = Self::i64_to_usize(piece_length)?;
+        let length = util::u64_to_usize(path.metadata()?.len())?;
+        let piece_length = util::i64_to_usize(piece_length)?;
 
         // read file content + calculate pieces/hashs
         let mut file = BufReader::new(::std::fs::File::open(&path)?);
@@ -489,7 +445,7 @@ impl TorrentBuilder {
                 break;
             } else {
                 total_read += file.by_ref()
-                    .take(Self::usize_to_u64(piece_length)?)
+                    .take(util::usize_to_u64(piece_length)?)
                     .read_to_end(&mut piece)?;
             }
 
@@ -502,15 +458,15 @@ impl TorrentBuilder {
             piece.clear();
         }
 
-        Ok((Self::usize_to_i64(length)?, pieces))
+        Ok((util::usize_to_i64(length)?, pieces))
     }
 
     fn read_dir<P>(path: P, piece_length: Integer) -> Result<(Integer, Vec<File>, Vec<Piece>)>
     where
         P: AsRef<Path>,
     {
-        let piece_length = Self::i64_to_usize(piece_length)?;
-        let entries = Self::list_dir(path)?;
+        let piece_length = util::i64_to_usize(piece_length)?;
+        let entries = util::list_dir(path)?;
         let total_length = entries.iter().fold(0, |acc, &(_, len)| acc + len);
         let mut files = Vec::with_capacity(entries.len());
         let mut pieces = Vec::with_capacity(total_length / piece_length + 1);
@@ -535,7 +491,7 @@ impl TorrentBuilder {
                 // @todo: can we avoid allocating a new vec?
                 let mut bytes = Vec::with_capacity(to_read);
                 file.by_ref()
-                    .take(Self::usize_to_u64(to_read)?)
+                    .take(util::usize_to_u64(to_read)?)
                     .read_to_end(&mut bytes)?;
                 piece.extend(bytes);
                 file_remaining -= to_read;
@@ -558,8 +514,8 @@ impl TorrentBuilder {
             }
 
             files.push(File {
-                length: Self::usize_to_i64(length)?,
-                path: PathBuf::from(Self::last_component(path)?),
+                length: util::usize_to_i64(length)?,
+                path: PathBuf::from(util::last_component(path)?),
                 extra_fields: None,
             });
         }
@@ -576,53 +532,7 @@ impl TorrentBuilder {
             piece.clear();
         }
 
-        Ok((Self::usize_to_i64(total_length)?, files, pieces))
-    }
-
-    // this method is recursive, i.e. entries in subdirectories
-    // are also returned
-    //
-    // *nix hidden files/dirs are ignored
-    //
-    // returned vec is sorted by path
-    fn list_dir<P>(path: P) -> Result<Vec<(PathBuf, usize)>>
-    where
-        P: AsRef<Path>,
-    {
-        let mut entries = Vec::new();
-
-        for entry in path.as_ref().read_dir()? {
-            let entry = entry?;
-            let path = entry.path();
-            let metadata = path.metadata()?;
-
-            if Self::last_component(&path)?.starts_with('.') {
-                continue;
-            } // hidden files/dirs are ignored
-
-            if metadata.is_dir() {
-                entries.extend(Self::list_dir(path)?);
-            } else {
-                entries.push((path, Self::u64_to_usize(metadata.len())?));
-            }
-        }
-
-        entries.sort_by(|&(ref p1, _), &(ref p2, _)| p1.cmp(p2));
-        Ok(entries)
-    }
-
-    fn last_component<P>(path: P) -> Result<String>
-    where
-        P: AsRef<Path>,
-    {
-        let path = path.as_ref();
-        match path.file_name() {
-            Some(s) => Ok(s.to_string_lossy().into_owned()),
-            None => Err(Error::new(
-                ErrorKind::TorrentBuilderFailure,
-                Cow::Owned(format!("[{}] ends in \"..\".", path.display())),
-            )),
-        }
+        Ok((util::usize_to_i64(total_length)?, files, pieces))
     }
 }
 
@@ -1159,44 +1069,6 @@ mod torrent_builder_tests {
     }
 
     #[test]
-    fn u64_to_usize_ok() {
-        // @todo: add test for err
-        assert_eq!(TorrentBuilder::u64_to_usize(42).unwrap(), 42);
-    }
-
-    #[test]
-    fn usize_to_u64_ok() {
-        // @todo: add test for err
-        assert_eq!(TorrentBuilder::usize_to_u64(42).unwrap(), 42);
-    }
-
-    #[test]
-    fn i64_to_usize_ok() {
-        assert_eq!(TorrentBuilder::i64_to_usize(42).unwrap(), 42);
-    }
-
-    #[test]
-    fn i64_to_usize_err() {
-        match TorrentBuilder::i64_to_usize(-1) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::IOError),
-        }
-    }
-
-    #[test]
-    fn usize_to_i64_ok() {
-        assert_eq!(TorrentBuilder::usize_to_i64(42).unwrap(), 42);
-    }
-
-    #[test]
-    fn usize_to_i64_err() {
-        match TorrentBuilder::usize_to_i64(usize::max_value()) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::IOError),
-        }
-    }
-
-    #[test]
     fn read_file_ok() {
         // byte_sequence contains 256 bytes ranging from 0x0 to 0xff
         let (length, pieces) = TorrentBuilder::read_file("tests/files/byte_sequence", 64).unwrap();
@@ -1222,63 +1094,5 @@ mod torrent_builder_tests {
                 ],
             ]
         );
-    }
-
-    #[test]
-    fn list_dir_ok() {
-        assert_eq!(
-            TorrentBuilder::list_dir("tests/files").unwrap(),
-            vec![
-                PathBuf::from("tests/files/byte_sequence"),
-                PathBuf::from("tests/files/symlink"),
-                PathBuf::from("tests/files/tails-amd64-3.6.1.torrent"),
-                PathBuf::from("tests/files/ubuntu-16.04.4-desktop-amd64.iso.torrent"),
-                // no [.hidden]
-            ].iter()
-                .map(PathBuf::from)
-                .map(|p| (p.clone(), p.metadata().unwrap().len() as usize))
-                .collect::<Vec<(PathBuf, usize)>>()
-        );
-    }
-
-    #[test]
-    fn list_dir_with_subdir() {
-        assert_eq!(
-            TorrentBuilder::list_dir("src/torrent").unwrap(),
-            vec![
-                PathBuf::from("src/torrent/mod.rs"),
-                PathBuf::from("src/torrent/v1/build.rs"),
-                PathBuf::from("src/torrent/v1/mod.rs"),
-                PathBuf::from("src/torrent/v1/read.rs"),
-                PathBuf::from("src/torrent/v1/write.rs"),
-            ].iter()
-                .map(PathBuf::from)
-                .map(|p| (p.clone(), p.metadata().unwrap().len() as usize))
-                .collect::<Vec<(PathBuf, usize)>>()
-        );
-    }
-
-    #[test]
-    fn last_component_ok() {
-        assert_eq!(
-            TorrentBuilder::last_component("/root/dir/file.ext").unwrap(),
-            "file.ext".to_string()
-        );
-    }
-
-    #[test]
-    fn last_component_ok_2() {
-        assert_eq!(
-            TorrentBuilder::last_component("/root/dir/dir2").unwrap(),
-            "dir2".to_string()
-        );
-    }
-
-    #[test]
-    fn last_component_err() {
-        match TorrentBuilder::last_component("/root/dir/..") {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::TorrentBuilderFailure),
-        }
     }
 }
