@@ -1,5 +1,5 @@
 //! Module for `.torrent` files ([v1](http://bittorrent.org/beps/bep_0003.html))
-//! related parsing/encoding.
+//! related parsing/encoding/creation.
 
 use std::fmt;
 use std::borrow::Cow;
