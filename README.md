@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.org/ttlajus/lava_torrent.svg?branch=master)](https://travis-ci.org/ttlajus/lava_torrent)
 [![codecov](https://codecov.io/gh/ttlajus/lava_torrent/branch/master/graph/badge.svg)](https://codecov.io/gh/ttlajus/lava_torrent)
 
-`lava_torrent` is a library for parsing/encoding bencode and *.torrent* files.
+`lava_torrent` is a library for parsing/encoding/creating bencode and *.torrent* files.
 
 ## *Quick Start*
 Read a torrent ([v1]) and print it and its info hash.
@@ -18,7 +18,6 @@ println!("Info hash: {}", torrent.info_hash());
 ```
 
 Create a torrent ([v1]) from files in a directory and save the *.torrent* file.
-***Experimental/Unstable***
 
 ```rust
 use lava_torrent::torrent::v1::TorrentBuilder;

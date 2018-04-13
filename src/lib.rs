@@ -1,4 +1,4 @@
-//! [`lava_torrent`] is a library for parsing/encoding bencode and *.torrent* files. It is
+//! [`lava_torrent`] is a library for parsing/encoding/creating bencode and *.torrent* files. It is
 //! dual-licensed under [Apache 2.0] and [MIT].
 //!
 //! # *Quick Start*
