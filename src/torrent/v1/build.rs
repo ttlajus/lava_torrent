@@ -17,9 +17,7 @@ impl TorrentBuilder {
     ///
     /// - A valid `piece_length` is larger than `0` AND is a power of `2`.
     ///
-    /// - Using a symbolic link as `path` will make `build()` return `Err`.
-    ///
-    /// - Using a `path` containing hidden components will also make `build()` return `Err`.
+    /// - Using a `path` containing hidden components will make `build()` return `Err`.
     /// This is \*nix-specific. Hidden components are those that start with `.`.
     ///
     /// - Paths with components exactly matching `..` are invalid.
@@ -165,9 +163,7 @@ impl TorrentBuilder {
     /// # Notes
     /// - `path` must be absolute.
     ///
-    /// - Using a symbolic link as `path` will make `build()` return `Err`.
-    ///
-    /// - Using a `path` containing hidden components will also make `build()` return `Err`.
+    /// - Using a `path` containing hidden components will make `build()` return `Err`.
     /// This is \*nix-specific. Hidden components are those that start with `.`.
     ///
     /// - Paths with components exactly matching `..` are invalid.
@@ -586,7 +582,7 @@ impl TorrentBuilder {
     // this method is recursive, i.e. entries in subdirectories
     // are also returned
     //
-    // symbolic links and *nix hidden files/dirs are ignored
+    // *nix hidden files/dirs are ignored
     //
     // returned vec is sorted by path
     fn list_dir<P>(path: P) -> Result<Vec<(PathBuf, usize)>>
