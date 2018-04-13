@@ -13,7 +13,6 @@
 //! ```
 //!
 //! Create a torrent ([v1]) from files in a directory and save the *.torrent* file.
-//! ***Experimental/Unstable***
 //!
 //! ```no_run
 //! use lava_torrent::torrent::v1::TorrentBuilder;
@@ -33,13 +32,11 @@
 //! ## Functionality
 //! - bencode parsing/encoding (i.e. "bencoding/bdecoding") => [`BencodeElem`]
 //! - torrent parsing/encoding (based on [`BencodeElem`]) => [`Torrent`]
-//!
-//! ## Unstable Functionality
-//! - torrent creation (***Experimental/Unstable***, currently multi-file torrents creation
-//! is still in development, and the code is not yet optimized) => [`TorrentBuilder`]
+//! - torrent creation => [`TorrentBuilder`]
 //!
 //! # *Performance*
-//! [`lava_torrent`] is designed with performance and maintenance cost in mind.
+//! [`lava_torrent`] is designed with performance and maintenance cost in mind. Some naive
+//! [profiling] has been performed.
 //!
 //! ## Copying
 //! Parsing a *.torrent* ([v1]) file would take at least 2 copies:
@@ -47,11 +44,10 @@
 //! - parse from bytes (bytes are copied, for example, when they are converted to `String`)
 //!
 //! Creating a *.torrent* ([v1]) file and writing its bencoded form to disk
-//! would take at least 2 copies:
-//! - load file content and construct a [`Torrent`] from it
-//! - encode the resulting struct and write it to disk (note: when encoding torrents, converting
-//! file paths (`OsStr`) to utf8 strings (`String`) also requires copies, but that should
-//! not be significant)
+//! would take at least 3 copies:
+//! - load file content from disk
+//! - feed the file content to a SHA1 hasher when constructing a [`Torrent`]
+//! - encode the resulting struct and write it to disk
 //!
 //! It might be possible to further reduce the number of copies, but in my opinion that would
 //! make the code harder to maintain. Unless there is evidence suggesting otherwise, I think
@@ -92,7 +88,7 @@
 //! # *Other Stuff*
 //! - Feature Request: To request a feature please open a GitHub issue (please
 //! try to request only 1 feature per issue).
-//! - Contribute: PR is always welcome.
+//! - Contribution: PR is always welcome.
 //! - What's with "lava": Originally I intended to start a project for downloading/crawling
 //! stuff. When downloading files, a stream of bits will be moving around--like lava.
 //! - Other "lava" crates: The landscape for downloading/crawling stuff is fairly mature
@@ -103,6 +99,7 @@
 //! [`lava_torrent`]: index.html
 //! [Apache 2.0]: https://www.apache.org/licenses/LICENSE-2.0
 //! [MIT]: https://opensource.org/licenses/MIT
+//! [profiling]: https://github.com/ttlajus/lava_torrent/wiki/Performance
 //! [v1]: http://bittorrent.org/beps/bep_0003.html
 //! [Merkle tree torrents]: http://bittorrent.org/beps/bep_0030.html
 //! [v2]: http://bittorrent.org/beps/bep_0052.html

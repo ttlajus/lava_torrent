@@ -77,7 +77,7 @@ pub struct Torrent {
     pub extra_info_fields: Option<Dictionary>,
 }
 
-/// Struct type for creating `Torrent`s from files. ***Experimental/Unstable***
+/// Builder for creating `Torrent`s from files.
 ///
 /// This struct is used for **creating** `Torrent`s, so that you can
 /// encode/serialize them to *.torrent* files. If you want to read
@@ -91,19 +91,19 @@ pub struct Torrent {
 ///  (e.g. [`set_announce()`]). Fields can be updated in the same way.
 ///
 /// # Notes
-/// **Symbolic links and \*nix hidden files/dirs are ignored.**
+/// **\*nix hidden files/dirs are ignored.**
 ///
 /// Reasoning:
 /// when handling these special "files", there are many decisions to make:
 /// - Should they be ignored, included, or selectively ignored/included?
-/// - Should symbolic links be followed?
 /// - Should included/ignored entries be marked specially (e.g. [BEP 47])?
 /// - Should users be allowed to configure the settings?
 /// - If users can configure the settings, what would be the ideal defaults?
 /// - ...
 ///
-/// Apparently it's not easy to make these decisions, especially when a module
-/// is still in experimental status. Therefore these files are ignored for now.
+/// Apparently it's not easy to make these decisions.
+/// Therefore these files are ignored for now.
+/// Clients like Deluge and qBittorrent also ignore hidden entries.
 ///
 /// [`Torrent::read_from_file()`]: struct.Torrent.html#method.read_from_file
 /// [`Torrent::read_from_bytes()`]: struct.Torrent.html#method.read_from_bytes
