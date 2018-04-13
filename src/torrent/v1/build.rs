@@ -77,9 +77,8 @@ impl TorrentBuilder {
         }
 
         // delegate the actual file reading to other methods
-        let file_type = self.path.symlink_metadata()?.file_type();
         let canonicalized_path = self.path.canonicalize()?;
-        if file_type.is_dir() {
+        if self.path.metadata()?.is_dir() {
             let (length, files, pieces) = Self::read_dir(canonicalized_path, self.piece_length)?;
 
             Ok(Torrent {
@@ -93,7 +92,7 @@ impl TorrentBuilder {
                 extra_fields: self.extra_fields,
                 extra_info_fields,
             })
-        } else if file_type.is_file() {
+        } else {
             let (length, pieces) = Self::read_file(canonicalized_path, self.piece_length)?;
 
             Ok(Torrent {
@@ -107,14 +106,6 @@ impl TorrentBuilder {
                 extra_fields: self.extra_fields,
                 extra_info_fields,
             })
-        } else {
-            Err(Error::new(
-                ErrorKind::TorrentBuilderFailure,
-                Cow::Owned(format!(
-                    "Root path [{}] points to a symbolic link.",
-                    self.path.display()
-                )),
-            ))
         }
     }
 
@@ -607,7 +598,7 @@ impl TorrentBuilder {
         for entry in path.as_ref().read_dir()? {
             let entry = entry?;
             let path = entry.path();
-            let metadata = entry.metadata()?;
+            let metadata = path.metadata()?;
 
             if Self::last_component(&path)?.starts_with('.') {
                 continue;
@@ -615,9 +606,9 @@ impl TorrentBuilder {
 
             if metadata.is_dir() {
                 entries.extend(Self::list_dir(path)?);
-            } else if metadata.is_file() {
+            } else {
                 entries.push((path, Self::u64_to_usize(metadata.len())?));
-            } // symbolic links are ignored
+            }
         }
 
         entries.sort_by(|&(ref p1, _), &(ref p2, _)| p1.cmp(p2));
@@ -1243,9 +1234,10 @@ mod torrent_builder_tests {
             TorrentBuilder::list_dir("tests/files").unwrap(),
             vec![
                 PathBuf::from("tests/files/byte_sequence"),
+                PathBuf::from("tests/files/symlink"),
                 PathBuf::from("tests/files/tails-amd64-3.6.1.torrent"),
                 PathBuf::from("tests/files/ubuntu-16.04.4-desktop-amd64.iso.torrent"),
-                // no [.hidden] and [symlink]
+                // no [.hidden]
             ].iter()
                 .map(PathBuf::from)
                 .map(|p| (p.clone(), p.metadata().unwrap().len() as usize))
