@@ -9,12 +9,12 @@ use lava_torrent::bencode::BencodeElem;
 const OUTPUT_ROOT: &str = "tests/tmp/";
 
 fn rand_file_name() -> String {
-    OUTPUT_ROOT.to_string() + &rand::thread_rng().gen::<u16>().to_string()
+    OUTPUT_ROOT.to_owned() + &rand::thread_rng().gen::<u16>().to_string()
 }
 
 #[test]
 fn bencode_elem_write_string_to_file_ok() {
-    let original = BencodeElem::String("spam".to_string());
+    let original = BencodeElem::String("spam".to_owned());
     let output = rand_file_name();
 
     original.write_into_file(&output).unwrap();
@@ -49,7 +49,7 @@ fn bencode_elem_write_integer_to_file_ok() {
 fn bencode_elem_write_list_to_file_ok() {
     let original = BencodeElem::List(vec![
         BencodeElem::Integer(42),
-        BencodeElem::String("spam".to_string()),
+        BencodeElem::String("spam".to_owned()),
     ]);
     let output = rand_file_name();
 
@@ -63,8 +63,8 @@ fn bencode_elem_write_list_to_file_ok() {
 fn bencode_elem_write_dictionary_to_file_ok() {
     let original = BencodeElem::Dictionary(HashMap::from_iter(
         vec![
-            ("spam".to_string(), BencodeElem::Integer(42)),
-            ("cow".to_string(), BencodeElem::String("moo".to_string())),
+            ("spam".to_owned(), BencodeElem::Integer(42)),
+            ("cow".to_owned(), BencodeElem::String("moo".to_owned())),
         ].into_iter(),
     ));
     let output = rand_file_name();

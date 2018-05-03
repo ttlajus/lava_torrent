@@ -187,16 +187,13 @@ mod util_tests {
     fn last_component_ok() {
         assert_eq!(
             last_component("/root/dir/file.ext").unwrap(),
-            "file.ext".to_string()
+            "file.ext".to_owned()
         );
     }
 
     #[test]
     fn last_component_ok_2() {
-        assert_eq!(
-            last_component("/root/dir/dir2").unwrap(),
-            "dir2".to_string()
-        );
+        assert_eq!(last_component("/root/dir/dir2").unwrap(), "dir2".to_owned());
     }
 
     #[test]

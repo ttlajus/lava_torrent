@@ -17,7 +17,7 @@
 //! ```no_run
 //! use lava_torrent::torrent::v1::TorrentBuilder;
 //!
-//! let torrent = TorrentBuilder::new("announce".to_string(), "dir/", 1048576).build().unwrap();
+//! let torrent = TorrentBuilder::new("announce".to_owned(), "dir/", 1048576).build().unwrap();
 //! torrent.write_into_file("sample.torrent").unwrap();
 //! ```
 //!
