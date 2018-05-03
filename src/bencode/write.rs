@@ -173,7 +173,7 @@ mod bencode_elem_write_tests {
     #[test]
     fn write_string_ok() {
         let mut vec = Vec::new();
-        write_string(&"spam".to_string(), &mut vec).unwrap();
+        write_string(&"spam".to_owned(), &mut vec).unwrap();
         assert_eq!(vec, "4:spam".as_bytes().to_vec());
     }
 
@@ -209,8 +209,8 @@ mod bencode_elem_write_tests {
         write_dictionary::<_, RandomState>(
             &HashMap::from_iter(
                 vec![
-                    ("spam".to_string(), bencode_elem!(42)),
-                    ("cow".to_string(), bencode_elem!("moo")),
+                    ("spam".to_owned(), bencode_elem!(42)),
+                    ("cow".to_owned(), bencode_elem!("moo")),
                 ].into_iter(),
             ),
             &mut vec,
@@ -227,7 +227,7 @@ mod bencode_elem_write_tests {
     #[test]
     fn encode_string_ok() {
         assert_eq!(
-            encode_string(&"spam".to_string()),
+            encode_string(&"spam".to_owned()),
             "4:spam".as_bytes().to_vec(),
         )
     }
@@ -260,8 +260,8 @@ mod bencode_elem_write_tests {
         assert_eq!(
             encode_dictionary::<RandomState>(&HashMap::from_iter(
                 vec![
-                    ("spam".to_string(), bencode_elem!(42)),
-                    ("cow".to_string(), bencode_elem!("moo")),
+                    ("spam".to_owned(), bencode_elem!(42)),
+                    ("cow".to_owned(), bencode_elem!("moo")),
                 ].into_iter()
             )),
             vec![

@@ -11,7 +11,7 @@ const OUTPUT_ROOT: &str = "tests/tmp/";
 const PIECE_LENGTH: Integer = 32 * 1024; // n * 1024 KiB
 
 fn rand_file_name() -> String {
-    OUTPUT_ROOT.to_string() + &rand::thread_rng().gen::<u16>().to_string()
+    OUTPUT_ROOT.to_owned() + &rand::thread_rng().gen::<u16>().to_string()
 }
 
 #[test]
@@ -19,7 +19,7 @@ fn build_single_file_ok() {
     let output_name = rand_file_name() + ".torrent";
 
     let builder = TorrentBuilder::new(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_string(),
+        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
         PathBuf::from("tests/files/tails-amd64-3.6.1.torrent")
             .canonicalize()
             .unwrap(),
@@ -28,15 +28,12 @@ fn build_single_file_ok() {
     // create a new chain because rustfmt does
     // weird things when `builder` is not declared separately
     builder
+        .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523448537))
         .add_extra_field(
-            "creation date".to_string(),
-            BencodeElem::Integer(1523448537),
+            "encoding".to_owned(),
+            BencodeElem::String("UTF-8".to_owned()),
         )
-        .add_extra_field(
-            "encoding".to_string(),
-            BencodeElem::String("UTF-8".to_string()),
-        )
-        .add_extra_info_field("private".to_string(), BencodeElem::Integer(0))
+        .add_extra_info_field("private".to_owned(), BencodeElem::Integer(0))
         .build()
         .unwrap()
         .write_into_file(&output_name)
@@ -54,22 +51,19 @@ fn build_multi_file_ok() {
     let output_name = rand_file_name() + ".torrent";
 
     let builder = TorrentBuilder::new(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_string(),
+        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
         PathBuf::from("tests/files").canonicalize().unwrap(),
         PIECE_LENGTH,
     );
     // create a new chain because rustfmt does
     // weird things when `builder` is not declared separately
     builder
+        .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607302))
         .add_extra_field(
-            "creation date".to_string(),
-            BencodeElem::Integer(1523607302),
+            "encoding".to_owned(),
+            BencodeElem::String("UTF-8".to_owned()),
         )
-        .add_extra_field(
-            "encoding".to_string(),
-            BencodeElem::String("UTF-8".to_string()),
-        )
-        .add_extra_info_field("private".to_string(), BencodeElem::Integer(0))
+        .add_extra_info_field("private".to_owned(), BencodeElem::Integer(0))
         .build()
         .unwrap()
         .write_into_file(&output_name)
@@ -87,12 +81,12 @@ fn build_with_name() {
     let output_name = rand_file_name() + ".torrent";
 
     TorrentBuilder::new(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_string(),
+        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
         PathBuf::from("tests/files/tails-amd64-3.6.1.torrent")
             .canonicalize()
             .unwrap(),
         PIECE_LENGTH,
-    ).set_name("file".to_string())
+    ).set_name("file".to_owned())
         .build()
         .unwrap()
         .write_into_file(&output_name)
@@ -100,7 +94,7 @@ fn build_with_name() {
 
     assert_eq!(
         Torrent::read_from_file(output_name).unwrap().name,
-        "file".to_string(),
+        "file".to_owned(),
     );
 }
 
@@ -109,20 +103,17 @@ fn build_private() {
     let output_name = rand_file_name() + ".torrent";
 
     let builder = TorrentBuilder::new(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_string(),
+        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
         PathBuf::from("tests/files").canonicalize().unwrap(),
         PIECE_LENGTH,
     );
     // create a new chain because rustfmt does
     // weird things when `builder` is not declared separately
     builder
+        .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607445))
         .add_extra_field(
-            "creation date".to_string(),
-            BencodeElem::Integer(1523607445),
-        )
-        .add_extra_field(
-            "encoding".to_string(),
-            BencodeElem::String("UTF-8".to_string()),
+            "encoding".to_owned(),
+            BencodeElem::String("UTF-8".to_owned()),
         )
         .set_privacy(true)
         .build()
@@ -146,22 +137,19 @@ fn build_symbolic_link() {
     path.push("symlink");
 
     let builder = TorrentBuilder::new(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_string(),
+        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
         path,
         PIECE_LENGTH,
     );
     // create a new chain because rustfmt does
     // weird things when `builder` is not declared separately
     builder
+        .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607602))
         .add_extra_field(
-            "creation date".to_string(),
-            BencodeElem::Integer(1523607602),
+            "encoding".to_owned(),
+            BencodeElem::String("UTF-8".to_owned()),
         )
-        .add_extra_field(
-            "encoding".to_string(),
-            BencodeElem::String("UTF-8".to_string()),
-        )
-        .add_extra_info_field("private".to_string(), BencodeElem::Integer(0))
+        .add_extra_info_field("private".to_owned(), BencodeElem::Integer(0))
         .build()
         .unwrap()
         .write_into_file(&output_name)
@@ -177,7 +165,7 @@ fn build_symbolic_link() {
 #[test]
 fn build_hidden_file() {
     let result = TorrentBuilder::new(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_string(),
+        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
         PathBuf::from("tests/files/.hidden").canonicalize().unwrap(),
         PIECE_LENGTH,
     ).build();

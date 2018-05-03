@@ -6,9 +6,9 @@ impl File {
     pub(crate) fn into_bencode_elem(self) -> BencodeElem {
         let mut result: HashMap<String, BencodeElem> = HashMap::new();
 
-        result.insert("length".to_string(), BencodeElem::Integer(self.length));
+        result.insert("length".to_owned(), BencodeElem::Integer(self.length));
         result.insert(
-            "path".to_string(),
+            "path".to_owned(),
             BencodeElem::List(
                 self.path
                     .iter()
@@ -34,11 +34,11 @@ impl Torrent {
         let mut result: HashMap<String, BencodeElem> = HashMap::new();
         let mut info: HashMap<String, BencodeElem> = HashMap::new();
 
-        result.insert("announce".to_string(), BencodeElem::String(self.announce));
+        result.insert("announce".to_owned(), BencodeElem::String(self.announce));
 
         if let Some(list) = self.announce_list {
             result.insert(
-                "announce-list".to_string(),
+                "announce-list".to_owned(),
                 BencodeElem::List(
                     list.into_iter()
                         .map(|tier| {
@@ -55,7 +55,7 @@ impl Torrent {
 
         if let Some(files) = self.files {
             info.insert(
-                "files".to_string(),
+                "files".to_owned(),
                 BencodeElem::List(
                     files
                         .into_iter()
@@ -64,16 +64,16 @@ impl Torrent {
                 ),
             );
         } else {
-            info.insert("length".to_string(), BencodeElem::Integer(self.length));
+            info.insert("length".to_owned(), BencodeElem::Integer(self.length));
         }
 
-        info.insert("name".to_string(), BencodeElem::String(self.name));
+        info.insert("name".to_owned(), BencodeElem::String(self.name));
         info.insert(
-            "piece length".to_string(),
+            "piece length".to_owned(),
             BencodeElem::Integer(self.piece_length),
         );
         info.insert(
-            "pieces".to_string(),
+            "pieces".to_owned(),
             BencodeElem::Bytes(self.pieces.into_iter().flat_map(|piece| piece).collect()),
         );
 
@@ -81,7 +81,7 @@ impl Torrent {
             info.extend(extra_info_fields);
         }
 
-        result.insert("info".to_string(), BencodeElem::Dictionary(info));
+        result.insert("info".to_owned(), BencodeElem::Dictionary(info));
 
         if let Some(extra_fields) = self.extra_fields {
             result.extend(extra_fields);
@@ -146,7 +146,7 @@ mod file_write_tests {
             length: 42,
             path: PathBuf::from("dir1/dir2/file"),
             extra_fields: Some(HashMap::from_iter(
-                vec![("comment".to_string(), bencode_elem!("no comment"))].into_iter(),
+                vec![("comment".to_owned(), bencode_elem!("no comment"))].into_iter(),
             )),
         };
 
@@ -171,11 +171,11 @@ mod torrent_write_tests {
     #[test]
     fn write_ok() {
         let torrent = Torrent {
-            announce: "url".to_string(),
+            announce: "url".to_owned(),
             announce_list: None,
             length: 4,
             files: None,
-            name: "sample".to_string(),
+            name: "sample".to_owned(),
             piece_length: 2,
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
@@ -201,14 +201,14 @@ mod torrent_write_tests {
     #[test]
     fn write_with_announce_list() {
         let torrent = Torrent {
-            announce: "url".to_string(),
+            announce: "url".to_owned(),
             announce_list: Some(vec![
-                vec!["url1".to_string(), "url2".to_string()],
-                vec!["url3".to_string(), "url4".to_string()],
+                vec!["url1".to_owned(), "url2".to_owned()],
+                vec!["url3".to_owned(), "url4".to_owned()],
             ]),
             length: 4,
             files: None,
-            name: "sample".to_string(),
+            name: "sample".to_owned(),
             piece_length: 2,
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
@@ -235,17 +235,17 @@ mod torrent_write_tests {
     #[test]
     fn write_with_extra_fields() {
         let torrent = Torrent {
-            announce: "url".to_string(),
+            announce: "url".to_owned(),
             announce_list: None,
             length: 4,
             files: None,
-            name: "sample".to_string(),
+            name: "sample".to_owned(),
             piece_length: 2,
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: Some(HashMap::from_iter(
                 vec![
-                    ("comment2".to_string(), bencode_elem!("no comment")),
-                    ("comment1".to_string(), bencode_elem!("no comment")),
+                    ("comment2".to_owned(), bencode_elem!("no comment")),
+                    ("comment1".to_owned(), bencode_elem!("no comment")),
                 ].into_iter(),
             )),
             extra_info_fields: None,
@@ -272,18 +272,18 @@ mod torrent_write_tests {
     #[test]
     fn write_with_extra_info_fields() {
         let torrent = Torrent {
-            announce: "url".to_string(),
+            announce: "url".to_owned(),
             announce_list: None,
             length: 4,
             files: None,
-            name: "sample".to_string(),
+            name: "sample".to_owned(),
             piece_length: 2,
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: Some(HashMap::from_iter(
                 vec![
-                    ("comment2".to_string(), bencode_elem!("no comment")),
-                    ("comment1".to_string(), bencode_elem!("no comment")),
+                    ("comment2".to_owned(), bencode_elem!("no comment")),
+                    ("comment1".to_owned(), bencode_elem!("no comment")),
                 ].into_iter(),
             )),
         };
@@ -309,7 +309,7 @@ mod torrent_write_tests {
     #[test]
     fn write_with_multiple_files() {
         let torrent = Torrent {
-            announce: "url".to_string(),
+            announce: "url".to_owned(),
             announce_list: None,
             length: 4,
             files: Some(vec![
@@ -324,7 +324,7 @@ mod torrent_write_tests {
                     extra_fields: None,
                 },
             ]),
-            name: "sample".to_string(),
+            name: "sample".to_owned(),
             piece_length: 2,
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
@@ -353,11 +353,11 @@ mod torrent_write_tests {
     #[test]
     fn encode_ok() {
         let torrent = Torrent {
-            announce: "url".to_string(),
+            announce: "url".to_owned(),
             announce_list: None,
             length: 4,
             files: None,
-            name: "sample".to_string(),
+            name: "sample".to_owned(),
             piece_length: 2,
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
@@ -381,14 +381,14 @@ mod torrent_write_tests {
     #[test]
     fn encode_with_announce_list() {
         let torrent = Torrent {
-            announce: "url".to_string(),
+            announce: "url".to_owned(),
             announce_list: Some(vec![
-                vec!["url1".to_string(), "url2".to_string()],
-                vec!["url3".to_string(), "url4".to_string()],
+                vec!["url1".to_owned(), "url2".to_owned()],
+                vec!["url3".to_owned(), "url4".to_owned()],
             ]),
             length: 4,
             files: None,
-            name: "sample".to_string(),
+            name: "sample".to_owned(),
             piece_length: 2,
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
@@ -413,17 +413,17 @@ mod torrent_write_tests {
     #[test]
     fn encode_with_extra_fields() {
         let torrent = Torrent {
-            announce: "url".to_string(),
+            announce: "url".to_owned(),
             announce_list: None,
             length: 4,
             files: None,
-            name: "sample".to_string(),
+            name: "sample".to_owned(),
             piece_length: 2,
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: Some(HashMap::from_iter(
                 vec![
-                    ("comment2".to_string(), bencode_elem!("no comment")),
-                    ("comment1".to_string(), bencode_elem!("no comment")),
+                    ("comment2".to_owned(), bencode_elem!("no comment")),
+                    ("comment1".to_owned(), bencode_elem!("no comment")),
                 ].into_iter(),
             )),
             extra_info_fields: None,
@@ -448,18 +448,18 @@ mod torrent_write_tests {
     #[test]
     fn encode_with_extra_info_fields() {
         let torrent = Torrent {
-            announce: "url".to_string(),
+            announce: "url".to_owned(),
             announce_list: None,
             length: 4,
             files: None,
-            name: "sample".to_string(),
+            name: "sample".to_owned(),
             piece_length: 2,
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,
             extra_info_fields: Some(HashMap::from_iter(
                 vec![
-                    ("comment2".to_string(), bencode_elem!("no comment")),
-                    ("comment1".to_string(), bencode_elem!("no comment")),
+                    ("comment2".to_owned(), bencode_elem!("no comment")),
+                    ("comment1".to_owned(), bencode_elem!("no comment")),
                 ].into_iter(),
             )),
         };
@@ -483,7 +483,7 @@ mod torrent_write_tests {
     #[test]
     fn encode_with_multiple_files() {
         let torrent = Torrent {
-            announce: "url".to_string(),
+            announce: "url".to_owned(),
             announce_list: None,
             length: 4,
             files: Some(vec![
@@ -498,7 +498,7 @@ mod torrent_write_tests {
                     extra_fields: None,
                 },
             ]),
-            name: "sample".to_string(),
+            name: "sample".to_owned(),
             piece_length: 2,
             pieces: vec![vec![1, 2], vec![3, 4]],
             extra_fields: None,

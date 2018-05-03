@@ -24,7 +24,7 @@ macro_rules! bencode_elem {
     ({ $( ($key:tt, $val:tt) ),* }) => {
         $crate::bencode::BencodeElem::Dictionary(
             ::std::collections::HashMap::from_iter(
-                vec![ $( ($key.to_string(), bencode_elem!($val)) ),* ].into_iter()
+                vec![ $( ($key.to_owned(), bencode_elem!($val)) ),* ].into_iter()
             )
         )
     };
@@ -78,13 +78,13 @@ mod bencode_elem_macro_tests {
 
     #[test]
     fn str_ref_to_integer_ok() {
-        assert_eq!(bencode_elem!(""), BencodeElem::String("".to_string()))
+        assert_eq!(bencode_elem!(""), BencodeElem::String("".to_owned()))
     }
 
     #[test]
     fn string_to_integer_ok() {
-        let string = "".to_string();
-        assert_eq!(bencode_elem!(string), BencodeElem::String("".to_string()))
+        let string = "".to_owned();
+        assert_eq!(bencode_elem!(string), BencodeElem::String("".to_owned()))
     }
 
     #[test]
@@ -106,7 +106,7 @@ mod bencode_elem_macro_tests {
             bencode_elem!([0x01, "0x02", [0x03]]),
             BencodeElem::List(vec![
                 BencodeElem::Integer(0x01),
-                BencodeElem::String("0x02".to_string()),
+                BencodeElem::String("0x02".to_owned()),
                 BencodeElem::List(vec![BencodeElem::Integer(0x03)]),
             ])
         )
@@ -124,12 +124,12 @@ mod bencode_elem_macro_tests {
             BencodeElem::Dictionary(HashMap::from_iter(
                 vec![
                     (
-                        "cow".to_string(),
+                        "cow".to_owned(),
                         BencodeElem::Dictionary(HashMap::from_iter(
-                            vec![("moo".to_string(), BencodeElem::Integer(4_i64))].into_iter(),
+                            vec![("moo".to_owned(), BencodeElem::Integer(4_i64))].into_iter(),
                         )),
                     ),
-                    ("spam".to_string(), BencodeElem::String("eggs".to_string())),
+                    ("spam".to_owned(), BencodeElem::String("eggs".to_owned())),
                 ].into_iter()
             ))
         )

@@ -91,7 +91,7 @@ impl From<i64> for BencodeElem {
 
 impl<'a> From<&'a str> for BencodeElem {
     fn from(val: &'a str) -> BencodeElem {
-        BencodeElem::String(val.to_string())
+        BencodeElem::String(val.to_owned())
     }
 }
 

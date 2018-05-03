@@ -9,7 +9,7 @@ use lava_torrent::torrent::v1::Torrent;
 const OUTPUT_ROOT: &str = "tests/tmp/";
 
 fn rand_file_name() -> String {
-    OUTPUT_ROOT.to_string() + &rand::thread_rng().gen::<u16>().to_string()
+    OUTPUT_ROOT.to_owned() + &rand::thread_rng().gen::<u16>().to_string()
 }
 
 #[test]

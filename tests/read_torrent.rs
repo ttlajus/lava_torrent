@@ -18,18 +18,18 @@ fn read_from_bytes() {
     let parsed = Torrent::read_from_bytes(bytes).unwrap();
     assert_eq!(
         parsed.announce,
-        "http://torrent.ubuntu.com:6969/announce".to_string(),
+        "http://torrent.ubuntu.com:6969/announce".to_owned(),
     );
     assert_eq!(
         parsed.announce_list,
         Some(vec![
-            vec!["http://torrent.ubuntu.com:6969/announce".to_string()],
-            vec!["http://ipv6.torrent.ubuntu.com:6969/announce".to_string()],
+            vec!["http://torrent.ubuntu.com:6969/announce".to_owned()],
+            vec!["http://ipv6.torrent.ubuntu.com:6969/announce".to_owned()],
         ]),
     );
     assert_eq!(parsed.length, 1_624_211_456);
     assert_eq!(parsed.files, None);
-    assert_eq!(parsed.name, "ubuntu-16.04.4-desktop-amd64.iso".to_string());
+    assert_eq!(parsed.name, "ubuntu-16.04.4-desktop-amd64.iso".to_owned());
     assert_eq!(parsed.piece_length, 524_288);
     // Check the entire `pieces` vec is not very meaningful here...
     // So we check its length instead: len(pieces) == ceil(torrent_size / block_size).
@@ -47,11 +47,11 @@ fn read_from_bytes() {
         Some(HashMap::from_iter(
             vec![
                 (
-                    "comment".to_string(),
-                    BencodeElem::String("Ubuntu CD releases.ubuntu.com".to_string()),
+                    "comment".to_owned(),
+                    BencodeElem::String("Ubuntu CD releases.ubuntu.com".to_owned()),
                 ),
                 (
-                    "creation date".to_string(),
+                    "creation date".to_owned(),
                     BencodeElem::Integer(1_519_934_077),
                 ),
             ].into_iter()
@@ -60,7 +60,7 @@ fn read_from_bytes() {
     assert_eq!(parsed.extra_info_fields, None);
     assert_eq!(
         parsed.info_hash(),
-        "778ce280b595e57780ff083f2eb6f897dfa4a4ee".to_string()
+        "778ce280b595e57780ff083f2eb6f897dfa4a4ee".to_owned()
     );
     assert_eq!(
         parsed.magnet_link(),
@@ -68,7 +68,7 @@ fn read_from_bytes() {
          &dn=ubuntu-16.04.4-desktop-amd64.iso\
          &tr=http://torrent.ubuntu.com:6969/announce\
          &tr=http://ipv6.torrent.ubuntu.com:6969/announce"
-            .to_string(),
+            .to_owned(),
     );
     assert!(!parsed.is_private());
 }
@@ -94,16 +94,15 @@ fn read_from_bytes_multiple_files() {
     let parsed = Torrent::read_from_bytes(bytes).unwrap();
     assert_eq!(
         parsed.announce,
-        "http://linuxtracker.org:2710/00000000000000000000000000000000/announce".to_string(),
+        "http://linuxtracker.org:2710/00000000000000000000000000000000/announce".to_owned(),
     );
     assert_eq!(
         parsed.announce_list,
         Some(vec![
-            vec!["udp://tracker.torrent.eu.org:451".to_string()],
-            vec!["udp://tracker.coppersurfer.tk:6969".to_string()],
+            vec!["udp://tracker.torrent.eu.org:451".to_owned()],
+            vec!["udp://tracker.coppersurfer.tk:6969".to_owned()],
             vec![
-                "http://linuxtracker.org:2710/00000000000000000000000000000000/announce"
-                    .to_string(),
+                "http://linuxtracker.org:2710/00000000000000000000000000000000/announce".to_owned(),
             ],
         ]),
     );
@@ -123,7 +122,7 @@ fn read_from_bytes_multiple_files() {
             },
         ])
     );
-    assert_eq!(parsed.name, "tails-amd64-3.6.1".to_string());
+    assert_eq!(parsed.name, "tails-amd64-3.6.1".to_owned());
     assert_eq!(parsed.piece_length, 262_144);
     // Check the entire `pieces` vec is not very meaningful here...
     // So we check its length instead: len(pieces) == ceil(torrent_size / block_size).
@@ -141,11 +140,11 @@ fn read_from_bytes_multiple_files() {
         Some(HashMap::from_iter(
             vec![
                 (
-                    "created by".to_string(),
-                    BencodeElem::String("mktorrent 1.0".to_string()),
+                    "created by".to_owned(),
+                    BencodeElem::String("mktorrent 1.0".to_owned()),
                 ),
                 (
-                    "creation date".to_string(),
+                    "creation date".to_owned(),
                     BencodeElem::Integer(1_521_245_346),
                 ),
             ].into_iter()
@@ -154,7 +153,7 @@ fn read_from_bytes_multiple_files() {
     assert_eq!(parsed.extra_info_fields, None);
     assert_eq!(
         parsed.info_hash(),
-        "a2a8d9b1ba0b1ac3d1ffa8062e02c0f9c23de31a".to_string()
+        "a2a8d9b1ba0b1ac3d1ffa8062e02c0f9c23de31a".to_owned()
     );
     assert_eq!(
         parsed.magnet_link(),
@@ -163,7 +162,7 @@ fn read_from_bytes_multiple_files() {
          &tr=udp://tracker.torrent.eu.org:451\
          &tr=udp://tracker.coppersurfer.tk:6969\
          &tr=http://linuxtracker.org:2710/00000000000000000000000000000000/announce"
-            .to_string(),
+            .to_owned(),
     );
     assert!(!parsed.is_private());
 }
