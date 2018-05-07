@@ -18,7 +18,7 @@ macro_rules! bencode_elem {
     (( $( $element:tt ),* )) => {
         $crate::bencode::BencodeElem::Bytes(vec![ $( $element ),* ])
     };
-    (( $( $element:tt ),* ,)) => {
+    (( $( $element:tt ),+ ,)) => {
         bencode_elem!(( $( $element ),* ))
     };
     ({ $( ($key:tt, $val:tt) ),* }) => {
@@ -28,7 +28,7 @@ macro_rules! bencode_elem {
             )
         )
     };
-    ({ $( ($key:tt, $val:tt) ),* ,}) => {
+    ({ $( ($key:tt, $val:tt) ),+ ,}) => {
         bencode_elem!({ $( ($key, $val) ),* })
     };
     ($other:expr) => {
