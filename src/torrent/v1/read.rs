@@ -1,9 +1,9 @@
-use std::path::{Path, PathBuf};
-use std::collections::HashMap;
-use std::borrow::Cow;
-use bencode::BencodeElem;
-use util;
 use super::*;
+use bencode::BencodeElem;
+use std::borrow::Cow;
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+use util;
 
 impl File {
     fn extract_file(elem: BencodeElem) -> Result<File> {
@@ -23,12 +23,12 @@ impl File {
     fn extract_file_length(dict: &mut HashMap<String, BencodeElem>) -> Result<i64> {
         match dict.remove("length") {
             Some(BencodeElem::Integer(len)) => {
-                if len > 0 {
+                if len >= 0 {
                     Ok(len)
                 } else {
                     Err(Error::new(
                         ErrorKind::MalformedTorrent,
-                        Cow::Borrowed("\"length\" <= 0."),
+                        Cow::Borrowed("\"length\" < 0."),
                     ))
                 }
             }
@@ -461,9 +461,9 @@ mod file_read_tests {
     }
 
     #[test]
-    fn extract_file_length_not_positive() {
+    fn extract_file_length_is_negative() {
         let mut dict =
-            HashMap::from_iter(vec![("length".to_owned(), bencode_elem!(0))].into_iter());
+            HashMap::from_iter(vec![("length".to_owned(), bencode_elem!(-1))].into_iter());
 
         match File::extract_file_length(&mut dict) {
             Ok(_) => assert!(false),
@@ -603,7 +603,7 @@ mod file_read_tests {
                 vec![("comment".to_owned(), bencode_elem!("none"))].into_iter()
             )),
             Some(HashMap::from_iter(
-                vec![("comment".to_owned(), bencode_elem!("none"))].into_iter()
+                vec![("comment".to_owned(), bencode_elem!("none"))].into_iter(),
             ))
         )
     }
@@ -1200,7 +1200,7 @@ mod torrent_read_tests {
                 vec![("comment".to_owned(), bencode_elem!("none"))].into_iter()
             )),
             Some(HashMap::from_iter(
-                vec![("comment".to_owned(), bencode_elem!("none"))].into_iter()
+                vec![("comment".to_owned(), bencode_elem!("none"))].into_iter(),
             ))
         )
     }
