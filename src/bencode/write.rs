@@ -31,7 +31,7 @@ where
 }
 
 /// Encode `int` and write the result to `dst`.
-pub fn write_integer<W>(int: &i64, dst: &mut W) -> Result<()>
+pub fn write_integer<W>(int: i64, dst: &mut W) -> Result<()>
 where
     W: Write,
 {
@@ -89,7 +89,7 @@ pub fn encode_bytes(bytes: &[u8]) -> Vec<u8> {
 }
 
 /// Encode `int` and return the result in a `Vec`.
-pub fn encode_integer(int: &i64) -> Vec<u8> {
+pub fn encode_integer(int: i64) -> Vec<u8> {
     let mut encoded = Vec::new();
     write_integer(int, &mut encoded).expect("Write to vec failed!");
     encoded
@@ -121,7 +121,7 @@ impl BencodeElem {
         match *self {
             BencodeElem::String(ref string) => write_string(string, dst),
             BencodeElem::Bytes(ref bytes) => write_bytes(bytes, dst),
-            BencodeElem::Integer(ref int) => write_integer(int, dst),
+            BencodeElem::Integer(int) => write_integer(int, dst),
             BencodeElem::List(ref list) => write_list(list, dst),
             BencodeElem::Dictionary(ref dict) => write_dictionary(dict, dst),
         }
@@ -155,7 +155,7 @@ impl BencodeElem {
         match *self {
             BencodeElem::String(ref string) => encode_string(string),
             BencodeElem::Bytes(ref bytes) => encode_bytes(bytes),
-            BencodeElem::Integer(ref int) => encode_integer(int),
+            BencodeElem::Integer(int) => encode_integer(int),
             BencodeElem::List(ref list) => encode_list(list),
             BencodeElem::Dictionary(ref dict) => encode_dictionary(dict),
         }
@@ -187,7 +187,7 @@ mod bencode_elem_write_tests {
     #[test]
     fn write_integer_ok() {
         let mut vec = Vec::new();
-        write_integer(&42, &mut vec).unwrap();
+        write_integer(42, &mut vec).unwrap();
         assert_eq!(vec, vec![b'i', b'4', b'2', b'e']);
     }
 
@@ -242,7 +242,7 @@ mod bencode_elem_write_tests {
 
     #[test]
     fn encode_integer_ok() {
-        assert_eq!(encode_integer(&42), vec![b'i', b'4', b'2', b'e'])
+        assert_eq!(encode_integer(42), vec![b'i', b'4', b'2', b'e'])
     }
 
     #[test]
