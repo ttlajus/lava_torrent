@@ -1,19 +1,19 @@
 //! Module for `.torrent` files ([v1](http://bittorrent.org/beps/bep_0003.html))
 //! related parsing/encoding/creation.
 
-use std::fmt;
-use std::borrow::Cow;
-use std::path::{Path, PathBuf};
-use std::collections::HashMap;
-use crypto::sha1::Sha1;
-use crypto::digest::Digest;
-use itertools::Itertools;
 use bencode::BencodeElem;
+use crypto::digest::Digest;
+use crypto::sha1::Sha1;
+use itertools::Itertools;
+use std::borrow::Cow;
+use std::collections::HashMap;
+use std::fmt;
+use std::path::{Path, PathBuf};
 use {Error, ErrorKind, Result};
 
+mod build;
 mod read;
 mod write;
-mod build;
 
 const PIECE_STRING_LENGTH: usize = 20;
 
@@ -301,10 +301,11 @@ impl fmt::Display for Torrent {
             writeln!(
                 f,
                 "-announce-list: [{}]",
-                tiers.iter().format_with(", ", |tier, f| f(&format_args!(
-                    "[{}]",
-                    ::itertools::join(tier, ", ")
-                )))
+                tiers
+                    .iter()
+                    .format_with(", ", |tier, f| {
+                        f(&format_args!("[{}]", ::itertools::join(tier, ", ")))
+                    })
             )?;
         }
         writeln!(f, "-size: {} bytes", self.length)?;
@@ -346,10 +347,9 @@ impl fmt::Display for Torrent {
             "-pieces: [{}]",
             self.pieces
                 .iter()
-                .format_with(", ", |piece, f| f(&format_args!(
-                    "[{:02x}]",
-                    piece.iter().format("")
-                ))),
+                .format_with(", ", |piece, f| {
+                    f(&format_args!("[{:02x}]", piece.iter().format("")))
+                }),
         )
     }
 }

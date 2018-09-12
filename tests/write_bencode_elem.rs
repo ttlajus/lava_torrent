@@ -1,10 +1,10 @@
 extern crate lava_torrent;
 extern crate rand;
 
-use std::iter::FromIterator;
-use std::collections::HashMap;
-use rand::Rng;
 use lava_torrent::bencode::BencodeElem;
+use rand::Rng;
+use std::collections::HashMap;
+use std::iter::FromIterator;
 
 const OUTPUT_ROOT: &str = "tests/tmp/";
 

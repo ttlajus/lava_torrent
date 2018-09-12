@@ -1,10 +1,10 @@
 extern crate lava_torrent;
 extern crate rand;
 
+use lava_torrent::torrent::v1::Torrent;
+use rand::Rng;
 use std::fs::File;
 use std::io::{BufReader, Read};
-use rand::Rng;
-use lava_torrent::torrent::v1::Torrent;
 
 const OUTPUT_ROOT: &str = "tests/tmp/";
 

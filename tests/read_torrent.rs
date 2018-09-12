@@ -1,13 +1,13 @@
 extern crate conv;
 extern crate lava_torrent;
 
-use std::path::PathBuf;
-use std::io::{BufReader, Read};
-use std::collections::HashMap;
-use std::iter::FromIterator;
 use conv::ValueFrom;
 use lava_torrent::bencode::BencodeElem;
 use lava_torrent::torrent::v1::{File, Torrent};
+use std::collections::HashMap;
+use std::io::{BufReader, Read};
+use std::iter::FromIterator;
+use std::path::PathBuf;
 
 #[test]
 fn read_from_bytes() {

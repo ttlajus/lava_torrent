@@ -1,14 +1,14 @@
-use std::path::Path;
+use super::*;
+use std::borrow::Cow;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, Read};
-use std::collections::HashMap;
 use std::iter::FromIterator;
-use std::borrow::Cow;
+use std::path::Path;
 use unicode_normalization::UnicodeNormalization;
-use {Error, ErrorKind, Result};
 use util;
 use util::ByteBuffer;
-use super::*;
+use {Error, ErrorKind, Result};
 
 impl BencodeElem {
     /// Parse `bytes` and return all `BencodeElem` found.

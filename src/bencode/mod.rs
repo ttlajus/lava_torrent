@@ -3,11 +3,11 @@
 //! Most of methods are associated methods of `BencodeElem`. Some general methods
 //! are placed at the module level, and they can be found in [`write`](write/index.html).
 
-use std::fmt;
-use std::convert::From;
-use std::collections::HashMap;
 use itertools;
 use itertools::Itertools;
+use std::collections::HashMap;
+use std::convert::From;
+use std::fmt;
 
 #[cfg(test)]
 #[macro_use]

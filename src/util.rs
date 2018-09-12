@@ -1,6 +1,6 @@
-use std::path::{Path, PathBuf};
-use std::borrow::Cow;
 use conv::ValueFrom;
+use std::borrow::Cow;
+use std::path::{Path, PathBuf};
 use {Error, ErrorKind, Result};
 
 pub(crate) fn u64_to_usize(src: u64) -> Result<usize> {

@@ -130,7 +130,7 @@ mod bencode_elem_macro_tests {
                         )),
                     ),
                     ("spam".to_owned(), BencodeElem::String("eggs".to_owned())),
-                ].into_iter()
+                ].into_iter(),
             ))
         )
     }

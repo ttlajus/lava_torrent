@@ -1,6 +1,6 @@
-use std::io::{BufWriter, Write};
-use bencode::BencodeElem;
 use super::*;
+use bencode::BencodeElem;
+use std::io::{BufWriter, Write};
 
 impl File {
     pub(crate) fn into_bencode_elem(self) -> BencodeElem {

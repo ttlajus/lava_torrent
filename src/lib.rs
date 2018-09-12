@@ -121,9 +121,9 @@ extern crate crypto;
 extern crate itertools;
 extern crate unicode_normalization;
 
-use std::fmt;
 use std::borrow::Cow;
 use std::convert::From;
+use std::fmt;
 
 pub(crate) mod util;
 #[macro_use]

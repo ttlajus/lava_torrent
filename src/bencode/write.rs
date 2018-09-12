@@ -1,12 +1,12 @@
 //! Module for bencode-related encoding.
 
-use std::io::{BufWriter, Write};
-use std::fs::File;
-use std::path::Path;
-use std::borrow::Cow;
-use std::hash::BuildHasher;
-use {Error, ErrorKind, Result};
 use super::*;
+use std::borrow::Cow;
+use std::fs::File;
+use std::hash::BuildHasher;
+use std::io::{BufWriter, Write};
+use std::path::Path;
+use {Error, ErrorKind, Result};
 
 /// Encode `string` and write the result to `dst`.
 pub fn write_string<W>(string: &str, dst: &mut W) -> Result<()>
@@ -167,8 +167,8 @@ mod bencode_elem_write_tests {
     // @note: `write_into_file()` is not tested as it is best
     // left to integration tests (in `tests/`).
     use super::*;
-    use std::iter::FromIterator;
     use std::collections::hash_map::RandomState;
+    use std::iter::FromIterator;
 
     #[test]
     fn write_string_ok() {
@@ -198,7 +198,7 @@ mod bencode_elem_write_tests {
         assert_eq!(
             vec,
             vec![
-                b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e'
+                b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e',
             ]
         );
     }
@@ -250,7 +250,7 @@ mod bencode_elem_write_tests {
         assert_eq!(
             encode_list(&vec![bencode_elem!(42), bencode_elem!("spam")]),
             vec![
-                b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e'
+                b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e',
             ],
         )
     }
@@ -301,7 +301,7 @@ mod bencode_elem_write_tests {
         assert_eq!(
             vec,
             vec![
-                b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e'
+                b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e',
             ]
         );
     }
@@ -344,7 +344,7 @@ mod bencode_elem_write_tests {
         assert_eq!(
             bencode_elem!([42, "spam"]).encode(),
             vec![
-                b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e'
+                b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e',
             ],
         )
     }

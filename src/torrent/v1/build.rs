@@ -1,9 +1,9 @@
+use super::*;
+use crypto::digest::Digest;
+use crypto::sha1::Sha1;
 use std::io::{BufReader, Read};
 use std::path::Component;
-use crypto::sha1::Sha1;
-use crypto::digest::Digest;
 use util;
-use super::*;
 
 impl TorrentBuilder {
     /// Create a new `TorrentBuilder` with required fields set.
@@ -444,7 +444,8 @@ impl TorrentBuilder {
             if total_read >= length {
                 break;
             } else {
-                total_read += file.by_ref()
+                total_read += file
+                    .by_ref()
                     .take(util::usize_to_u64(piece_length)?)
                     .read_to_end(&mut piece)?;
             }

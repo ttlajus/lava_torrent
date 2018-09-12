@@ -539,15 +539,13 @@ mod file_read_tests {
     #[test]
     fn extract_file_path_component_not_string() {
         let mut dict = HashMap::from_iter(
-            vec![
-                (
-                    "path".to_owned(),
-                    BencodeElem::List(vec![
-                        BencodeElem::String("root".to_owned()),
-                        BencodeElem::Bytes(".bashrc".as_bytes().to_vec()),
-                    ]),
-                ),
-            ].into_iter(),
+            vec![(
+                "path".to_owned(),
+                BencodeElem::List(vec![
+                    BencodeElem::String("root".to_owned()),
+                    BencodeElem::Bytes(".bashrc".as_bytes().to_vec()),
+                ]),
+            )].into_iter(),
         );
 
         match File::extract_file_path(&mut dict) {
@@ -559,15 +557,13 @@ mod file_read_tests {
     #[test]
     fn extract_file_path_component_invalid() {
         let mut dict = HashMap::from_iter(
-            vec![
-                (
-                    "path".to_owned(),
-                    BencodeElem::List(vec![
-                        BencodeElem::String("root".to_owned()),
-                        BencodeElem::String(".".to_owned()),
-                    ]),
-                ),
-            ].into_iter(),
+            vec![(
+                "path".to_owned(),
+                BencodeElem::List(vec![
+                    BencodeElem::String("root".to_owned()),
+                    BencodeElem::String(".".to_owned()),
+                ]),
+            )].into_iter(),
         );
 
         match File::extract_file_path(&mut dict) {
@@ -579,15 +575,13 @@ mod file_read_tests {
     #[test]
     fn extract_file_path_component_invalid_2() {
         let mut dict = HashMap::from_iter(
-            vec![
-                (
-                    "path".to_owned(),
-                    BencodeElem::List(vec![
-                        BencodeElem::String("root".to_owned()),
-                        BencodeElem::String("..".to_owned()),
-                    ]),
-                ),
-            ].into_iter(),
+            vec![(
+                "path".to_owned(),
+                BencodeElem::List(vec![
+                    BencodeElem::String("root".to_owned()),
+                    BencodeElem::String("..".to_owned()),
+                ]),
+            )].into_iter(),
         );
 
         match File::extract_file_path(&mut dict) {
@@ -704,8 +698,7 @@ mod torrent_read_tests {
 
     #[test]
     fn from_parsed_ok() {
-        let dict = vec![
-            bencode_elem!({
+        let dict = vec![bencode_elem!({
                 ("announce", "url"),
                 ("info", {
                     ("name", "??"),
@@ -717,8 +710,7 @@ mod torrent_read_tests {
                             0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13)
                     ),
                 }),
-            }),
-        ];
+            })];
 
         assert_eq!(
             Torrent::from_parsed(dict).unwrap(),
@@ -729,12 +721,10 @@ mod torrent_read_tests {
                 files: None,
                 name: "??".to_owned(),
                 piece_length: 2,
-                pieces: vec![
-                    vec![
-                        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
-                        0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13,
-                    ],
-                ],
+                pieces: vec![vec![
+                    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
+                    0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13,
+                ]],
                 extra_fields: None,
                 extra_info_fields: None,
             }
@@ -819,12 +809,10 @@ mod torrent_read_tests {
     #[test]
     fn extract_announce_not_string() {
         let mut dict = HashMap::from_iter(
-            vec![
-                (
-                    "announce".to_owned(),
-                    BencodeElem::Bytes("url".as_bytes().to_vec()),
-                ),
-            ].into_iter(),
+            vec![(
+                "announce".to_owned(),
+                BencodeElem::Bytes("url".as_bytes().to_vec()),
+            )].into_iter(),
         );
 
         match Torrent::extract_announce(&mut dict) {
@@ -868,12 +856,10 @@ mod torrent_read_tests {
     #[test]
     fn extract_announce_list_ok() {
         let mut dict = HashMap::from_iter(
-            vec![
-                (
-                    "announce-list".to_owned(),
-                    bencode_elem!([["url1", "url2"], ["url3", "url4"]]),
-                ),
-            ].into_iter(),
+            vec![(
+                "announce-list".to_owned(),
+                bencode_elem!([["url1", "url2"], ["url3", "url4"]]),
+            )].into_iter(),
         );
 
         assert_eq!(
@@ -904,16 +890,14 @@ mod torrent_read_tests {
     #[test]
     fn extract_files_ok() {
         let mut dict = HashMap::from_iter(
-            vec![
-                (
-                    "files".to_owned(),
-                    bencode_elem!([{
+            vec![(
+                "files".to_owned(),
+                bencode_elem!([{
                         ("length", 42),
                         ("path", ["root", ".bashrc"]),
                         ("comment", "no comment"),
                     }]),
-                ),
-            ].into_iter(),
+            )].into_iter(),
         );
 
         let files = Torrent::extract_files(&mut dict).unwrap().unwrap();
@@ -967,13 +951,11 @@ mod torrent_read_tests {
     fn extract_length_conflict_with_files() {
         let mut dict =
             HashMap::from_iter(vec![("length".to_owned(), bencode_elem!(42))].into_iter());
-        let files = Some(vec![
-            File {
-                length: 100,
-                path: PathBuf::new(),
-                extra_fields: None,
-            },
-        ]);
+        let files = Some(vec![File {
+            length: 100,
+            path: PathBuf::new(),
+            extra_fields: None,
+        }]);
 
         match Torrent::extract_length(&mut dict, &files) {
             Ok(_) => assert!(false),
@@ -1005,13 +987,11 @@ mod torrent_read_tests {
     #[test]
     fn extract_length_missing_have_files() {
         let mut dict = HashMap::new();
-        let files = Some(vec![
-            File {
-                length: 100,
-                path: PathBuf::new(),
-                extra_fields: None,
-            },
-        ]);
+        let files = Some(vec![File {
+            length: 100,
+            path: PathBuf::new(),
+            extra_fields: None,
+        }]);
 
         assert_eq!(Torrent::extract_length(&mut dict, &files).unwrap(), 100);
     }
@@ -1052,12 +1032,10 @@ mod torrent_read_tests {
     #[test]
     fn extract_name_not_string() {
         let mut dict = HashMap::from_iter(
-            vec![
-                (
-                    "name".to_owned(),
-                    BencodeElem::Bytes("not name".as_bytes().to_vec()),
-                ),
-            ].into_iter(),
+            vec![(
+                "name".to_owned(),
+                BencodeElem::Bytes("not name".as_bytes().to_vec()),
+            )].into_iter(),
         );
 
         match Torrent::extract_name(&mut dict) {
@@ -1118,15 +1096,13 @@ mod torrent_read_tests {
     #[test]
     fn extract_pieces_ok() {
         let mut dict = HashMap::from_iter(
-            vec![
-                (
-                    "pieces".to_owned(),
-                    BencodeElem::Bytes(vec![
-                        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
-                        0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13,
-                    ]),
-                ),
-            ].into_iter(),
+            vec![(
+                "pieces".to_owned(),
+                BencodeElem::Bytes(vec![
+                    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
+                    0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13,
+                ]),
+            )].into_iter(),
         );
 
         let pieces = Torrent::extract_pieces(&mut dict).unwrap();
@@ -1176,15 +1152,13 @@ mod torrent_read_tests {
     #[test]
     fn extract_pieces_invalid_length() {
         let mut dict = HashMap::from_iter(
-            vec![
-                (
-                    "pieces".to_owned(),
-                    BencodeElem::Bytes(vec![
-                        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
-                        0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12,
-                    ]),
-                ),
-            ].into_iter(),
+            vec![(
+                "pieces".to_owned(),
+                BencodeElem::Bytes(vec![
+                    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
+                    0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12,
+                ]),
+            )].into_iter(),
         );
 
         match Torrent::extract_pieces(&mut dict) {

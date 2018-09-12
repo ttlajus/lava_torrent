@@ -1,11 +1,11 @@
 extern crate lava_torrent;
 extern crate rand;
 
-use std::path::PathBuf;
-use rand::Rng;
-use lava_torrent::ErrorKind;
 use lava_torrent::bencode::BencodeElem;
 use lava_torrent::torrent::v1::{Integer, Torrent, TorrentBuilder};
+use lava_torrent::ErrorKind;
+use rand::Rng;
+use std::path::PathBuf;
 
 const OUTPUT_ROOT: &str = "tests/tmp/";
 const PIECE_LENGTH: Integer = 32 * 1024; // n * 1024 KiB
