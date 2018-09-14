@@ -4,12 +4,12 @@
 use bencode::BencodeElem;
 use crypto::digest::Digest;
 use crypto::sha1::Sha1;
+use error::*;
 use itertools::Itertools;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
-use {Error, ErrorKind, Result};
 
 mod build;
 mod read;
@@ -137,10 +137,9 @@ impl File {
         if result.is_absolute() {
             Ok(result)
         } else {
-            Err(Error::new(
-                ErrorKind::IOError,
-                Cow::Borrowed("Joined path is not absolute."),
-            ))
+            bail!(ErrorKind::InvalidArgument(Cow::Borrowed(
+                "Joined path is not absolute."
+            )))
         }
     }
 }
@@ -381,8 +380,10 @@ mod file_tests {
         };
 
         match file.absolute_path("root") {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::IOError),
+            Err(Error(ErrorKind::InvalidArgument(m), _)) => {
+                assert_eq!(m, "Joined path is not absolute.");
+            }
+            _ => assert!(false),
         }
     }
 }

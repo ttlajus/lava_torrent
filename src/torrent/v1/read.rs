@@ -13,10 +13,9 @@ impl File {
                 path: Self::extract_file_path(&mut dict)?,
                 extra_fields: Self::extract_file_extra_fields(dict),
             }),
-            _ => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"files\" contains a non-dictionary element."),
-            )),
+            _ => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""files" contains a non-dictionary element."#
+            ))),
         }
     }
 
@@ -26,20 +25,17 @@ impl File {
                 if len >= 0 {
                     Ok(len)
                 } else {
-                    Err(Error::new(
-                        ErrorKind::MalformedTorrent,
-                        Cow::Borrowed("\"length\" < 0."),
-                    ))
+                    bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                        r#""length" < 0."#
+                    )))
                 }
             }
-            Some(_) => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"length\" does not map to an integer."),
-            )),
-            None => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"length\" does not exist."),
-            )),
+            Some(_) => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""length" does not map to an integer."#
+            ))),
+            None => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""length" does not exist."#
+            ))),
         }
     }
 
@@ -47,10 +43,9 @@ impl File {
         match dict.remove("path") {
             Some(BencodeElem::List(list)) => {
                 if list.is_empty() {
-                    Err(Error::new(
-                        ErrorKind::MalformedTorrent,
-                        Cow::Borrowed("\"path\" maps to a 0-length list."),
-                    ))
+                    bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                        r#""path" maps to a 0-length list."#
+                    )))
                 } else {
                     let mut path = PathBuf::new();
                     for component in list {
@@ -61,31 +56,27 @@ impl File {
                             // Rust rejects overlong encodings, and NFC
                             // normalization is performed when parsing bencode.
                             if (component == ".") || (component == "..") {
-                                return Err(Error::new(
-                                    ErrorKind::MalformedTorrent,
-                                    Cow::Borrowed("\"path\" contains \".\" or \"..\"."),
-                                ));
+                                bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                                    r#""path" contains "." or ".."."#
+                                )));
                             } else {
                                 path.push(component);
                             }
                         } else {
-                            return Err(Error::new(
-                                ErrorKind::MalformedTorrent,
-                                Cow::Borrowed("\"path\" contains a non-string element."),
-                            ));
+                            bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                                r#""path" contains a non-string element."#
+                            )));
                         }
                     }
                     Ok(path)
                 }
             }
-            Some(_) => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"path\" does not map to a list."),
-            )),
-            None => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"path\" does not exist."),
-            )),
+            Some(_) => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""path" does not map to a list."#
+            ))),
+            None => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""path" does not exist."#
+            ))),
         }
     }
 
@@ -129,38 +120,30 @@ impl Torrent {
             util::i64_to_usize(self.piece_length)?.checked_mul(self.pieces.len())
         {
             if total_piece_length < util::i64_to_usize(self.length)? {
-                Err(Error::new(
-                    ErrorKind::MalformedTorrent,
-                    Cow::Owned(format!(
-                        "Total piece length {} < torrent's length {}.",
-                        total_piece_length, self.length,
-                    )),
-                ))
+                bail!(ErrorKind::MalformedTorrent(Cow::Owned(format!(
+                    "Total piece length {} < torrent's length {}.",
+                    total_piece_length, self.length,
+                ))))
             } else if self.length <= 0 {
-                Err(Error::new(
-                    ErrorKind::MalformedTorrent,
-                    Cow::Borrowed("\"length\" <= 0."),
-                ))
+                bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                    r#""length" <= 0."#
+                )))
             } else {
                 Ok(self)
             }
         } else {
-            Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("Torrent's total piece length overflowed in usize."),
-            ))
+            bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                "Torrent's total piece length overflowed in usize."
+            )))
         }
     }
 
     fn from_parsed(mut parsed: Vec<BencodeElem>) -> Result<Torrent> {
         if parsed.len() != 1 {
-            return Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Owned(format!(
-                    "Torrent should contain 1 and only 1 top-level element, {} found.",
-                    parsed.len()
-                )),
-            ));
+            bail!(ErrorKind::MalformedTorrent(Cow::Owned(format!(
+                "Torrent should contain 1 and only 1 top-level element, {} found.",
+                parsed.len()
+            ))));
         }
 
         if let BencodeElem::Dictionary(mut parsed) = parsed.remove(0) {
@@ -188,34 +171,29 @@ impl Torrent {
                         extra_info_fields: Self::extract_extra_fields(info),
                     })
                 }
-                Some(_) => Err(Error::new(
-                    ErrorKind::MalformedTorrent,
-                    Cow::Borrowed("\"info\" is not a dictionary."),
-                )),
-                None => Err(Error::new(
-                    ErrorKind::MalformedTorrent,
-                    Cow::Borrowed("\"info\" does not exist."),
-                )),
+                Some(_) => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                    r#""info" is not a dictionary."#
+                ))),
+                None => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                    r#""info" does not exist."#
+                ))),
             }
         } else {
-            Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("Torrent's top-level element is not a dictionary."),
-            ))
+            bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                "Torrent's top-level element is not a dictionary."
+            )))
         }
     }
 
     fn extract_announce(dict: &mut HashMap<String, BencodeElem>) -> Result<String> {
         match dict.remove("announce") {
             Some(BencodeElem::String(url)) => Ok(url),
-            Some(_) => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"announce\" does not map to a string (or maps to invalid UTF8)."),
-            )),
-            None => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"announce\" does not exist."),
-            )),
+            Some(_) => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""announce" does not map to a string (or maps to invalid UTF8)."#
+            ))),
+            None => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""announce" does not exist."#
+            ))),
         }
     }
 
@@ -231,10 +209,9 @@ impl Torrent {
                 }
                 Ok(Some(announce_list))
             }
-            Some(_) => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"announce-list\" does not map to a list."),
-            )),
+            Some(_) => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""announce-list" does not map to a list."#
+            ))),
             // Since BEP 12 is an extension,
             // the existence of `announce-list` is not guaranteed.
             None => Ok(None),
@@ -248,23 +225,16 @@ impl Torrent {
                 for url in urls {
                     match url {
                         BencodeElem::String(url) => tier.push(url),
-                        _ => {
-                            return Err(Error::new(
-                                ErrorKind::MalformedTorrent,
-                                Cow::Borrowed(
-                                    "A tier within \"announce-list\" \
-                                     contains a non-string element.",
-                                ),
-                            ));
-                        }
+                        _ => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                            r#"A tier within "announce-list" contains a non-string element."#
+                        ))),
                     }
                 }
                 Ok(tier)
             }
-            _ => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"announce-list\" contains a non-list element."),
-            )),
+            _ => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""announce-list" contains a non-list element."#
+            ))),
         }
     }
 
@@ -272,10 +242,9 @@ impl Torrent {
         match dict.remove("files") {
             Some(BencodeElem::List(list)) => {
                 if list.is_empty() {
-                    Err(Error::new(
-                        ErrorKind::MalformedTorrent,
-                        Cow::Borrowed("\"files\" maps to an empty list."),
-                    ))
+                    bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                        r#""files" maps to an empty list."#
+                    )))
                 } else {
                     let mut files = Vec::new();
                     for file in list {
@@ -284,10 +253,9 @@ impl Torrent {
                     Ok(Some(files))
                 }
             }
-            Some(_) => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"files\" does not map to a list."),
-            )),
+            Some(_) => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""files" does not map to a list."#
+            ))),
             None => Ok(None),
         }
     }
@@ -299,18 +267,16 @@ impl Torrent {
         match dict.remove("length") {
             Some(BencodeElem::Integer(len)) => {
                 if files.is_some() {
-                    Err(Error::new(
-                        ErrorKind::MalformedTorrent,
-                        Cow::Borrowed("Both \"length\" and \"files\" exist."),
-                    ))
+                    bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                        r#"Both "length" and "files" exist."#
+                    )))
                 } else {
                     Ok(len)
                 }
             }
-            Some(_) => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"length\" does not map to an integer."),
-            )),
+            Some(_) => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""length" does not map to an integer."#
+            ))),
             None => {
                 if let Some(ref files) = *files {
                     let mut length: i64 = 0;
@@ -320,19 +286,17 @@ impl Torrent {
                                 length = sum;
                             }
                             None => {
-                                return Err(Error::new(
-                                    ErrorKind::MalformedTorrent,
-                                    Cow::Borrowed("Torrent's length overflowed in i64."),
-                                ));
+                                bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                                    r#"Torrent's length overflowed in i64."#
+                                )));
                             }
                         }
                     }
                     Ok(length)
                 } else {
-                    Err(Error::new(
-                        ErrorKind::MalformedTorrent,
-                        Cow::Borrowed("Neither \"length\" nor \"files\" exists."),
-                    ))
+                    bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                        r#"Neither "length" nor "files" exists."#
+                    )))
                 }
             }
         }
@@ -341,14 +305,12 @@ impl Torrent {
     fn extract_name(dict: &mut HashMap<String, BencodeElem>) -> Result<String> {
         match dict.remove("name") {
             Some(BencodeElem::String(name)) => Ok(name),
-            Some(_) => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"name\" does not map to a string (or maps to invalid UTF8)."),
-            )),
-            None => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"name\" does not exist."),
-            )),
+            Some(_) => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""name" does not map to a string (or maps to invalid UTF8)."#
+            ))),
+            None => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""name" does not exist."#
+            ))),
         }
     }
 
@@ -358,20 +320,17 @@ impl Torrent {
                 if len > 0 {
                     Ok(len)
                 } else {
-                    Err(Error::new(
-                        ErrorKind::MalformedTorrent,
-                        Cow::Borrowed("\"piece length\" <= 0."),
-                    ))
+                    bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                        r#""piece length" <= 0."#
+                    )))
                 }
             }
-            Some(_) => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"piece length\" does not map to an integer."),
-            )),
-            None => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"piece length\" does not exist."),
-            )),
+            Some(_) => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""piece length" does not map to an integer."#
+            ))),
+            None => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""piece length" does not exist."#
+            ))),
         }
     }
 
@@ -379,18 +338,14 @@ impl Torrent {
         match dict.remove("pieces") {
             Some(BencodeElem::Bytes(bytes)) => {
                 if bytes.is_empty() {
-                    Err(Error::new(
-                        ErrorKind::MalformedTorrent,
-                        Cow::Borrowed("\"pieces\" maps to an empty sequence."),
-                    ))
+                    bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                        r#""pieces" maps to an empty sequence."#
+                    )))
                 } else if (bytes.len() % PIECE_STRING_LENGTH) != 0 {
-                    Err(Error::new(
-                        ErrorKind::MalformedTorrent,
-                        Cow::Owned(format!(
-                            "\"pieces\"' length is not a multiple of {}.",
-                            PIECE_STRING_LENGTH,
-                        )),
-                    ))
+                    bail!(ErrorKind::MalformedTorrent(Cow::Owned(format!(
+                        r#""pieces"' length is not a multiple of {}."#,
+                        PIECE_STRING_LENGTH,
+                    ))))
                 } else {
                     Ok(bytes
                         .chunks(PIECE_STRING_LENGTH)
@@ -398,14 +353,12 @@ impl Torrent {
                         .collect())
                 }
             }
-            Some(_) => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"pieces\" does not map to a sequence of bytes."),
-            )),
-            None => Err(Error::new(
-                ErrorKind::MalformedTorrent,
-                Cow::Borrowed("\"pieces\" does not exist."),
-            )),
+            Some(_) => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""pieces" does not map to a sequence of bytes."#
+            ))),
+            None => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""pieces" does not exist."#
+            ))),
         }
     }
 
@@ -448,8 +401,10 @@ mod file_read_tests {
         let file = bencode_elem!([]);
 
         match File::extract_file(file) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""files" contains a non-dictionary element."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -466,8 +421,8 @@ mod file_read_tests {
             HashMap::from_iter(vec![("length".to_owned(), bencode_elem!(-1))].into_iter());
 
         match File::extract_file_length(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => assert_eq!(m, r#""length" < 0."#),
+            _ => assert!(false),
         }
     }
 
@@ -477,8 +432,10 @@ mod file_read_tests {
             HashMap::from_iter(vec![("length".to_owned(), bencode_elem!("42"))].into_iter());
 
         match File::extract_file_length(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""length" does not map to an integer."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -487,8 +444,10 @@ mod file_read_tests {
         let mut dict = HashMap::new();
 
         match File::extract_file_length(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""length" does not exist."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -511,8 +470,10 @@ mod file_read_tests {
         );
 
         match File::extract_file_path(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""path" does not map to a list."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -521,8 +482,10 @@ mod file_read_tests {
         let mut dict = HashMap::new();
 
         match File::extract_file_path(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""path" does not exist."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -531,8 +494,10 @@ mod file_read_tests {
         let mut dict = HashMap::from_iter(vec![("path".to_owned(), bencode_elem!([]))].into_iter());
 
         match File::extract_file_path(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""path" maps to a 0-length list."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -549,8 +514,10 @@ mod file_read_tests {
         );
 
         match File::extract_file_path(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""path" contains a non-string element."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -567,8 +534,10 @@ mod file_read_tests {
         );
 
         match File::extract_file_path(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""path" contains "." or ".."."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -585,8 +554,10 @@ mod file_read_tests {
         );
 
         match File::extract_file_path(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""path" contains "." or ".."."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -651,8 +622,10 @@ mod torrent_read_tests {
         };
 
         match torrent.validate() {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, "Total piece length 4 < torrent's length 6.");
+            }
+            _ => assert!(false),
         }
     }
 
@@ -671,8 +644,8 @@ mod torrent_read_tests {
         };
 
         match torrent.validate() {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => assert_eq!(m, r#""length" <= 0."#),
+            _ => assert!(false),
         }
     }
 
@@ -691,8 +664,10 @@ mod torrent_read_tests {
         };
 
         match torrent.validate() {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, "Torrent's total piece length overflowed in usize.");
+            }
+            _ => assert!(false),
         }
     }
 
@@ -736,8 +711,11 @@ mod torrent_read_tests {
         let dict = vec![bencode_elem!({}), bencode_elem!([])];
 
         match Torrent::from_parsed(dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => assert_eq!(
+                m,
+                "Torrent should contain 1 and only 1 top-level element, 2 found."
+            ),
+            _ => assert!(false),
         }
     }
 
@@ -746,8 +724,11 @@ mod torrent_read_tests {
         let dict = Vec::new();
 
         match Torrent::from_parsed(dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => assert_eq!(
+                m,
+                "Torrent should contain 1 and only 1 top-level element, 0 found."
+            ),
+            _ => assert!(false),
         }
     }
 
@@ -756,8 +737,10 @@ mod torrent_read_tests {
         let dict = vec![bencode_elem!([])];
 
         match Torrent::from_parsed(dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, "Torrent's top-level element is not a dictionary.");
+            }
+            _ => assert!(false),
         }
     }
 
@@ -768,8 +751,10 @@ mod torrent_read_tests {
         let dict = vec![bencode_elem!({ ("announce", "url") })];
 
         match Torrent::from_parsed(dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""info" does not exist."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -780,8 +765,10 @@ mod torrent_read_tests {
         let parsed = vec![bencode_elem!({ ("announce", "url"), ("info", []) })];
 
         match Torrent::from_parsed(parsed) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""info" is not a dictionary."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -801,8 +788,10 @@ mod torrent_read_tests {
         let mut dict = HashMap::new();
 
         match Torrent::extract_announce(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""announce" does not exist."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -816,8 +805,11 @@ mod torrent_read_tests {
         );
 
         match Torrent::extract_announce(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => assert_eq!(
+                m,
+                r#""announce" does not map to a string (or maps to invalid UTF8)."#
+            ),
+            _ => assert!(false),
         }
     }
 
@@ -835,8 +827,10 @@ mod torrent_read_tests {
     fn extract_announce_list_tier_not_list() {
         let tier = bencode_elem!({});
         match Torrent::extract_announce_list_tier(tier) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""announce-list" contains a non-list element."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -848,8 +842,11 @@ mod torrent_read_tests {
         ]);
 
         match Torrent::extract_announce_list_tier(tier) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => assert_eq!(
+                m,
+                r#"A tier within "announce-list" contains a non-string element."#
+            ),
+            _ => assert!(false),
         }
     }
 
@@ -882,8 +879,10 @@ mod torrent_read_tests {
         let mut dict = HashMap::from_iter(vec![("announce-list".to_owned(), bencode_elem!({}))]);
 
         match Torrent::extract_announce_list(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""announce-list" does not map to a list."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -919,8 +918,10 @@ mod torrent_read_tests {
         let mut dict = HashMap::from_iter(vec![("files".to_owned(), bencode_elem!({}))]);
 
         match Torrent::extract_files(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""files" does not map to a list."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -935,8 +936,10 @@ mod torrent_read_tests {
         let mut dict = HashMap::from_iter(vec![("files".to_owned(), bencode_elem!([]))]);
 
         match Torrent::extract_files(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""files" maps to an empty list."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -958,8 +961,10 @@ mod torrent_read_tests {
         }]);
 
         match Torrent::extract_length(&mut dict, &files) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#"Both "length" and "files" exist."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -969,8 +974,10 @@ mod torrent_read_tests {
             HashMap::from_iter(vec![("length".to_owned(), bencode_elem!("42"))].into_iter());
 
         match Torrent::extract_length(&mut dict, &None) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""length" does not map to an integer."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -979,8 +986,10 @@ mod torrent_read_tests {
         let mut dict = HashMap::new();
 
         match Torrent::extract_length(&mut dict, &None) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#"Neither "length" nor "files" exists."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -1013,8 +1022,10 @@ mod torrent_read_tests {
         ]);
 
         match Torrent::extract_length(&mut dict, &files) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#"Torrent's length overflowed in i64."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -1039,8 +1050,11 @@ mod torrent_read_tests {
         );
 
         match Torrent::extract_name(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => assert_eq!(
+                m,
+                r#""name" does not map to a string (or maps to invalid UTF8)."#
+            ),
+            _ => assert!(false),
         }
     }
 
@@ -1049,8 +1063,10 @@ mod torrent_read_tests {
         let mut dict = HashMap::new();
 
         match Torrent::extract_name(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""name" does not exist."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -1067,8 +1083,10 @@ mod torrent_read_tests {
             HashMap::from_iter(vec![("piece length".to_owned(), bencode_elem!("1"))].into_iter());
 
         match Torrent::extract_piece_length(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""piece length" does not map to an integer."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -1077,8 +1095,10 @@ mod torrent_read_tests {
         let mut dict = HashMap::new();
 
         match Torrent::extract_piece_length(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""piece length" does not exist."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -1088,8 +1108,10 @@ mod torrent_read_tests {
             HashMap::from_iter(vec![("piece length".to_owned(), bencode_elem!(0))].into_iter());
 
         match Torrent::extract_piece_length(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""piece length" <= 0."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -1123,8 +1145,10 @@ mod torrent_read_tests {
             HashMap::from_iter(vec![("pieces".to_owned(), bencode_elem!("???"))].into_iter());
 
         match Torrent::extract_pieces(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""pieces" does not map to a sequence of bytes."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -1133,8 +1157,10 @@ mod torrent_read_tests {
         let mut dict = HashMap::new();
 
         match Torrent::extract_pieces(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""pieces" does not exist."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -1144,8 +1170,10 @@ mod torrent_read_tests {
             HashMap::from_iter(vec![("pieces".to_owned(), bencode_elem!(()))].into_iter());
 
         match Torrent::extract_pieces(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
+                assert_eq!(m, r#""pieces" maps to an empty sequence."#);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -1162,8 +1190,14 @@ mod torrent_read_tests {
         );
 
         match Torrent::extract_pieces(&mut dict) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::MalformedTorrent),
+            Err(Error(ErrorKind::MalformedTorrent(m), _)) => assert_eq!(
+                m,
+                format!(
+                    r#""pieces"' length is not a multiple of {}."#,
+                    PIECE_STRING_LENGTH,
+                )
+            ),
+            _ => assert!(false),
         }
     }
 

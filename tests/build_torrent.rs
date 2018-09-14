@@ -2,8 +2,8 @@ extern crate lava_torrent;
 extern crate rand;
 
 use lava_torrent::bencode::BencodeElem;
+use lava_torrent::error::*;
 use lava_torrent::torrent::v1::{Integer, Torrent, TorrentBuilder};
-use lava_torrent::ErrorKind;
 use rand::Rng;
 use std::path::PathBuf;
 
@@ -171,7 +171,9 @@ fn build_hidden_file() {
     ).build();
 
     match result {
-        Ok(_) => assert!(false),
-        Err(e) => assert_eq!(e.kind(), ErrorKind::TorrentBuilderFailure),
+        Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
+            assert_eq!(m, "Root path contains hidden components.");
+        }
+        _ => assert!(false),
     }
 }

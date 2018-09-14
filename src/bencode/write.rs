@@ -1,12 +1,11 @@
 //! Module for bencode-related encoding.
 
 use super::*;
-use std::borrow::Cow;
+use error::*;
 use std::fs::File;
 use std::hash::BuildHasher;
 use std::io::{BufWriter, Write};
 use std::path::Path;
-use {Error, ErrorKind, Result};
 
 /// Encode `string` and write the result to `dst`.
 pub fn write_string<W>(string: &str, dst: &mut W) -> Result<()>
@@ -137,17 +136,10 @@ impl BencodeElem {
     where
         P: AsRef<Path>,
     {
-        match File::create(&path) {
-            Ok(file) => {
-                self.write_into(&mut BufWriter::new(&file))?;
-                file.sync_all()?;
-                Ok(())
-            }
-            Err(_) => Err(Error::new(
-                ErrorKind::IOError,
-                Cow::Owned(format!("Failed to create [{}].", path.as_ref().display())),
-            )),
-        }
+        let file = File::create(&path)?;
+        self.write_into(&mut BufWriter::new(&file))?;
+        file.sync_all()?;
+        Ok(())
     }
 
     /// Encode `self` and return the result in a `Vec`.

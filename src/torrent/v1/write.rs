@@ -100,17 +100,10 @@ impl Torrent {
     where
         P: AsRef<Path>,
     {
-        match ::std::fs::File::create(&path) {
-            Ok(file) => {
-                self.write_into(&mut BufWriter::new(&file))?;
-                file.sync_all()?;
-                Ok(())
-            }
-            Err(_) => Err(Error::new(
-                ErrorKind::IOError,
-                Cow::Owned(format!("Failed to create [{}].", path.as_ref().display())),
-            )),
-        }
+        let file = ::std::fs::File::create(&path)?;
+        self.write_into(&mut BufWriter::new(&file))?;
+        file.sync_all()?;
+        Ok(())
     }
 
     /// Encode `self` as bencode and return the result in a `Vec`.

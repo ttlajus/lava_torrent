@@ -80,8 +80,8 @@ fn read_from_file() {
     BufReader::new(file).read_to_end(&mut bytes).unwrap();
 
     assert_eq!(
-        Torrent::read_from_bytes(bytes),
-        Torrent::read_from_file("tests/files/ubuntu-16.04.4-desktop-amd64.iso.torrent"),
+        Torrent::read_from_bytes(bytes).unwrap(),
+        Torrent::read_from_file("tests/files/ubuntu-16.04.4-desktop-amd64.iso.torrent").unwrap(),
     );
 }
 
@@ -174,7 +174,7 @@ fn read_from_files_multiple_files() {
     BufReader::new(file).read_to_end(&mut bytes).unwrap();
 
     assert_eq!(
-        Torrent::read_from_bytes(bytes),
-        Torrent::read_from_file("tests/files/tails-amd64-3.6.1.torrent"),
+        Torrent::read_from_bytes(bytes).unwrap(),
+        Torrent::read_from_file("tests/files/tails-amd64-3.6.1.torrent").unwrap(),
     );
 }

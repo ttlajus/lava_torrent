@@ -1,50 +1,34 @@
 use conv::ValueFrom;
+use error::*;
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
-use {Error, ErrorKind, Result};
 
 pub(crate) fn u64_to_usize(src: u64) -> Result<usize> {
     // @todo: switch to `usize::try_from()` when it's stable
-    match usize::value_from(src) {
-        Ok(n) => Ok(n),
-        Err(_) => Err(Error::new(
-            ErrorKind::IOError,
-            Cow::Owned(format!("[{}] does not fit into usize.", src)),
-        )),
-    }
+    usize::value_from(src).chain_err(|| {
+        ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into usize.", src)))
+    })
 }
 
 pub(crate) fn usize_to_u64(src: usize) -> Result<u64> {
     // @todo: switch to `u64::try_from()` when it's stable
-    match u64::value_from(src) {
-        Ok(n) => Ok(n),
-        Err(_) => Err(Error::new(
-            ErrorKind::IOError,
-            Cow::Owned(format!("[{}] does not fit into u64.", src)),
-        )),
-    }
+    u64::value_from(src).chain_err(|| {
+        ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into u64.", src)))
+    })
 }
 
 pub(crate) fn i64_to_usize(src: i64) -> Result<usize> {
     // @todo: switch to `usize::try_from()` when it's stable
-    match usize::value_from(src) {
-        Ok(n) => Ok(n),
-        Err(_) => Err(Error::new(
-            ErrorKind::IOError,
-            Cow::Owned(format!("[{}] does not fit into usize.", src)),
-        )),
-    }
+    usize::value_from(src).chain_err(|| {
+        ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into usize.", src)))
+    })
 }
 
 pub(crate) fn usize_to_i64(src: usize) -> Result<i64> {
     // @todo: switch to `i64::try_from()` when it's stable
-    match i64::value_from(src) {
-        Ok(n) => Ok(n),
-        Err(_) => Err(Error::new(
-            ErrorKind::IOError,
-            Cow::Owned(format!("[{}] does not fit into i64.", src)),
-        )),
-    }
+    i64::value_from(src).chain_err(|| {
+        ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into i64.", src)))
+    })
 }
 
 // this method is recursive, i.e. entries in subdirectories
@@ -86,10 +70,10 @@ where
     let path = path.as_ref();
     match path.file_name() {
         Some(s) => Ok(s.to_string_lossy().into_owned()),
-        None => Err(Error::new(
-            ErrorKind::IOError,
-            Cow::Owned(format!("[{}] ends in \"..\".", path.display())),
-        )),
+        None => bail!(ErrorKind::InvalidArgument(Cow::Owned(format!(
+            r#"[{}] ends in ".."."#,
+            path.display()
+        )))),
     }
 }
 
@@ -199,8 +183,10 @@ mod util_tests {
     #[test]
     fn last_component_err() {
         match last_component("/root/dir/..") {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::IOError),
+            Err(Error(ErrorKind::InvalidArgument(m), _)) => {
+                assert_eq!(m, r#"[/root/dir/..] ends in ".."."#,);
+            }
+            _ => assert!(false),
         }
     }
 
@@ -224,8 +210,10 @@ mod util_tests {
     #[test]
     fn i64_to_usize_err() {
         match i64_to_usize(-1) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::IOError),
+            Err(Error(ErrorKind::FailedNumericConv(m), _)) => {
+                assert_eq!(m, "[-1] does not fit into usize.");
+            }
+            _ => assert!(false),
         }
     }
 
@@ -237,8 +225,11 @@ mod util_tests {
     #[test]
     fn usize_to_i64_err() {
         match usize_to_i64(usize::max_value()) {
-            Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e.kind(), ErrorKind::IOError),
+            Err(Error(ErrorKind::FailedNumericConv(m), _)) => assert_eq!(
+                m,
+                format!("[{}] does not fit into i64.", usize::max_value())
+            ),
+            _ => assert!(false),
         }
     }
 }

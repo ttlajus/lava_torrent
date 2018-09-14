@@ -120,69 +120,60 @@ extern crate conv;
 extern crate crypto;
 extern crate itertools;
 extern crate unicode_normalization;
-
-use std::borrow::Cow;
-use std::convert::From;
-use std::fmt;
+#[macro_use]
+extern crate error_chain;
 
 pub(crate) mod util;
 #[macro_use]
 pub mod bencode;
 pub mod torrent;
 
-/// Custom `Result` type.
-pub type Result<T> = std::result::Result<T, Error>;
+/// Custom error.
+///
+/// Error Kinds Explanation
+/// - `Io`: IO error occurred. The bencode and the torrent may or may not
+/// be malformed (as we can't verify that).
+/// - `MalformedBencode`: The bencode is found to be bad before we can parse
+/// the torrent, so the torrent may or may not be malformed.
+/// this is generally unexpected behavior and thus should be handled
+/// - `MalformedTorrent`: Bencode is fine, but parsed data is gibberish, so we
+/// can't extract a torrent from it.
+/// - `TorrentBuilderFailure`: `TorrentBuilder` encounters problems when
+/// building `Torrent`. For instance, a field is set to an empty string by the caller.
+/// - `InvalidArgument`: An invalid argument is passed to a function.
+/// - `FailedNumericConv`: Conversion between numeric types (e.g. `i64 -> u64`) has failed.
+///
+pub mod error {
+    error_chain! {
+        foreign_links {
+            Io(::std::io::Error);
+        }
 
-/// Custom `Error` type.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Error {
-    kind: ErrorKind,
-    msg: Cow<'static, str>,
-}
+        errors {
+            MalformedBencode(reason: ::std::borrow::Cow<'static, str>) {
+                description("malformed bencode")
+                display("malformed bencode: {}", reason)
+            }
 
-/// Works with [`Error`](struct.Error.html) to differentiate between different kinds of errors.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum ErrorKind {
-    /// The bencode is found to be bad before we can parse the torrent,
-    /// so the torrent may or may not be malformed.
-    MalformedBencode,
-    /// IO error occurred. The bencode and the torrent may or may not
-    /// be malformed (as we can't verify that).
-    IOError,
-    /// Bencode is fine, but parsed data is gibberish, so we can't extract
-    /// a torrent from it.
-    MalformedTorrent,
-    /// `TorrentBuilder` encounters problems when building `Torrent`. For
-    /// instance, a field is set to an empty string by the caller.
-    TorrentBuilderFailure,
-}
+            MalformedTorrent(reason: ::std::borrow::Cow<'static, str>) {
+                description("malformed torrent")
+                display("malformed torrent: {}", reason)
+            }
 
-impl Error {
-    fn new(kind: ErrorKind, msg: Cow<'static, str>) -> Error {
-        Error { kind, msg }
-    }
+            TorrentBuilderFailure(reason: ::std::borrow::Cow<'static, str>) {
+                description("failed to build torrent")
+                display("failed to build torrent: {}", reason)
+            }
 
-    /// Return the kind of this error.
-    pub fn kind(&self) -> ErrorKind {
-        self.kind
-    }
-}
+            InvalidArgument(reason: ::std::borrow::Cow<'static, str>) {
+                description("invalid argument:")
+                display("invalid argument: {}", reason)
+            }
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}: {}", self.kind, self.msg)
-    }
-}
-
-impl std::error::Error for Error {
-    fn description(&self) -> &str {
-        &self.msg
-    }
-}
-
-impl From<std::io::Error> for Error {
-    // @todo: better conversion (e.g. save cause)?
-    fn from(e: std::io::Error) -> Error {
-        Error::new(ErrorKind::IOError, Cow::Owned(format!("IO error: {}.", e)))
+            FailedNumericConv(msg: ::std::borrow::Cow<'static, str>) {
+                description("numeric conversion failed:")
+                display("numeric conversion failed: {}", msg)
+            }
+        }
     }
 }
