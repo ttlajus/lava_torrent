@@ -447,6 +447,7 @@ impl TorrentBuilder {
         for (path, length) in entries {
             let mut file = BufReader::new(::std::fs::File::open(&path)?);
             let mut file_remaining = length;
+            let mut bytes = Vec::with_capacity(piece_length);
 
             loop {
                 // calculate the # of bytes to read in this iteration
@@ -459,12 +460,10 @@ impl TorrentBuilder {
                 };
 
                 // read bytes
-                // @todo: can we avoid allocating a new vec?
-                let mut bytes = Vec::with_capacity(to_read);
                 file.by_ref()
                     .take(util::usize_to_u64(to_read)?)
                     .read_to_end(&mut bytes)?;
-                piece.extend(bytes);
+                piece.append(&mut bytes);
                 file_remaining -= to_read;
 
                 // if piece is completely filled, hash it
