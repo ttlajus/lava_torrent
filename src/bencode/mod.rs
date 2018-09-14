@@ -103,7 +103,7 @@ impl From<String> for BencodeElem {
 
 impl<'a> From<&'a [u8]> for BencodeElem {
     fn from(val: &'a [u8]) -> BencodeElem {
-        BencodeElem::Bytes(val.to_vec())
+        BencodeElem::Bytes(val.to_owned())
     }
 }
 
@@ -116,7 +116,7 @@ impl From<Vec<u8>> for BencodeElem {
 impl fmt::Display for BencodeElem {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            BencodeElem::String(ref string) => write!(f, "\"{}\"", string),
+            BencodeElem::String(ref string) => write!(f, r#""{}""#, string),
             BencodeElem::Bytes(ref bytes) => write!(f, "[{:#02x}]", bytes.iter().format(", ")),
             BencodeElem::Integer(ref int) => write!(f, "{}", int),
             BencodeElem::List(ref list) => write!(f, "[{}]", itertools::join(list, ", ")),
@@ -126,7 +126,7 @@ impl fmt::Display for BencodeElem {
                 dict.iter()
                     .sorted_by_key(|&(key, _)| key.as_bytes())
                     .iter()
-                    .format_with(", ", |&(k, v), f| f(&format_args!("(\"{}\", {})", k, v)))
+                    .format_with(", ", |&(k, v), f| f(&format_args!(r#"("{}", {})"#, k, v)))
             ),
         }
     }
@@ -139,7 +139,7 @@ mod bencode_elem_display_tests {
 
     #[test]
     fn display_test_string() {
-        assert_eq!(bencode_elem!("").to_string(), "\"\"");
+        assert_eq!(bencode_elem!("").to_string(), r#""""#);
     }
 
     #[test]
@@ -157,14 +157,14 @@ mod bencode_elem_display_tests {
 
     #[test]
     fn display_test_list() {
-        assert_eq!(bencode_elem!([0, "spam"]).to_string(), "[0, \"spam\"]");
+        assert_eq!(bencode_elem!([0, "spam"]).to_string(), r#"[0, "spam"]"#);
     }
 
     #[test]
     fn display_test_dictionary() {
         assert_eq!(
             bencode_elem!({ ("cow", { ("moo", 4) }), ("spam", "eggs") }).to_string(),
-            "{ (\"cow\", { (\"moo\", 4) }), (\"spam\", \"eggs\") }",
+            r#"{ ("cow", { ("moo", 4) }), ("spam", "eggs") }"#,
         )
     }
 }
