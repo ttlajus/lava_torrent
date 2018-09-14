@@ -31,13 +31,27 @@ pub(crate) fn usize_to_i64(src: usize) -> Result<i64> {
     })
 }
 
+pub(crate) fn i64_to_u64(src: i64) -> Result<u64> {
+    // @todo: switch to `u64::try_from()` when it's stable
+    u64::value_from(src).chain_err(|| {
+        ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into u64.", src)))
+    })
+}
+
+pub(crate) fn u64_to_i64(src: u64) -> Result<i64> {
+    // @todo: switch to `i64::try_from()` when it's stable
+    i64::value_from(src).chain_err(|| {
+        ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into i64.", src)))
+    })
+}
+
 // this method is recursive, i.e. entries in subdirectories
 // are also returned
 //
 // *nix hidden files/dirs are ignored
 //
 // returned vec is sorted by path
-pub(crate) fn list_dir<P>(path: P) -> Result<Vec<(PathBuf, usize)>>
+pub(crate) fn list_dir<P>(path: P) -> Result<Vec<(PathBuf, u64)>>
 where
     P: AsRef<Path>,
 {
@@ -55,7 +69,7 @@ where
         if metadata.is_dir() {
             entries.extend(list_dir(path)?);
         } else {
-            entries.push((path, u64_to_usize(metadata.len())?));
+            entries.push((path, metadata.len()));
         }
     }
 
@@ -145,8 +159,8 @@ mod util_tests {
                 // no [.hidden]
             ].iter()
                 .map(PathBuf::from)
-                .map(|p| (p.clone(), p.metadata().unwrap().len() as usize))
-                .collect::<Vec<(PathBuf, usize)>>()
+                .map(|p| (p.clone(), p.metadata().unwrap().len()))
+                .collect::<Vec<(PathBuf, u64)>>()
         );
     }
 
@@ -162,8 +176,8 @@ mod util_tests {
                 PathBuf::from("src/torrent/v1/write.rs"),
             ].iter()
                 .map(PathBuf::from)
-                .map(|p| (p.clone(), p.metadata().unwrap().len() as usize))
-                .collect::<Vec<(PathBuf, usize)>>()
+                .map(|p| (p.clone(), p.metadata().unwrap().len()))
+                .collect::<Vec<(PathBuf, u64)>>()
         );
     }
 
@@ -229,6 +243,36 @@ mod util_tests {
                 m,
                 format!("[{}] does not fit into i64.", usize::max_value())
             ),
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn i64_to_u64_ok() {
+        assert_eq!(i64_to_u64(42).unwrap(), 42);
+    }
+
+    #[test]
+    fn i64_to_u64_err() {
+        match i64_to_u64(-1) {
+            Err(Error(ErrorKind::FailedNumericConv(m), _)) => {
+                assert_eq!(m, "[-1] does not fit into u64.");
+            }
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn u64_to_i64_ok() {
+        assert_eq!(u64_to_i64(42).unwrap(), 42);
+    }
+
+    #[test]
+    fn u64_to_i64_err() {
+        match u64_to_i64(u64::max_value()) {
+            Err(Error(ErrorKind::FailedNumericConv(m), _)) => {
+                assert_eq!(m, format!("[{}] does not fit into i64.", u64::max_value()))
+            }
             _ => assert!(false),
         }
     }

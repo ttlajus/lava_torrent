@@ -400,13 +400,13 @@ impl TorrentBuilder {
         P: AsRef<Path>,
     {
         let path = path.as_ref();
-        let length = util::u64_to_usize(path.metadata()?.len())?;
-        let piece_length = util::i64_to_usize(piece_length)?;
+        let length = path.metadata()?.len();
+        let piece_length = util::i64_to_u64(piece_length)?;
 
         // read file content + calculate pieces/hashs
         let mut file = BufReader::new(::std::fs::File::open(&path)?);
-        let mut piece = Vec::with_capacity(piece_length);
-        let mut pieces = Vec::with_capacity(length / piece_length + 1);
+        let mut piece = Vec::with_capacity(util::u64_to_usize(piece_length)?);
+        let mut pieces = Vec::with_capacity(util::u64_to_usize(length / piece_length + 1)?);
         let mut total_read = 0;
 
         let mut hasher = Sha1::new();
@@ -414,10 +414,8 @@ impl TorrentBuilder {
             if total_read >= length {
                 break;
             } else {
-                total_read += file
-                    .by_ref()
-                    .take(util::usize_to_u64(piece_length)?)
-                    .read_to_end(&mut piece)?;
+                let read = file.by_ref().take(piece_length).read_to_end(&mut piece)?;
+                total_read += util::usize_to_u64(read)?;
             }
 
             // @todo: is this vector pre-filling avoidable?
@@ -429,29 +427,29 @@ impl TorrentBuilder {
             piece.clear();
         }
 
-        Ok((util::usize_to_i64(length)?, pieces))
+        Ok((util::u64_to_i64(length)?, pieces))
     }
 
     fn read_dir<P>(path: P, piece_length: Integer) -> Result<(Integer, Vec<File>, Vec<Piece>)>
     where
         P: AsRef<Path>,
     {
-        let piece_length = util::i64_to_usize(piece_length)?;
+        let piece_length = util::i64_to_u64(piece_length)?;
         let entries = util::list_dir(path)?;
         let total_length = entries.iter().fold(0, |acc, &(_, len)| acc + len);
         let mut files = Vec::with_capacity(entries.len());
-        let mut pieces = Vec::with_capacity(total_length / piece_length + 1);
+        let mut pieces = Vec::with_capacity(util::u64_to_usize(total_length / piece_length + 1)?);
 
         let mut piece = Vec::new();
         let mut hasher = Sha1::new();
+        let mut bytes = Vec::with_capacity(util::u64_to_usize(piece_length)?);
         for (path, length) in entries {
             let mut file = BufReader::new(::std::fs::File::open(&path)?);
             let mut file_remaining = length;
-            let mut bytes = Vec::with_capacity(piece_length);
 
             loop {
                 // calculate the # of bytes to read in this iteration
-                let piece_filled = piece.len();
+                let piece_filled = util::usize_to_u64(piece.len())?;
                 let piece_reamining = piece_length - piece_filled;
                 let to_read = if file_remaining < piece_reamining {
                     file_remaining
@@ -460,14 +458,12 @@ impl TorrentBuilder {
                 };
 
                 // read bytes
-                file.by_ref()
-                    .take(util::usize_to_u64(to_read)?)
-                    .read_to_end(&mut bytes)?;
+                file.by_ref().take(to_read).read_to_end(&mut bytes)?;
                 piece.append(&mut bytes);
                 file_remaining -= to_read;
 
                 // if piece is completely filled, hash it
-                if piece.len() == piece_length {
+                if piece.len() == util::u64_to_usize(piece_length)? {
                     // @todo: is this vector pre-filling avoidable?
                     let mut output = vec![0; PIECE_STRING_LENGTH];
                     hasher.input(&piece);
@@ -484,7 +480,7 @@ impl TorrentBuilder {
             }
 
             files.push(File {
-                length: util::usize_to_i64(length)?,
+                length: util::u64_to_i64(length)?,
                 path: PathBuf::from(util::last_component(path)?),
                 extra_fields: None,
             });
@@ -502,7 +498,7 @@ impl TorrentBuilder {
             piece.clear();
         }
 
-        Ok((util::usize_to_i64(total_length)?, files, pieces))
+        Ok((util::u64_to_i64(total_length)?, files, pieces))
     }
 }
 
