@@ -8,10 +8,12 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 
 /// Encode `string` and write the result to `dst`.
-pub fn write_string<W>(string: &str, dst: &mut W) -> Result<()>
+pub fn write_string<S, W>(string: S, dst: &mut W) -> Result<()>
 where
+    S: AsRef<str>,
     W: Write,
 {
+    let string = string.as_ref();
     dst.write_all(&string.len().to_string().into_bytes())?;
     dst.write_all(&[STRING_DELIMITER])?;
     dst.write_all(string.as_bytes())?;
@@ -19,10 +21,12 @@ where
 }
 
 /// Encode `bytes` and write the result to `dst`.
-pub fn write_bytes<W>(bytes: &[u8], dst: &mut W) -> Result<()>
+pub fn write_bytes<B, W>(bytes: B, dst: &mut W) -> Result<()>
 where
+    B: AsRef<[u8]>,
     W: Write,
 {
+    let bytes = bytes.as_ref();
     dst.write_all(&bytes.len().to_string().into_bytes())?;
     dst.write_all(&[STRING_DELIMITER])?;
     dst.write_all(bytes)?;
@@ -41,10 +45,12 @@ where
 }
 
 /// Encode `list` and write the result to `dst`.
-pub fn write_list<W>(list: &[BencodeElem], dst: &mut W) -> Result<()>
+pub fn write_list<L, W>(list: L, dst: &mut W) -> Result<()>
 where
+    L: AsRef<[BencodeElem]>,
     W: Write,
 {
+    let list = list.as_ref();
     dst.write_all(&[LIST_PREFIX])?;
     for item in list {
         item.write_into(dst)?;
@@ -74,14 +80,22 @@ where
 }
 
 /// Encode `string` and return the result in a `Vec`.
-pub fn encode_string(string: &str) -> Vec<u8> {
+pub fn encode_string<S>(string: S) -> Vec<u8>
+where
+    S: AsRef<str>,
+{
+    let string = string.as_ref();
     let mut encoded = Vec::with_capacity(string.len() + 2);
     write_string(string, &mut encoded).expect("Write to vec failed!");
     encoded
 }
 
 /// Encode `bytes` and return the result in a `Vec`.
-pub fn encode_bytes(bytes: &[u8]) -> Vec<u8> {
+pub fn encode_bytes<B>(bytes: B) -> Vec<u8>
+where
+    B: AsRef<[u8]>,
+{
+    let bytes = bytes.as_ref();
     let mut encoded = Vec::with_capacity(bytes.len() + 2);
     write_bytes(bytes, &mut encoded).expect("Write to vec failed!");
     encoded
@@ -95,7 +109,10 @@ pub fn encode_integer(int: i64) -> Vec<u8> {
 }
 
 /// Encode `list` and return the result in a `Vec`.
-pub fn encode_list(list: &[BencodeElem]) -> Vec<u8> {
+pub fn encode_list<L>(list: L) -> Vec<u8>
+where
+    L: AsRef<[BencodeElem]>,
+{
     let mut encoded = Vec::new();
     write_list(list, &mut encoded).expect("Write to vec failed!");
     encoded
