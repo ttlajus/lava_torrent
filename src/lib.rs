@@ -130,46 +130,46 @@ pub mod torrent;
 
 /// Custom error.
 ///
-/// Error Kinds Explanation
-/// - `Io`: IO error occurred. The bencode and the torrent may or may not
-/// be malformed (as we can't verify that).
-/// - `MalformedBencode`: The bencode is found to be bad before we can parse
-/// the torrent, so the torrent may or may not be malformed.
-/// this is generally unexpected behavior and thus should be handled
-/// - `MalformedTorrent`: Bencode is fine, but parsed data is gibberish, so we
-/// can't extract a torrent from it.
-/// - `TorrentBuilderFailure`: `TorrentBuilder` encounters problems when
-/// building `Torrent`. For instance, a field is set to an empty string by the caller.
-/// - `InvalidArgument`: An invalid argument is passed to a function.
-/// - `FailedNumericConv`: Conversion between numeric types (e.g. `i64 -> u64`) has failed.
-///
 pub mod error {
     error_chain! {
         foreign_links {
-            Io(::std::io::Error);
+            Io(::std::io::Error)
+            #[doc = "IO error occurred. \
+            The bencode and the torrent may or may not be malformed \
+            (as we can't verify that)."];
         }
 
         errors {
+            #[doc = "The bencode is found to be bad before we can parse \
+             the torrent, so the torrent may or may not be malformed. \
+             This is generally unexpected behavior and thus should be handled."]
             MalformedBencode(reason: ::std::borrow::Cow<'static, str>) {
                 description("malformed bencode")
                 display("malformed bencode: {}", reason)
             }
 
+            #[doc = "Bencode is fine, but parsed data is gibberish, so we \
+             can't extract a torrent from it."]
             MalformedTorrent(reason: ::std::borrow::Cow<'static, str>) {
                 description("malformed torrent")
                 display("malformed torrent: {}", reason)
             }
 
+            #[doc = "`TorrentBuilder` encounters problems when \
+             building `Torrent`. For instance, a field is set to \
+             an empty string by the caller."]
             TorrentBuilderFailure(reason: ::std::borrow::Cow<'static, str>) {
                 description("failed to build torrent")
                 display("failed to build torrent: {}", reason)
             }
 
+            #[doc = "An invalid argument is passed to a function."]
             InvalidArgument(reason: ::std::borrow::Cow<'static, str>) {
                 description("invalid argument:")
                 display("invalid argument: {}", reason)
             }
 
+            #[doc = "Conversion between numeric types (e.g. `i64 -> u64`) has failed."]
             FailedNumericConv(msg: ::std::borrow::Cow<'static, str>) {
                 description("numeric conversion failed:")
                 display("numeric conversion failed: {}", msg)
