@@ -300,11 +300,10 @@ impl fmt::Display for Torrent {
             writeln!(
                 f,
                 "-announce-list: [{}]",
-                tiers
-                    .iter()
-                    .format_with(", ", |tier, f| {
-                        f(&format_args!("[{}]", ::itertools::join(tier, ", ")))
-                    })
+                tiers.iter().format_with(", ", |tier, f| f(&format_args!(
+                    "[{}]",
+                    ::itertools::join(tier, ", ")
+                )))
             )?;
         }
         writeln!(f, "-size: {} bytes", self.length)?;
@@ -346,9 +345,10 @@ impl fmt::Display for Torrent {
             "-pieces: [{}]",
             self.pieces
                 .iter()
-                .format_with(", ", |piece, f| {
-                    f(&format_args!("[{:02x}]", piece.iter().format("")))
-                }),
+                .format_with(", ", |piece, f| f(&format_args!(
+                    "[{:02x}]",
+                    piece.iter().format("")
+                ))),
         )
     }
 }
@@ -612,7 +612,8 @@ mod file_display_tests {
                 vec![
                     ("comment2".to_owned(), bencode_elem!("no comment")),
                     ("comment1".to_owned(), bencode_elem!("no comment")),
-                ].into_iter(),
+                ]
+                .into_iter(),
             )),
         };
 
@@ -698,7 +699,8 @@ mod torrent_display_tests {
                 vec![
                     ("comment2".to_owned(), bencode_elem!("no comment")),
                     ("comment1".to_owned(), bencode_elem!("no comment")),
-                ].into_iter(),
+                ]
+                .into_iter(),
             )),
             extra_info_fields: None,
         };
@@ -730,7 +732,8 @@ mod torrent_display_tests {
                 vec![
                     ("comment2".to_owned(), bencode_elem!("no comment")),
                     ("comment1".to_owned(), bencode_elem!("no comment")),
-                ].into_iter(),
+                ]
+                .into_iter(),
             )),
         };
 

@@ -187,7 +187,8 @@ mod torrent_write_tests {
                     ("piece length", 2),
                     ("pieces", (1, 2, 3, 4)),
                 })
-            }).encode()
+            })
+            .encode()
         );
     }
 
@@ -221,7 +222,8 @@ mod torrent_write_tests {
                     ("piece length", 2),
                     ("pieces", (1, 2, 3, 4)),
                 })
-            }).encode()
+            })
+            .encode()
         );
     }
 
@@ -239,7 +241,8 @@ mod torrent_write_tests {
                 vec![
                     ("comment2".to_owned(), bencode_elem!("no comment")),
                     ("comment1".to_owned(), bencode_elem!("no comment")),
-                ].into_iter(),
+                ]
+                .into_iter(),
             )),
             extra_info_fields: None,
         };
@@ -258,7 +261,8 @@ mod torrent_write_tests {
                     ("piece length", 2),
                     ("pieces", (1, 2, 3, 4)),
                 })
-            }).encode()
+            })
+            .encode()
         );
     }
 
@@ -277,7 +281,8 @@ mod torrent_write_tests {
                 vec![
                     ("comment2".to_owned(), bencode_elem!("no comment")),
                     ("comment1".to_owned(), bencode_elem!("no comment")),
-                ].into_iter(),
+                ]
+                .into_iter(),
             )),
         };
         let mut result = Vec::new();
@@ -295,7 +300,8 @@ mod torrent_write_tests {
                     ("piece length", 2),
                     ("pieces", (1, 2, 3, 4)),
                 })
-            }).encode()
+            })
+            .encode()
         );
     }
 
@@ -339,7 +345,8 @@ mod torrent_write_tests {
                     ("piece length", 2),
                     ("pieces", (1, 2, 3, 4)),
                 })
-            }).encode()
+            })
+            .encode()
         );
     }
 
@@ -367,7 +374,8 @@ mod torrent_write_tests {
                     ("piece length", 2),
                     ("pieces", (1, 2, 3, 4)),
                 })
-            }).encode()
+            })
+            .encode()
         );
     }
 
@@ -399,7 +407,8 @@ mod torrent_write_tests {
                     ("piece length", 2),
                     ("pieces", (1, 2, 3, 4)),
                 })
-            }).encode()
+            })
+            .encode()
         );
     }
 
@@ -417,7 +426,8 @@ mod torrent_write_tests {
                 vec![
                     ("comment2".to_owned(), bencode_elem!("no comment")),
                     ("comment1".to_owned(), bencode_elem!("no comment")),
-                ].into_iter(),
+                ]
+                .into_iter(),
             )),
             extra_info_fields: None,
         };
@@ -434,7 +444,8 @@ mod torrent_write_tests {
                     ("piece length", 2),
                     ("pieces", (1, 2, 3, 4)),
                 })
-            }).encode()
+            })
+            .encode()
         );
     }
 
@@ -453,7 +464,8 @@ mod torrent_write_tests {
                 vec![
                     ("comment2".to_owned(), bencode_elem!("no comment")),
                     ("comment1".to_owned(), bencode_elem!("no comment")),
-                ].into_iter(),
+                ]
+                .into_iter(),
             )),
         };
 
@@ -469,7 +481,8 @@ mod torrent_write_tests {
                     ("piece length", 2),
                     ("pieces", (1, 2, 3, 4)),
                 })
-            }).encode()
+            })
+            .encode()
         );
     }
 
@@ -511,7 +524,8 @@ mod torrent_write_tests {
                     ("piece length", 2),
                     ("pieces", (1, 2, 3, 4)),
                 })
-            }).encode()
+            })
+            .encode()
         );
     }
 }

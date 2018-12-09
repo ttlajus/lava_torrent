@@ -510,7 +510,8 @@ mod file_read_tests {
                     BencodeElem::String("root".to_owned()),
                     BencodeElem::Bytes(".bashrc".as_bytes().to_vec()),
                 ]),
-            )].into_iter(),
+            )]
+            .into_iter(),
         );
 
         match File::extract_file_path(&mut dict) {
@@ -530,7 +531,8 @@ mod file_read_tests {
                     BencodeElem::String("root".to_owned()),
                     BencodeElem::String(".".to_owned()),
                 ]),
-            )].into_iter(),
+            )]
+            .into_iter(),
         );
 
         match File::extract_file_path(&mut dict) {
@@ -550,7 +552,8 @@ mod file_read_tests {
                     BencodeElem::String("root".to_owned()),
                     BencodeElem::String("..".to_owned()),
                 ]),
-            )].into_iter(),
+            )]
+            .into_iter(),
         );
 
         match File::extract_file_path(&mut dict) {
@@ -674,18 +677,18 @@ mod torrent_read_tests {
     #[test]
     fn from_parsed_ok() {
         let dict = vec![bencode_elem!({
-                ("announce", "url"),
-                ("info", {
-                    ("name", "??"),
-                    ("length", 2),
-                    ("piece length", 2),
-                    (
-                        "pieces",
-                        (0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-                            0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13)
-                    ),
-                }),
-            })];
+            ("announce", "url"),
+            ("info", {
+                ("name", "??"),
+                ("length", 2),
+                ("piece length", 2),
+                (
+                    "pieces",
+                    (0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
+                        0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13)
+                ),
+            }),
+        })];
 
         assert_eq!(
             Torrent::from_parsed(dict).unwrap(),
@@ -801,7 +804,8 @@ mod torrent_read_tests {
             vec![(
                 "announce".to_owned(),
                 BencodeElem::Bytes("url".as_bytes().to_vec()),
-            )].into_iter(),
+            )]
+            .into_iter(),
         );
 
         match Torrent::extract_announce(&mut dict) {
@@ -856,7 +860,8 @@ mod torrent_read_tests {
             vec![(
                 "announce-list".to_owned(),
                 bencode_elem!([["url1", "url2"], ["url3", "url4"]]),
-            )].into_iter(),
+            )]
+            .into_iter(),
         );
 
         assert_eq!(
@@ -892,11 +897,12 @@ mod torrent_read_tests {
             vec![(
                 "files".to_owned(),
                 bencode_elem!([{
-                        ("length", 42),
-                        ("path", ["root", ".bashrc"]),
-                        ("comment", "no comment"),
-                    }]),
-            )].into_iter(),
+                    ("length", 42),
+                    ("path", ["root", ".bashrc"]),
+                    ("comment", "no comment"),
+                }]),
+            )]
+            .into_iter(),
         );
 
         let files = Torrent::extract_files(&mut dict).unwrap().unwrap();
@@ -1046,7 +1052,8 @@ mod torrent_read_tests {
             vec![(
                 "name".to_owned(),
                 BencodeElem::Bytes("not name".as_bytes().to_vec()),
-            )].into_iter(),
+            )]
+            .into_iter(),
         );
 
         match Torrent::extract_name(&mut dict) {
@@ -1124,7 +1131,8 @@ mod torrent_read_tests {
                     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
                     0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13,
                 ]),
-            )].into_iter(),
+            )]
+            .into_iter(),
         );
 
         let pieces = Torrent::extract_pieces(&mut dict).unwrap();
@@ -1186,7 +1194,8 @@ mod torrent_read_tests {
                     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
                     0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12,
                 ]),
-            )].into_iter(),
+            )]
+            .into_iter(),
         );
 
         match Torrent::extract_pieces(&mut dict) {

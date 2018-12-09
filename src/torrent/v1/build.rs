@@ -694,7 +694,8 @@ mod torrent_builder_tests {
                     vec![
                         ("k1".to_owned(), bencode_elem!("v1")),
                         ("k2".to_owned(), bencode_elem!("v2")),
-                    ].into_iter()
+                    ]
+                    .into_iter()
                 )),
                 ..Default::default()
             }
@@ -730,7 +731,8 @@ mod torrent_builder_tests {
                     vec![
                         ("k1".to_owned(), bencode_elem!("v1")),
                         ("k2".to_owned(), bencode_elem!("v2")),
-                    ].into_iter()
+                    ]
+                    .into_iter()
                 )),
                 ..Default::default()
             }

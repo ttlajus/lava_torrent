@@ -65,7 +65,8 @@ fn bencode_elem_write_dictionary_to_file_ok() {
         vec![
             ("spam".to_owned(), BencodeElem::Integer(42)),
             ("cow".to_owned(), BencodeElem::String("moo".to_owned())),
-        ].into_iter(),
+        ]
+        .into_iter(),
     ));
     let output = rand_file_name();
 

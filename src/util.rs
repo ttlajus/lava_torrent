@@ -150,7 +150,8 @@ mod util_tests {
                 PathBuf::from("tests/files/tails-amd64-3.6.1.torrent"),
                 PathBuf::from("tests/files/ubuntu-16.04.4-desktop-amd64.iso.torrent"),
                 // no [.hidden]
-            ].iter()
+            ]
+            .iter()
             .map(PathBuf::from)
             .map(|p| (p.clone(), p.metadata().unwrap().len()))
             .collect::<Vec<(PathBuf, u64)>>()
@@ -167,7 +168,8 @@ mod util_tests {
                 PathBuf::from("src/torrent/v1/mod.rs"),
                 PathBuf::from("src/torrent/v1/read.rs"),
                 PathBuf::from("src/torrent/v1/write.rs"),
-            ].iter()
+            ]
+            .iter()
             .map(PathBuf::from)
             .map(|p| (p.clone(), p.metadata().unwrap().len()))
             .collect::<Vec<(PathBuf, u64)>>()

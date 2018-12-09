@@ -39,8 +39,9 @@ fn read_from_bytes() {
         (f64::value_from(parsed.pieces.len()).unwrap()
             - (f64::value_from(parsed.length).unwrap()
                 / f64::value_from(parsed.piece_length).unwrap())
-                .ceil())
-            .abs() < std::f64::EPSILON
+            .ceil())
+        .abs()
+            < std::f64::EPSILON
     );
     assert_eq!(
         parsed.extra_fields,
@@ -54,7 +55,8 @@ fn read_from_bytes() {
                     "creation date".to_owned(),
                     BencodeElem::Integer(1_519_934_077),
                 ),
-            ].into_iter()
+            ]
+            .into_iter()
         )),
     );
     assert_eq!(parsed.extra_info_fields, None);
@@ -132,8 +134,9 @@ fn read_from_bytes_multiple_files() {
         (f64::value_from(parsed.pieces.len()).unwrap()
             - (f64::value_from(parsed.length).unwrap()
                 / f64::value_from(parsed.piece_length).unwrap())
-                .ceil())
-            .abs() < std::f64::EPSILON
+            .ceil())
+        .abs()
+            < std::f64::EPSILON
     );
     assert_eq!(
         parsed.extra_fields,
@@ -147,7 +150,8 @@ fn read_from_bytes_multiple_files() {
                     "creation date".to_owned(),
                     BencodeElem::Integer(1_521_245_346),
                 ),
-            ].into_iter()
+            ]
+            .into_iter()
         )),
     );
     assert_eq!(parsed.extra_info_fields, None);

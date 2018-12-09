@@ -86,11 +86,12 @@ fn build_with_name() {
             .canonicalize()
             .unwrap(),
         PIECE_LENGTH,
-    ).set_name("file".to_owned())
-        .build()
-        .unwrap()
-        .write_into_file(&output_name)
-        .unwrap();
+    )
+    .set_name("file".to_owned())
+    .build()
+    .unwrap()
+    .write_into_file(&output_name)
+    .unwrap();
 
     assert_eq!(
         Torrent::read_from_file(output_name).unwrap().name,
@@ -168,7 +169,8 @@ fn build_hidden_file() {
         "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
         PathBuf::from("tests/files/.hidden").canonicalize().unwrap(),
         PIECE_LENGTH,
-    ).build();
+    )
+    .build();
 
     match result {
         Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
