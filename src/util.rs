@@ -24,13 +24,6 @@ pub(crate) fn i64_to_usize(src: i64) -> Result<usize> {
     })
 }
 
-pub(crate) fn usize_to_i64(src: usize) -> Result<i64> {
-    // @todo: switch to `i64::try_from()` when it's stable
-    i64::value_from(src).chain_err(|| {
-        ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into i64.", src)))
-    })
-}
-
 pub(crate) fn i64_to_u64(src: i64) -> Result<u64> {
     // @todo: switch to `u64::try_from()` when it's stable
     u64::value_from(src).chain_err(|| {
@@ -158,9 +151,9 @@ mod util_tests {
                 PathBuf::from("tests/files/ubuntu-16.04.4-desktop-amd64.iso.torrent"),
                 // no [.hidden]
             ].iter()
-                .map(PathBuf::from)
-                .map(|p| (p.clone(), p.metadata().unwrap().len()))
-                .collect::<Vec<(PathBuf, u64)>>()
+            .map(PathBuf::from)
+            .map(|p| (p.clone(), p.metadata().unwrap().len()))
+            .collect::<Vec<(PathBuf, u64)>>()
         );
     }
 
@@ -175,9 +168,9 @@ mod util_tests {
                 PathBuf::from("src/torrent/v1/read.rs"),
                 PathBuf::from("src/torrent/v1/write.rs"),
             ].iter()
-                .map(PathBuf::from)
-                .map(|p| (p.clone(), p.metadata().unwrap().len()))
-                .collect::<Vec<(PathBuf, u64)>>()
+            .map(PathBuf::from)
+            .map(|p| (p.clone(), p.metadata().unwrap().len()))
+            .collect::<Vec<(PathBuf, u64)>>()
         );
     }
 
@@ -227,22 +220,6 @@ mod util_tests {
             Err(Error(ErrorKind::FailedNumericConv(m), _)) => {
                 assert_eq!(m, "[-1] does not fit into usize.");
             }
-            _ => assert!(false),
-        }
-    }
-
-    #[test]
-    fn usize_to_i64_ok() {
-        assert_eq!(usize_to_i64(42).unwrap(), 42);
-    }
-
-    #[test]
-    fn usize_to_i64_err() {
-        match usize_to_i64(usize::max_value()) {
-            Err(Error(ErrorKind::FailedNumericConv(m), _)) => assert_eq!(
-                m,
-                format!("[{}] does not fit into i64.", usize::max_value())
-            ),
             _ => assert!(false),
         }
     }
