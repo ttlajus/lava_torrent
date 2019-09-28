@@ -22,7 +22,7 @@ Create a torrent ([v1]) from files in a directory and save the *.torrent* file.
 ```rust
 use lava_torrent::torrent::v1::TorrentBuilder;
 
-let torrent = TorrentBuilder::new("announce".to_string(), "dir/", 1048576).build().unwrap();
+let torrent = TorrentBuilder::new("dir/", 1048576).build().unwrap();
 torrent.write_into_file("sample.torrent").unwrap();
 ```
 
