@@ -184,13 +184,7 @@ impl Torrent {
         );
         info.insert(
             "pieces".to_owned(),
-            BencodeElem::Bytes(
-                self.pieces
-                    .clone()
-                    .into_iter()
-                    .flat_map(|piece| piece)
-                    .collect(),
-            ),
+            BencodeElem::Bytes(self.pieces.clone().into_iter().flatten().collect()),
         );
 
         if let Some(ref extra_info_fields) = self.extra_info_fields {
@@ -288,8 +282,7 @@ impl fmt::Display for File {
                 fields
                     .iter()
                     .sorted_by_key(|&(key, _)| key.as_bytes())
-                    .iter()
-                    .format_with("", |&(k, v), f| f(&format_args!("-{}: {}\n", k, v)))
+                    .format_with("", |(k, v), f| f(&format_args!("-{}: {}\n", k, v)))
             )?;
         }
 
@@ -323,8 +316,7 @@ impl fmt::Display for Torrent {
                 fields
                     .iter()
                     .sorted_by_key(|&(key, _)| key.as_bytes())
-                    .iter()
-                    .format_with("", |&(k, v), f| f(&format_args!("-{}: {}\n", k, v)))
+                    .format_with("", |(k, v), f| f(&format_args!("-{}: {}\n", k, v)))
             )?;
         }
 
@@ -335,8 +327,7 @@ impl fmt::Display for Torrent {
                 fields
                     .iter()
                     .sorted_by_key(|&(key, _)| key.as_bytes())
-                    .iter()
-                    .format_with("", |&(k, v), f| f(&format_args!("-{}: {}\n", k, v)))
+                    .format_with("", |(k, v), f| f(&format_args!("-{}: {}\n", k, v)))
             )?;
         }
 

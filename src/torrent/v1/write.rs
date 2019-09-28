@@ -76,7 +76,7 @@ impl Torrent {
         );
         info.insert(
             "pieces".to_owned(),
-            BencodeElem::Bytes(self.pieces.into_iter().flat_map(|piece| piece).collect()),
+            BencodeElem::Bytes(self.pieces.into_iter().flatten().collect()),
         );
 
         if let Some(extra_info_fields) = self.extra_info_fields {

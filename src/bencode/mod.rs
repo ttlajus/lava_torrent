@@ -125,8 +125,7 @@ impl fmt::Display for BencodeElem {
                 "{{ {} }}",
                 dict.iter()
                     .sorted_by_key(|&(key, _)| key.as_bytes())
-                    .iter()
-                    .format_with(", ", |&(k, v), f| f(&format_args!(r#"("{}", {})"#, k, v)))
+                    .format_with(", ", |(k, v), f| f(&format_args!(r#"("{}", {})"#, k, v)))
             ),
         }
     }
