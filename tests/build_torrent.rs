@@ -18,26 +18,25 @@ fn rand_file_name() -> String {
 fn build_single_file_ok() {
     let output_name = rand_file_name() + ".torrent";
 
-    let builder = TorrentBuilder::new(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
+    TorrentBuilder::new(
         PathBuf::from("tests/files/tails-amd64-3.6.1.torrent")
             .canonicalize()
             .unwrap(),
         PIECE_LENGTH,
-    );
-    // create a new chain because rustfmt does
-    // weird things when `builder` is not declared separately
-    builder
-        .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523448537))
-        .add_extra_field(
-            "encoding".to_owned(),
-            BencodeElem::String("UTF-8".to_owned()),
-        )
-        .add_extra_info_field("private".to_owned(), BencodeElem::Integer(0))
-        .build()
-        .unwrap()
-        .write_into_file(&output_name)
-        .unwrap();
+    )
+    .set_announce(Some(
+        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
+    ))
+    .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523448537))
+    .add_extra_field(
+        "encoding".to_owned(),
+        BencodeElem::String("UTF-8".to_owned()),
+    )
+    .add_extra_info_field("private".to_owned(), BencodeElem::Integer(0))
+    .build()
+    .unwrap()
+    .write_into_file(&output_name)
+    .unwrap();
 
     // compare against a sample file created by Deluge
     assert_eq!(
@@ -50,24 +49,23 @@ fn build_single_file_ok() {
 fn build_multi_file_ok() {
     let output_name = rand_file_name() + ".torrent";
 
-    let builder = TorrentBuilder::new(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
+    TorrentBuilder::new(
         PathBuf::from("tests/files").canonicalize().unwrap(),
         PIECE_LENGTH,
-    );
-    // create a new chain because rustfmt does
-    // weird things when `builder` is not declared separately
-    builder
-        .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607302))
-        .add_extra_field(
-            "encoding".to_owned(),
-            BencodeElem::String("UTF-8".to_owned()),
-        )
-        .add_extra_info_field("private".to_owned(), BencodeElem::Integer(0))
-        .build()
-        .unwrap()
-        .write_into_file(&output_name)
-        .unwrap();
+    )
+    .set_announce(Some(
+        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
+    ))
+    .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607302))
+    .add_extra_field(
+        "encoding".to_owned(),
+        BencodeElem::String("UTF-8".to_owned()),
+    )
+    .add_extra_info_field("private".to_owned(), BencodeElem::Integer(0))
+    .build()
+    .unwrap()
+    .write_into_file(&output_name)
+    .unwrap();
 
     // compare against a sample file created by Deluge
     assert_eq!(
@@ -81,12 +79,14 @@ fn build_with_name() {
     let output_name = rand_file_name() + ".torrent";
 
     TorrentBuilder::new(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
         PathBuf::from("tests/files/tails-amd64-3.6.1.torrent")
             .canonicalize()
             .unwrap(),
         PIECE_LENGTH,
     )
+    .set_announce(Some(
+        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
+    ))
     .set_name("file".to_owned())
     .build()
     .unwrap()
@@ -103,24 +103,23 @@ fn build_with_name() {
 fn build_private() {
     let output_name = rand_file_name() + ".torrent";
 
-    let builder = TorrentBuilder::new(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
+    TorrentBuilder::new(
         PathBuf::from("tests/files").canonicalize().unwrap(),
         PIECE_LENGTH,
-    );
-    // create a new chain because rustfmt does
-    // weird things when `builder` is not declared separately
-    builder
-        .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607445))
-        .add_extra_field(
-            "encoding".to_owned(),
-            BencodeElem::String("UTF-8".to_owned()),
-        )
-        .set_privacy(true)
-        .build()
-        .unwrap()
-        .write_into_file(&output_name)
-        .unwrap();
+    )
+    .set_announce(Some(
+        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
+    ))
+    .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607445))
+    .add_extra_field(
+        "encoding".to_owned(),
+        BencodeElem::String("UTF-8".to_owned()),
+    )
+    .set_privacy(true)
+    .build()
+    .unwrap()
+    .write_into_file(&output_name)
+    .unwrap();
 
     // compare against a sample file created by Deluge
     assert_eq!(
@@ -137,14 +136,10 @@ fn build_symbolic_link() {
     let mut path = PathBuf::from("tests/files").canonicalize().unwrap();
     path.push("symlink");
 
-    let builder = TorrentBuilder::new(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
-        path,
-        PIECE_LENGTH,
-    );
-    // create a new chain because rustfmt does
-    // weird things when `builder` is not declared separately
-    builder
+    TorrentBuilder::new(path, PIECE_LENGTH)
+        .set_announce(Some(
+            "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
+        ))
         .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607602))
         .add_extra_field(
             "encoding".to_owned(),
@@ -166,10 +161,12 @@ fn build_symbolic_link() {
 #[test]
 fn build_hidden_file() {
     let result = TorrentBuilder::new(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
         PathBuf::from("tests/files/.hidden").canonicalize().unwrap(),
         PIECE_LENGTH,
     )
+    .set_announce(Some(
+        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
+    ))
     .build();
 
     match result {

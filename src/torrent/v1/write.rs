@@ -34,7 +34,9 @@ impl Torrent {
         let mut result: HashMap<String, BencodeElem> = HashMap::new();
         let mut info: HashMap<String, BencodeElem> = HashMap::new();
 
-        result.insert("announce".to_owned(), BencodeElem::String(self.announce));
+        if let Some(announce) = self.announce {
+            result.insert("announce".to_owned(), BencodeElem::String(announce));
+        }
 
         if let Some(list) = self.announce_list {
             result.insert(
@@ -168,7 +170,7 @@ mod torrent_write_tests {
     #[test]
     fn write_ok() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -199,7 +201,7 @@ mod torrent_write_tests {
     #[test]
     fn write_with_announce_list() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: Some(vec![
                 vec!["url1".to_owned(), "url2".to_owned()],
                 vec!["url3".to_owned(), "url4".to_owned()],
@@ -234,7 +236,7 @@ mod torrent_write_tests {
     #[test]
     fn write_with_extra_fields() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -273,7 +275,7 @@ mod torrent_write_tests {
     #[test]
     fn write_with_extra_info_fields() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -312,7 +314,7 @@ mod torrent_write_tests {
     #[test]
     fn write_with_multiple_files() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: Some(vec![
@@ -357,7 +359,7 @@ mod torrent_write_tests {
     #[test]
     fn encode_ok() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -386,7 +388,7 @@ mod torrent_write_tests {
     #[test]
     fn encode_with_announce_list() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: Some(vec![
                 vec!["url1".to_owned(), "url2".to_owned()],
                 vec!["url3".to_owned(), "url4".to_owned()],
@@ -419,7 +421,7 @@ mod torrent_write_tests {
     #[test]
     fn encode_with_extra_fields() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -456,7 +458,7 @@ mod torrent_write_tests {
     #[test]
     fn encode_with_extra_info_fields() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -493,7 +495,7 @@ mod torrent_write_tests {
     #[test]
     fn encode_with_multiple_files() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: Some(vec![

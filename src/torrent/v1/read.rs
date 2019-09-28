@@ -185,15 +185,13 @@ impl Torrent {
         }
     }
 
-    fn extract_announce(dict: &mut HashMap<String, BencodeElem>) -> Result<String> {
+    fn extract_announce(dict: &mut HashMap<String, BencodeElem>) -> Result<Option<String>> {
         match dict.remove("announce") {
-            Some(BencodeElem::String(url)) => Ok(url),
+            Some(BencodeElem::String(url)) => Ok(Some(url)),
             Some(_) => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
                 r#""announce" does not map to a string (or maps to invalid UTF8)."#
             ))),
-            None => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
-                r#""announce" does not exist."#
-            ))),
+            None => Ok(None),
         }
     }
 
@@ -594,7 +592,7 @@ mod torrent_read_tests {
         // torrent is actually invalid (incorrect pieces' length)
         // keeping things simple for the sake of solely testing `validate()`
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -613,7 +611,7 @@ mod torrent_read_tests {
     #[test]
     fn validate_length_mismatch() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 6,
             files: None,
@@ -635,7 +633,7 @@ mod torrent_read_tests {
     #[test]
     fn validate_length_not_positive() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 0,
             files: None,
@@ -655,7 +653,7 @@ mod torrent_read_tests {
     #[test]
     fn validate_length_overflow() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 1,
             files: None,
@@ -693,7 +691,7 @@ mod torrent_read_tests {
         assert_eq!(
             Torrent::from_parsed(dict).unwrap(),
             Torrent {
-                announce: "url".to_owned(),
+                announce: Some("url".to_owned()),
                 announce_list: None,
                 length: 2,
                 files: None,
@@ -782,7 +780,7 @@ mod torrent_read_tests {
 
         assert_eq!(
             Torrent::extract_announce(&mut dict).unwrap(),
-            "url".to_owned()
+            Some("url".to_owned()),
         );
     }
 
@@ -790,12 +788,7 @@ mod torrent_read_tests {
     fn extract_announce_missing() {
         let mut dict = HashMap::new();
 
-        match Torrent::extract_announce(&mut dict) {
-            Err(Error(ErrorKind::MalformedTorrent(m), _)) => {
-                assert_eq!(m, r#""announce" does not exist."#);
-            }
-            _ => assert!(false),
-        }
+        assert_eq!(Torrent::extract_announce(&mut dict).unwrap(), None,);
     }
 
     #[test]

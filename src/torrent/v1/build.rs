@@ -23,12 +23,11 @@ impl TorrentBuilder {
     /// - Paths with components exactly matching `..` are invalid.
     ///
     /// [`build()`]: #method.build
-    pub fn new<P>(announce: String, path: P, piece_length: Integer) -> TorrentBuilder
+    pub fn new<P>(path: P, piece_length: Integer) -> TorrentBuilder
     where
         P: AsRef<Path>,
     {
         TorrentBuilder {
-            announce,
             path: path.as_ref().to_path_buf(),
             piece_length,
             ..Default::default()
@@ -116,7 +115,7 @@ impl TorrentBuilder {
     /// turns out to be invalid, calling [`build()`] later will fail.
     ///
     /// [`build()`]: #method.build
-    pub fn set_announce(self, announce: String) -> TorrentBuilder {
+    pub fn set_announce(self, announce: Option<String>) -> TorrentBuilder {
         TorrentBuilder { announce, ..self }
     }
 
@@ -251,12 +250,17 @@ impl TorrentBuilder {
     }
 
     fn validate_announce(&self) -> Result<()> {
-        if self.announce.is_empty() {
-            bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
-                "TorrentBuilder has `announce` but its length is 0."
-            )))
-        } else {
-            Ok(())
+        match self.announce {
+            Some(ref announce) => {
+                if announce.is_empty() {
+                    bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
+                        "TorrentBuilder has `announce` but its length is 0."
+                    )))
+                } else {
+                    Ok(())
+                }
+            }
+            None => Ok(()),
         }
     }
 
@@ -515,9 +519,8 @@ mod torrent_builder_tests {
     #[test]
     fn new_ok() {
         assert_eq!(
-            TorrentBuilder::new("url".to_owned(), "dir/", 42),
+            TorrentBuilder::new("dir/", 42),
             TorrentBuilder {
-                announce: "url".to_owned(),
                 path: PathBuf::from("dir"),
                 piece_length: 42,
                 ..Default::default()
@@ -527,24 +530,24 @@ mod torrent_builder_tests {
 
     #[test]
     fn set_announce_ok() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 42);
+        let builder = TorrentBuilder::new("dir/", 42);
 
-        let builder = builder.set_announce("url2".to_owned());
+        let builder = builder.set_announce(Some("url".to_owned()));
         assert_eq!(
             builder,
             TorrentBuilder {
-                announce: "url2".to_owned(),
+                announce: Some("url".to_owned()),
                 path: PathBuf::from("dir"),
                 piece_length: 42,
                 ..Default::default()
             }
         );
 
-        let builder = builder.set_announce("url3".to_owned());
+        let builder = builder.set_announce(Some("url2".to_owned()));
         assert_eq!(
             builder,
             TorrentBuilder {
-                announce: "url3".to_owned(),
+                announce: Some("url2".to_owned()),
                 path: PathBuf::from("dir"),
                 piece_length: 42,
                 ..Default::default()
@@ -554,14 +557,13 @@ mod torrent_builder_tests {
 
     #[test]
     fn set_announce_list_ok() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 42);
+        let builder = TorrentBuilder::new("dir/", 42);
 
         let builder =
             builder.set_announce_list(vec![vec!["url2".to_owned()], vec!["url3".to_owned()]]);
         assert_eq!(
             builder,
             TorrentBuilder {
-                announce: "url".to_owned(),
                 announce_list: Some(vec![vec!["url2".to_owned()], vec!["url3".to_owned()]]),
                 path: PathBuf::from("dir"),
                 piece_length: 42,
@@ -573,7 +575,6 @@ mod torrent_builder_tests {
         assert_eq!(
             builder,
             TorrentBuilder {
-                announce: "url".to_owned(),
                 announce_list: Some(vec![vec!["url2".to_owned()]]),
                 path: PathBuf::from("dir"),
                 piece_length: 42,
@@ -584,13 +585,12 @@ mod torrent_builder_tests {
 
     #[test]
     fn set_name_ok() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 42);
+        let builder = TorrentBuilder::new("dir/", 42);
 
         let builder = builder.set_name("sample".to_owned());
         assert_eq!(
             builder,
             TorrentBuilder {
-                announce: "url".to_owned(),
                 name: Some("sample".to_owned()),
                 path: PathBuf::from("dir"),
                 piece_length: 42,
@@ -602,7 +602,6 @@ mod torrent_builder_tests {
         assert_eq!(
             builder,
             TorrentBuilder {
-                announce: "url".to_owned(),
                 name: Some("sample2".to_owned()),
                 path: PathBuf::from("dir"),
                 piece_length: 42,
@@ -613,13 +612,12 @@ mod torrent_builder_tests {
 
     #[test]
     fn set_path_ok() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 42);
+        let builder = TorrentBuilder::new("dir/", 42);
 
         let builder = builder.set_path("dir2");
         assert_eq!(
             builder,
             TorrentBuilder {
-                announce: "url".to_owned(),
                 path: PathBuf::from("dir2"),
                 piece_length: 42,
                 ..Default::default()
@@ -630,7 +628,6 @@ mod torrent_builder_tests {
         assert_eq!(
             builder,
             TorrentBuilder {
-                announce: "url".to_owned(),
                 path: PathBuf::from("dir3"),
                 piece_length: 42,
                 ..Default::default()
@@ -640,13 +637,12 @@ mod torrent_builder_tests {
 
     #[test]
     fn set_piece_length_ok() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 42);
+        let builder = TorrentBuilder::new("dir/", 42);
 
         let builder = builder.set_piece_length(256);
         assert_eq!(
             builder,
             TorrentBuilder {
-                announce: "url".to_owned(),
                 path: PathBuf::from("dir"),
                 piece_length: 256,
                 ..Default::default()
@@ -657,7 +653,6 @@ mod torrent_builder_tests {
         assert_eq!(
             builder,
             TorrentBuilder {
-                announce: "url".to_owned(),
                 path: PathBuf::from("dir"),
                 piece_length: 512,
                 ..Default::default()
@@ -667,13 +662,12 @@ mod torrent_builder_tests {
 
     #[test]
     fn add_extra_field_ok() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 42);
+        let builder = TorrentBuilder::new("dir/", 42);
 
         let builder = builder.add_extra_field("k1".to_owned(), bencode_elem!("v1"));
         assert_eq!(
             builder,
             TorrentBuilder {
-                announce: "url".to_owned(),
                 path: PathBuf::from("dir"),
                 piece_length: 42,
                 extra_fields: Some(HashMap::from_iter(
@@ -687,7 +681,6 @@ mod torrent_builder_tests {
         assert_eq!(
             builder,
             TorrentBuilder {
-                announce: "url".to_owned(),
                 path: PathBuf::from("dir"),
                 piece_length: 42,
                 extra_fields: Some(HashMap::from_iter(
@@ -704,13 +697,12 @@ mod torrent_builder_tests {
 
     #[test]
     fn add_extra_info_field_ok() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 42);
+        let builder = TorrentBuilder::new("dir/", 42);
 
         let builder = builder.add_extra_info_field("k1".to_owned(), bencode_elem!("v1"));
         assert_eq!(
             builder,
             TorrentBuilder {
-                announce: "url".to_owned(),
                 path: PathBuf::from("dir"),
                 piece_length: 42,
                 extra_info_fields: Some(HashMap::from_iter(
@@ -724,7 +716,6 @@ mod torrent_builder_tests {
         assert_eq!(
             builder,
             TorrentBuilder {
-                announce: "url".to_owned(),
                 path: PathBuf::from("dir"),
                 piece_length: 42,
                 extra_info_fields: Some(HashMap::from_iter(
@@ -741,13 +732,12 @@ mod torrent_builder_tests {
 
     #[test]
     fn set_privacy_ok() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 42);
+        let builder = TorrentBuilder::new("dir/", 42);
 
         let builder = builder.set_privacy(true);
         assert_eq!(
             builder,
             TorrentBuilder {
-                announce: "url".to_owned(),
                 path: PathBuf::from("dir"),
                 piece_length: 42,
                 is_private: true,
@@ -759,7 +749,6 @@ mod torrent_builder_tests {
         assert_eq!(
             builder,
             TorrentBuilder {
-                announce: "url".to_owned(),
                 path: PathBuf::from("dir"),
                 piece_length: 42,
                 ..Default::default()
@@ -769,16 +758,26 @@ mod torrent_builder_tests {
 
     #[test]
     fn validate_announce_ok() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 42);
+        let builder = TorrentBuilder::new("dir/", 42).set_announce(Some("url".to_owned()));
+        let builder2 = TorrentBuilder::new("dir/", 42).set_announce(Some("url".to_owned()));
 
         builder.validate_announce().unwrap();
         // validation methods should not modify builder
-        assert_eq!(builder, TorrentBuilder::new("url".to_owned(), "dir/", 42));
+        assert_eq!(builder, builder2);
+    }
+
+    #[test]
+    fn validate_announce_ok_2() {
+        let builder = TorrentBuilder::new("dir/", 42);
+
+        builder.validate_announce().unwrap();
+        // validation methods should not modify builder
+        assert_eq!(builder, TorrentBuilder::new("dir/", 42));
     }
 
     #[test]
     fn validate_announce_empty() {
-        let builder = TorrentBuilder::new("".to_owned(), "dir/", 42);
+        let builder = TorrentBuilder::new("dir/", 42).set_announce(Some("".to_owned()));
 
         match builder.validate_announce() {
             Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
@@ -790,30 +789,29 @@ mod torrent_builder_tests {
 
     #[test]
     fn validate_announce_list_ok() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 42)
-            .set_announce_list(vec![vec!["url2".to_owned()]]);
+        let builder =
+            TorrentBuilder::new("dir/", 42).set_announce_list(vec![vec!["url".to_owned()]]);
 
         builder.validate_announce_list().unwrap();
         // validation methods should not modify builder
         assert_eq!(
             builder,
-            TorrentBuilder::new("url".to_owned(), "dir/", 42)
-                .set_announce_list(vec![vec!["url2".to_owned()]])
+            TorrentBuilder::new("dir/", 42).set_announce_list(vec![vec!["url".to_owned()]])
         );
     }
 
     #[test]
     fn validate_announce_list_none() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 42);
+        let builder = TorrentBuilder::new("dir/", 42);
 
         builder.validate_announce_list().unwrap();
         // validation methods should not modify builder
-        assert_eq!(builder, TorrentBuilder::new("url".to_owned(), "dir/", 42));
+        assert_eq!(builder, TorrentBuilder::new("dir/", 42));
     }
 
     #[test]
     fn validate_announce_list_empty() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 42).set_announce_list(vec![]);
+        let builder = TorrentBuilder::new("dir/", 42).set_announce_list(vec![]);
 
         match builder.validate_announce_list() {
             Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
@@ -825,7 +823,7 @@ mod torrent_builder_tests {
 
     #[test]
     fn validate_announce_list_empty_tier() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 42)
+        let builder = TorrentBuilder::new("dir/", 42)
             .set_announce_list(vec![vec!["url2".to_owned()], vec![]]);
 
         match builder.validate_announce_list() {
@@ -839,7 +837,7 @@ mod torrent_builder_tests {
 
     #[test]
     fn validate_announce_list_empty_url() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 42)
+        let builder = TorrentBuilder::new("dir/", 42)
             .set_announce_list(vec![vec!["url2".to_owned()], vec!["".to_owned()]]);
 
         match builder.validate_announce_list() {
@@ -853,29 +851,28 @@ mod torrent_builder_tests {
 
     #[test]
     fn validate_name_ok() {
-        let builder =
-            TorrentBuilder::new("url".to_owned(), "dir/", 42).set_name("sample".to_owned());
+        let builder = TorrentBuilder::new("dir/", 42).set_name("sample".to_owned());
 
         builder.validate_name().unwrap();
         // validation methods should not modify builder
         assert_eq!(
             builder,
-            TorrentBuilder::new("url".to_owned(), "dir/", 42).set_name("sample".to_owned())
+            TorrentBuilder::new("dir/", 42).set_name("sample".to_owned())
         );
     }
 
     #[test]
     fn validate_name_none() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 42);
+        let builder = TorrentBuilder::new("dir/", 42);
 
         builder.validate_name().unwrap();
         // validation methods should not modify builder
-        assert_eq!(builder, TorrentBuilder::new("url".to_owned(), "dir/", 42));
+        assert_eq!(builder, TorrentBuilder::new("dir/", 42));
     }
 
     #[test]
     fn validate_name_empty() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 42).set_name("".to_owned());
+        let builder = TorrentBuilder::new("dir/", 42).set_name("".to_owned());
 
         match builder.validate_name() {
             Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
@@ -889,18 +886,18 @@ mod torrent_builder_tests {
     fn validate_path_ok() {
         let mut path = PathBuf::from(".").canonicalize().unwrap();
         path.push("target");
-        let builder = TorrentBuilder::new("url".to_owned(), &path, 42);
+        let builder = TorrentBuilder::new(&path, 42);
 
         builder.validate_path().unwrap();
         // validation methods should not modify builder
-        assert_eq!(builder, TorrentBuilder::new("url".to_owned(), path, 42));
+        assert_eq!(builder, TorrentBuilder::new(path, 42));
     }
 
     #[test]
     fn validate_path_does_not_exist() {
         let mut path = PathBuf::from(".").canonicalize().unwrap();
         path.push("dir");
-        let builder = TorrentBuilder::new("url".to_owned(), path, 42);
+        let builder = TorrentBuilder::new(path, 42);
 
         match builder.validate_path() {
             Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => assert_eq!(
@@ -915,7 +912,7 @@ mod torrent_builder_tests {
     fn validate_path_has_invalid_component() {
         let mut path = PathBuf::from(".").canonicalize().unwrap();
         path.push("target/..");
-        let builder = TorrentBuilder::new("url".to_owned(), path, 42);
+        let builder = TorrentBuilder::new(path, 42);
 
         match builder.validate_path() {
             Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
@@ -929,7 +926,7 @@ mod torrent_builder_tests {
     fn validate_path_has_hidden_component() {
         let mut path = PathBuf::from(".").canonicalize().unwrap();
         path.push("tests/files/.hidden");
-        let builder = TorrentBuilder::new("url".to_owned(), path, 42);
+        let builder = TorrentBuilder::new(path, 42);
 
         match builder.validate_path() {
             Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
@@ -941,7 +938,7 @@ mod torrent_builder_tests {
 
     #[test]
     fn validate_path_not_absolute() {
-        let builder = TorrentBuilder::new("url".to_owned(), "target/", 42);
+        let builder = TorrentBuilder::new("target/", 42);
 
         match builder.validate_path() {
             Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
@@ -953,19 +950,16 @@ mod torrent_builder_tests {
 
     #[test]
     fn validate_piece_length_ok() {
-        let builder = TorrentBuilder::new("url".to_owned(), "target/", 1024);
+        let builder = TorrentBuilder::new("target/", 1024);
 
         builder.validate_piece_length().unwrap();
         // validation methods should not modify builder
-        assert_eq!(
-            builder,
-            TorrentBuilder::new("url".to_owned(), "target/", 1024),
-        );
+        assert_eq!(builder, TorrentBuilder::new("target/", 1024),);
     }
 
     #[test]
     fn validate_piece_length_not_positive() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", -1024);
+        let builder = TorrentBuilder::new("dir/", -1024);
 
         match builder.validate_piece_length() {
             Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
@@ -977,7 +971,7 @@ mod torrent_builder_tests {
 
     #[test]
     fn validate_piece_length_not_power_of_two() {
-        let builder = TorrentBuilder::new("url".to_owned(), "dir/", 1023);
+        let builder = TorrentBuilder::new("dir/", 1023);
 
         match builder.validate_piece_length() {
             Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => assert_eq!(
@@ -990,34 +984,31 @@ mod torrent_builder_tests {
 
     #[test]
     fn validate_extra_fields_ok() {
-        let builder = TorrentBuilder::new("url".to_owned(), "target/", 42)
+        let builder = TorrentBuilder::new("target/", 42)
             .add_extra_field("k1".to_owned(), bencode_elem!("v1"));
 
         builder.validate_extra_fields().unwrap();
         // validation methods should not modify builder
         assert_eq!(
             builder,
-            TorrentBuilder::new("url".to_owned(), "target/", 42)
+            TorrentBuilder::new("target/", 42)
                 .add_extra_field("k1".to_owned(), bencode_elem!("v1")),
         );
     }
 
     #[test]
     fn validate_extra_fields_none() {
-        let builder = TorrentBuilder::new("url".to_owned(), "target/", 42);
+        let builder = TorrentBuilder::new("target/", 42);
 
         builder.validate_extra_fields().unwrap();
         // validation methods should not modify builder
-        assert_eq!(
-            builder,
-            TorrentBuilder::new("url".to_owned(), "target/", 42),
-        );
+        assert_eq!(builder, TorrentBuilder::new("target/", 42),);
     }
 
     #[test]
     fn validate_extra_fields_empty_key() {
-        let builder = TorrentBuilder::new("url".to_owned(), "target/", 42)
-            .add_extra_field("".to_owned(), bencode_elem!("v1"));
+        let builder =
+            TorrentBuilder::new("target/", 42).add_extra_field("".to_owned(), bencode_elem!("v1"));
 
         match builder.validate_extra_fields() {
             Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => assert_eq!(
@@ -1030,33 +1021,30 @@ mod torrent_builder_tests {
 
     #[test]
     fn validate_extra_info_fields_ok() {
-        let builder = TorrentBuilder::new("url".to_owned(), "target/", 42)
+        let builder = TorrentBuilder::new("target/", 42)
             .add_extra_info_field("k1".to_owned(), bencode_elem!("v1"));
 
         builder.validate_extra_info_fields().unwrap();
         // validation methods should not modify builder
         assert_eq!(
             builder,
-            TorrentBuilder::new("url".to_owned(), "target/", 42)
+            TorrentBuilder::new("target/", 42)
                 .add_extra_info_field("k1".to_owned(), bencode_elem!("v1")),
         );
     }
 
     #[test]
     fn validate_extra_info_fields_none() {
-        let builder = TorrentBuilder::new("url".to_owned(), "target/", 42);
+        let builder = TorrentBuilder::new("target/", 42);
 
         builder.validate_extra_info_fields().unwrap();
         // validation methods should not modify builder
-        assert_eq!(
-            builder,
-            TorrentBuilder::new("url".to_owned(), "target/", 42),
-        );
+        assert_eq!(builder, TorrentBuilder::new("target/", 42),);
     }
 
     #[test]
     fn validate_extra_info_fields_empty_key() {
-        let builder = TorrentBuilder::new("url".to_owned(), "target/", 42)
+        let builder = TorrentBuilder::new("target/", 42)
             .add_extra_info_field("".to_owned(), bencode_elem!("v1"));
 
         match builder.validate_extra_info_fields() {

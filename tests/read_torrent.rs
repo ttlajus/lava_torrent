@@ -18,7 +18,7 @@ fn read_from_bytes() {
     let parsed = Torrent::read_from_bytes(bytes).unwrap();
     assert_eq!(
         parsed.announce,
-        "http://torrent.ubuntu.com:6969/announce".to_owned(),
+        Some("http://torrent.ubuntu.com:6969/announce".to_owned()),
     );
     assert_eq!(
         parsed.announce_list,
@@ -96,7 +96,7 @@ fn read_from_bytes_multiple_files() {
     let parsed = Torrent::read_from_bytes(bytes).unwrap();
     assert_eq!(
         parsed.announce,
-        "http://linuxtracker.org:2710/00000000000000000000000000000000/announce".to_owned(),
+        Some("http://linuxtracker.org:2710/00000000000000000000000000000000/announce".to_owned()),
     );
     assert_eq!(
         parsed.announce_list,

@@ -57,7 +57,7 @@ pub struct File {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Torrent {
     /// URL of the torrent's tracker.
-    pub announce: String,
+    pub announce: Option<String>,
     /// Announce list as defined in [BEP 12](http://bittorrent.org/beps/bep_0012.html).
     pub announce_list: Option<AnnounceList>,
     /// Total torrent size in bytes (i.e. sum of all files' sizes).
@@ -84,7 +84,7 @@ pub struct Torrent {
 /// existing *.torrent* files then use [`Torrent::read_from_file()`]
 /// or [`Torrent::read_from_bytes()`].
 ///
-/// Required fields: `announce`, `path`, and `piece_length`.
+/// Required fields: `path` and `piece_length`.
 /// They are set when calling the constructor [`new()`].
 ///
 /// Optional fields can be set by calling the corresponding methods
@@ -112,7 +112,7 @@ pub struct Torrent {
 /// [BEP 47]: http://bittorrent.org/beps/bep_0047.html
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct TorrentBuilder {
-    announce: String,
+    announce: Option<String>,
     announce_list: Option<AnnounceList>,
     name: Option<String>,
     path: PathBuf,
@@ -225,6 +225,9 @@ impl Torrent {
     /// `announce-list` key is present, the client will ignore the `announce` key
     /// and only use the URLs in `announce-list`."
     ///
+    /// If neither `self.announce` nor `self.announce_list` is present, the output
+    /// won't contain any `tr` parameter.
+    ///
     /// The `x.pe` parameter (for peer addresses) is currently not supported.
     pub fn magnet_link(&self) -> String {
         if let Some(ref list) = self.announce_list {
@@ -238,13 +241,15 @@ impl Torrent {
                         .format_with("", |url, f| f(&format_args!("&tr={}", url)))
                 ))),
             )
-        } else {
+        } else if let Some(ref announce) = self.announce {
             format!(
                 "magnet:?xt=urn:btih:{}&dn={}&tr={}",
                 self.info_hash(),
                 self.name,
-                self.announce,
+                announce,
             )
+        } else {
+            format!("magnet:?xt=urn:btih:{}&dn={}", self.info_hash(), self.name,)
         }
     }
 
@@ -295,7 +300,9 @@ impl fmt::Display for File {
 impl fmt::Display for Torrent {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "{}.torrent", self.name)?;
-        writeln!(f, "-announce: {}", self.announce)?;
+        if let Some(ref announce) = self.announce {
+            writeln!(f, "-announce: {}", announce)?;
+        }
         if let Some(ref tiers) = self.announce_list {
             writeln!(
                 f,
@@ -396,7 +403,7 @@ mod torrent_tests {
     #[test]
     fn construct_info_ok() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -424,7 +431,7 @@ mod torrent_tests {
     #[test]
     fn info_hash_ok() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -444,7 +451,7 @@ mod torrent_tests {
     #[test]
     fn magnet_link_ok() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -466,7 +473,7 @@ mod torrent_tests {
     #[test]
     fn magnet_link_with_announce_list() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: Some(vec![
                 vec!["url1".to_owned()],
                 vec!["url2".to_owned(), "url3".to_owned()],
@@ -491,7 +498,7 @@ mod torrent_tests {
     #[test]
     fn is_private_ok() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -510,7 +517,7 @@ mod torrent_tests {
     #[test]
     fn is_private_no_extra_fields() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -527,7 +534,7 @@ mod torrent_tests {
     #[test]
     fn is_private_no_key() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -546,7 +553,7 @@ mod torrent_tests {
     #[test]
     fn is_private_incorrect_val_type() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -565,7 +572,7 @@ mod torrent_tests {
     #[test]
     fn is_private_incorrect_val() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -636,7 +643,7 @@ mod torrent_display_tests {
     #[test]
     fn torrent_display_ok() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -660,7 +667,7 @@ mod torrent_display_tests {
     #[test]
     fn torrent_display_with_announce_list() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: Some(vec![
                 vec!["url1".to_owned(), "url2".to_owned()],
                 vec!["url3".to_owned(), "url4".to_owned()],
@@ -688,7 +695,7 @@ mod torrent_display_tests {
     #[test]
     fn torrent_display_with_extra_fields() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -720,7 +727,7 @@ mod torrent_display_tests {
     #[test]
     fn torrent_display_with_extra_info_fields() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: None,
@@ -752,7 +759,7 @@ mod torrent_display_tests {
     #[test]
     fn torrent_display_with_multiple_files() {
         let torrent = Torrent {
-            announce: "url".to_owned(),
+            announce: Some("url".to_owned()),
             announce_list: None,
             length: 4,
             files: Some(vec![
