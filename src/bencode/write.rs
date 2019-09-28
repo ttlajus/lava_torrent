@@ -149,6 +149,10 @@ impl BencodeElem {
     ///
     /// "This function will create a file if it does
     /// not exist, and will truncate it if it does."
+    ///
+    /// Note: it is the client's responsibility to ensure
+    /// that all directories in `path` actually exist (e.g.
+    /// by calling [`create_dir_all`](https://doc.rust-lang.org/std/fs/fn.create_dir_all.html)).
     pub fn write_into_file<P>(&self, path: P) -> Result<()>
     where
         P: AsRef<Path>,
