@@ -207,6 +207,21 @@ impl Torrent {
         hasher.result_str()
     }
 
+    /// Calculate the `Torrent`'s info hash as defined in
+    /// [BEP 3](http://bittorrent.org/beps/bep_0003.html).
+    ///
+    /// Note that the calculated info hash is not cached.
+    /// So if this method is called multiple times, multiple
+    /// calculations will be performed. To avoid that, the
+    /// caller should cache the return value as needed.
+    pub fn info_hash_bytes(&self) -> Vec<u8> {
+        let mut hasher = Sha1::new();
+        hasher.input(&self.construct_info().encode());
+        let mut bytes = vec![0; hasher.output_bytes()];
+        hasher.result(bytes.as_mut());
+        bytes
+    }
+
     /// Calculate the `Torrent`'s magnet link as defined in
     /// [BEP 9](http://bittorrent.org/beps/bep_0009.html).
     ///

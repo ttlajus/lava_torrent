@@ -127,6 +127,7 @@ pub(crate) mod util;
 #[macro_use]
 pub mod bencode;
 pub mod torrent;
+pub mod tracker;
 
 /// Custom error.
 ///
@@ -153,6 +154,13 @@ pub mod error {
             MalformedTorrent(reason: ::std::borrow::Cow<'static, str>) {
                 description("malformed torrent")
                 display("malformed torrent: {}", reason)
+            }
+
+            #[doc = "Bencode is fine, but parsed data is gibberish, so we \
+             can't extract a response from it."]
+            MalformedResponse(reason: ::std::borrow::Cow<'static, str>) {
+                description("malformed response")
+                display("malformed response: {}", reason)
             }
 
             #[doc = "`TorrentBuilder` encounters problems when \
