@@ -79,6 +79,29 @@ where
     Ok(())
 }
 
+/// Encode `dict` and write the result to `dst`.
+pub fn write_raw_dictionary<W, S>(
+    dict: &HashMap<Vec<u8>, BencodeElem, S>,
+    dst: &mut W,
+) -> Result<()>
+where
+    W: Write,
+    S: BuildHasher,
+{
+    // "Keys must be strings and appear in sorted order
+    // (sorted as raw strings, not alphanumerics)."
+    let mut sorted = dict.iter().collect::<Vec<(&Vec<u8>, &BencodeElem)>>();
+    sorted.sort_by_key(|&(key, _)| key);
+
+    dst.write_all(&[DICTIONARY_PREFIX])?;
+    for (key, val) in sorted {
+        write_bytes(key, dst)?;
+        val.write_into(dst)?;
+    }
+    dst.write_all(&[DICTIONARY_POSTFIX])?;
+    Ok(())
+}
+
 /// Encode `string` and return the result in a `Vec`.
 pub fn encode_string<S>(string: S) -> Vec<u8>
 where
@@ -128,6 +151,16 @@ where
     encoded
 }
 
+/// Encode `dict` and return the result in a `Vec`.
+pub fn encode_raw_dictionary<S>(dict: &HashMap<Vec<u8>, BencodeElem, S>) -> Vec<u8>
+where
+    S: BuildHasher,
+{
+    let mut encoded = Vec::new();
+    write_raw_dictionary(dict, &mut encoded).expect("Write to vec failed!");
+    encoded
+}
+
 impl BencodeElem {
     /// Encode `self` and write the result to `dst`.
     pub fn write_into<W>(&self, dst: &mut W) -> Result<()>
@@ -140,6 +173,7 @@ impl BencodeElem {
             BencodeElem::Integer(int) => write_integer(int, dst),
             BencodeElem::List(ref list) => write_list(list, dst),
             BencodeElem::Dictionary(ref dict) => write_dictionary(dict, dst),
+            BencodeElem::RawDictionary(ref dict) => write_raw_dictionary(dict, dst),
         }
     }
 
@@ -171,6 +205,7 @@ impl BencodeElem {
             BencodeElem::Integer(int) => encode_integer(int),
             BencodeElem::List(ref list) => encode_list(list),
             BencodeElem::Dictionary(ref dict) => encode_dictionary(dict),
+            BencodeElem::RawDictionary(ref dict) => encode_raw_dictionary(dict),
         }
     }
 }

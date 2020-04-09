@@ -86,7 +86,10 @@ impl BencodeElem {
         while Self::peek_byte(bytes)? != DICTIONARY_POSTFIX {
             // more to parse
             match Self::decode_string(bytes) {
-                Ok(BencodeElem::String(string)) => entries.push((string, Self::parse(bytes)?)),
+                Ok(BencodeElem::Bytes(string)) => entries.push((string, Self::parse(bytes)?)),
+                Ok(BencodeElem::String(string)) => {
+                    entries.push((string.into_bytes(), Self::parse(bytes)?))
+                }
                 Ok(_) => bail!(ErrorKind::MalformedBencode(Cow::Borrowed(
                     "Non-string dictionary key."
                 ))),
@@ -99,15 +102,27 @@ impl BencodeElem {
         for (i, j) in (1..entries.len()).enumerate() {
             let (&(ref k1, _), &(ref k2, _)) = (&entries[i], &entries[j]);
             // "sorted as raw strings, not alphanumerics"
-            if k1.as_bytes() > k2.as_bytes() {
+            if k1 > k2 {
                 bail!(ErrorKind::MalformedBencode(Cow::Borrowed(
                     "A dictionary is not properly sorted."
                 )));
             }
         }
 
+        // convert to Dictionary if possible
+        let mut entries2 = Vec::new();
+        for (k, v) in &entries {
+            match String::from_utf8(k.to_owned()) {
+                Ok(s) => entries2.push((s, v.to_owned())),
+                Err(_) => {
+                    return Ok(BencodeElem::RawDictionary(HashMap::from_iter(
+                        entries.into_iter(),
+                    )));
+                }
+            }
+        }
         Ok(BencodeElem::Dictionary(HashMap::from_iter(
-            entries.into_iter(),
+            entries2.into_iter(),
         )))
     }
 
@@ -472,19 +487,6 @@ mod bencode_elem_read_tests {
         match BencodeElem::decode_dictionary(&mut ByteBuffer::new(bytes)) {
             Err(Error(ErrorKind::MalformedBencode(m), _)) => {
                 assert_eq!(m, "Input contains invalid integer: i4e3.");
-            }
-            _ => assert!(false),
-        }
-    }
-
-    #[test]
-    fn decode_dictionary_non_string_key_2() {
-        let mut bytes = vec![b'4', b':', 0xff, 0xf8, 0xff, 0xee];
-        bytes.extend("3:moo4:spam4:eggse".as_bytes());
-
-        match BencodeElem::decode_dictionary(&mut ByteBuffer::new(&bytes)) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
-                assert_eq!(m, "Non-string dictionary key.");
             }
             _ => assert!(false),
         }

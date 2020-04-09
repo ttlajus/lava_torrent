@@ -25,10 +25,11 @@ const STRING_DELIMITER: u8 = b':';
 
 /// Represent a single bencode element.
 ///
-/// There are 4 variants in the [spec], but this enum has 5 variants. The extra variant is
+/// There are 4 variants in the [spec], but this enum has 6 variants. The extra variants are
 /// `Bytes` (a sequence of bytes that does not represent a valid utf8
 /// string, e.g. a SHA1 block hash), which is considered to be the
-/// same as `String` in the [spec]. But they are best treated differently
+/// same as `String` in the [spec], and `RawDictionary`, which has keys that are not
+/// valid utf8 strings. They are best treated differently
 /// in actual implementations to make things easier.
 ///
 /// Note that the `Integer` variant here uses `i64` explicitly instead of using a type alias like
@@ -45,6 +46,7 @@ pub enum BencodeElem {
     Integer(i64),
     List(Vec<BencodeElem>),
     Dictionary(HashMap<String, BencodeElem>),
+    RawDictionary(HashMap<Vec<u8>, BencodeElem>),
 }
 
 impl From<u8> for BencodeElem {
@@ -126,6 +128,17 @@ impl fmt::Display for BencodeElem {
                 dict.iter()
                     .sorted_by_key(|&(key, _)| key.as_bytes())
                     .format_with(", ", |(k, v), f| f(&format_args!(r#"("{}", {})"#, k, v)))
+            ),
+            BencodeElem::RawDictionary(ref dict) => write!(
+                f,
+                "{{ {} }}",
+                dict.iter()
+                    .sorted_by_key(|&(key, _)| key)
+                    .format_with(", ", |(k, v), f| f(&format_args!(
+                        r#"("{}", {})"#,
+                        k.iter().map(|b| format!("{:x}", b)).format(""),
+                        v
+                    )))
             ),
         }
     }
