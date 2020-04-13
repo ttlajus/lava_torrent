@@ -157,4 +157,34 @@ mod bencode_elem_macro_tests {
     fn dict_empty() {
         assert_eq!(bencode_elem!({}), BencodeElem::Dictionary(HashMap::new()))
     }
+
+    #[test]
+    fn raw_dict_ok() {
+        assert_eq!(
+            bencode_elem!(r{ ([0xff, 0xf8, 0xff, 0xee], { ("moo", 4) }), ([b's', b'p', b'a', b'm'], "eggs") }),
+            BencodeElem::RawDictionary(HashMap::from_iter(
+                vec![
+                    (
+                        vec![0xff, 0xf8, 0xff, 0xee],
+                        BencodeElem::Dictionary(HashMap::from_iter(
+                            vec![("moo".to_owned(), BencodeElem::Integer(4_i64))].into_iter(),
+                        )),
+                    ),
+                    (
+                        "spam".as_bytes().to_owned(),
+                        BencodeElem::String("eggs".to_owned())
+                    ),
+                ]
+                .into_iter(),
+            ))
+        )
+    }
+
+    #[test]
+    fn raw_dict_empty() {
+        assert_eq!(
+            bencode_elem!(r {}),
+            BencodeElem::RawDictionary(HashMap::new())
+        )
+    }
 }
