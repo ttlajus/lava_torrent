@@ -1,39 +1,34 @@
-use conv::ValueFrom;
 use error::*;
 use std::borrow::Cow;
+use std::convert::TryFrom;
 use std::path::{Path, PathBuf};
 
 pub(crate) fn u64_to_usize(src: u64) -> Result<usize> {
-    // @todo: switch to `usize::try_from()` when it's stable
-    usize::value_from(src).chain_err(|| {
+    usize::try_from(src).chain_err(|| {
         ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into usize.", src)))
     })
 }
 
 pub(crate) fn usize_to_u64(src: usize) -> Result<u64> {
-    // @todo: switch to `u64::try_from()` when it's stable
-    u64::value_from(src).chain_err(|| {
+    u64::try_from(src).chain_err(|| {
         ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into u64.", src)))
     })
 }
 
 pub(crate) fn i64_to_usize(src: i64) -> Result<usize> {
-    // @todo: switch to `usize::try_from()` when it's stable
-    usize::value_from(src).chain_err(|| {
+    usize::try_from(src).chain_err(|| {
         ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into usize.", src)))
     })
 }
 
 pub(crate) fn i64_to_u64(src: i64) -> Result<u64> {
-    // @todo: switch to `u64::try_from()` when it's stable
-    u64::value_from(src).chain_err(|| {
+    u64::try_from(src).chain_err(|| {
         ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into u64.", src)))
     })
 }
 
 pub(crate) fn u64_to_i64(src: u64) -> Result<i64> {
-    // @todo: switch to `i64::try_from()` when it's stable
-    i64::value_from(src).chain_err(|| {
+    i64::try_from(src).chain_err(|| {
         ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into i64.", src)))
     })
 }
