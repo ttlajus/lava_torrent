@@ -85,11 +85,8 @@ impl BencodeElem {
 
         while Self::peek_byte(bytes)? != DICTIONARY_POSTFIX {
             // more to parse
-            match Self::decode_string(bytes) {
-                Ok(BencodeElem::Bytes(string)) => entries.push((string, Self::parse(bytes)?)),
-                Ok(BencodeElem::String(string)) => {
-                    entries.push((string.into_bytes(), Self::parse(bytes)?))
-                }
+            match Self::decode_bytes(bytes) {
+                Ok(BencodeElem::Bytes(key)) => entries.push((key, Self::parse(bytes)?)),
                 Ok(_) => bail!(ErrorKind::MalformedBencode(Cow::Borrowed(
                     "Non-string dictionary key."
                 ))),
@@ -110,10 +107,11 @@ impl BencodeElem {
         }
 
         // convert to Dictionary if possible
+        // in which case keys are normalized to NFC forms
         let mut entries2 = Vec::new();
         for (k, v) in &entries {
             match String::from_utf8(k.to_owned()) {
-                Ok(s) => entries2.push((s, v.to_owned())),
+                Ok(s) => entries2.push((s.chars().nfc().collect(), v.to_owned())),
                 Err(_) => {
                     return Ok(BencodeElem::RawDictionary(HashMap::from_iter(
                         entries.into_iter(),
@@ -174,22 +172,24 @@ impl BencodeElem {
     }
 
     fn decode_string(bytes: &mut ByteBuffer) -> Result<BencodeElem> {
+        match Self::decode_bytes(bytes) {
+            Ok(BencodeElem::Bytes(string_bytes)) => {
+                // Valid UTF8 strings are normalizd to NFC forms.
+                match String::from_utf8(string_bytes) {
+                    Ok(string) => Ok(BencodeElem::String(string.chars().nfc().collect())),
+                    Err(e) => Ok(BencodeElem::Bytes(e.into_bytes())),
+                }
+            }
+            Ok(_) => panic!("decode_bytes() did not return bytes."),
+            Err(e) => Err(e),
+        }
+    }
+
+    fn decode_bytes(bytes: &mut ByteBuffer) -> Result<BencodeElem> {
         match Self::decode_integer(bytes, STRING_DELIMITER) {
             Ok(BencodeElem::Integer(len)) => {
                 if let Ok(len) = util::i64_to_usize(len) {
-                    let string_bytes = bytes.take(len).cloned().collect();
-
-                    // Since the SHA1 hash values are not valid UTF8,
-                    // we can't really say that an invalid UTF8 string
-                    // indicates malformed bencode. In that case, we
-                    // can only return the bytes as-is, and the client
-                    // has to decide if the bencode is indeed malformed.
-                    //
-                    // Valid UTF8 strings are normalizd to NFC forms.
-                    match String::from_utf8(string_bytes) {
-                        Ok(string) => Ok(BencodeElem::String(string.chars().nfc().collect())),
-                        Err(e) => Ok(BencodeElem::Bytes(e.into_bytes())),
-                    }
+                    Ok(BencodeElem::Bytes(bytes.take(len).cloned().collect()))
                 } else {
                     bail!(ErrorKind::MalformedBencode(Cow::Borrowed(
                         "A string's length does not fit into `usize`."
