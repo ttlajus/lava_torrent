@@ -7,6 +7,7 @@ use super::*;
 // -bytes: (b1, b2, ...), support trailing comma
 // -list: [e1, e2, ...], support trailing comma
 // -dictionary: { (k1, v1), (k2, v2), ... }, support trailing comma (no trailing comma in K-V pair)
+// -raw dictionary: { ([k1], v1), ([k2], v2), ... }, support trailing comma (no trailing comma in K-V pair)
 #[macro_export]
 macro_rules! bencode_elem {
     ([ $( $element:tt ),* ]) => {
@@ -30,6 +31,22 @@ macro_rules! bencode_elem {
     };
     ({ $( ($key:tt, $val:tt) ),+ ,}) => {
         bencode_elem!({ $( ($key, $val) ),* })
+    };
+    (r{ $( ( [ $( $key:tt ),* ] , $val:tt) ),* }) => {
+        $crate::bencode::BencodeElem::RawDictionary(
+            ::std::collections::HashMap::from_iter(
+                vec![ $( (vec![ $( $key ),* ], bencode_elem!($val)) ),* ].into_iter()
+            )
+        )
+    };
+    (r{ $( ( [ $( $key:tt ),+ ,] , $val:tt) ),* }) => {
+        bencode_elem!(r{ $( ( [ $( $key ),* ], $val) ),* })
+    };
+    (r{ $( ( [ $( $key:tt ),* ] , $val:tt) ),+ ,}) => {
+        bencode_elem!(r{ $( ( [ $( $key ),* ], $val) ),* })
+    };
+    (r{ $( ( [ $( $key:tt ),+ ,] , $val:tt) ),+ ,}) => {
+        bencode_elem!(r{ $( ( [ $( $key ),* ], $val) ),* })
     };
     ($other:expr) => {
         $crate::bencode::BencodeElem::from($other)

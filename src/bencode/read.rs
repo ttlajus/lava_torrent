@@ -503,6 +503,30 @@ mod bencode_elem_read_tests {
         }
     }
 
+    #[test]
+    fn decode_raw_dictionary_ok() {
+        let mut bytes = vec![b'4', b':', 0xff, 0xf8, 0xff, 0xee];
+        bytes.extend("3:mooe".as_bytes());
+
+        assert_eq!(
+            BencodeElem::decode_dictionary(&mut ByteBuffer::new(&bytes)).unwrap(),
+            bencode_elem!(r{ ([0xff, 0xf8, 0xff, 0xee], "moo") })
+        );
+    }
+
+    #[test]
+    fn decode_raw_dictionary_ok_2() {
+        // mix valid utf8 strings and invalid utf8 strings
+        let mut bytes = "3:zoo3:moo".as_bytes().to_owned();
+        bytes.extend(vec![b'4', b':', 0xff, 0xf8, 0xff, 0xee]);
+        bytes.extend("4:eggse".as_bytes());
+
+        assert_eq!(
+            BencodeElem::decode_dictionary(&mut ByteBuffer::new(&bytes)).unwrap(),
+            bencode_elem!(r{ ([b'z', b'o', b'o'], "moo"), ([0xff, 0xf8, 0xff, 0xee], "eggs") })
+        );
+    }
+
     // @note: `parse()` is called by other `decode_*()` methods, so
     // it is implicitly tested by other tests. Still, the following tests
     // are provided. Though these tests are not as comprehensive.
