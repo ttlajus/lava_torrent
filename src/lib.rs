@@ -33,26 +33,7 @@
 //! - bencode parsing/encoding (i.e. "bencoding/bdecoding") => [`BencodeElem`]
 //! - torrent parsing/encoding (based on [`BencodeElem`]) => [`Torrent`]
 //! - torrent creation => [`TorrentBuilder`]
-//!
-//! # *Performance*
-//! [`lava_torrent`] is designed with performance and maintenance cost in mind. Some naive
-//! [profiling] has been performed.
-//!
-//! ## Copying
-//! Parsing a *.torrent* ([v1]) file would take at least 2 copies:
-//! - load bencode bytes from file
-//! - parse from bytes (bytes are copied, for example, when they are converted to `String`)
-//!
-//! Creating a *.torrent* ([v1]) file and writing its bencoded form to disk
-//! would take at least 3 copies:
-//! - load file content from disk
-//! - feed the file content to a SHA1 hasher when constructing a [`Torrent`]
-//! - encode the resulting struct and write it to disk
-//!
-//! It might be possible to further reduce the number of copies, but in my opinion that would
-//! make the code harder to maintain. Unless there is evidence suggesting otherwise, I think
-//! the current balance between performance and maintenance cost is good enough. Please open
-//! a GitHub issue if you have any suggestion.
+//! - tracker response parsing => [`tracker`] [experimental]
 //!
 //! # *Correctness*
 //! [`lava_torrent`] is written without using any existing parser or parser generator.
@@ -107,6 +88,7 @@
 //! [`BencodeElem`]: bencode/enum.BencodeElem.html
 //! [`Torrent`]: torrent/v1/struct.Torrent.html
 //! [`TorrentBuilder`]: torrent/v1/struct.TorrentBuilder.html
+//! [`tracker`]: tracker/index.html
 //! [BitTorrent specification]: http://bittorrent.org/beps/bep_0003.html
 //! [BEP 3]: http://bittorrent.org/beps/bep_0003.html
 //! [`bigint`]: https://github.com/rust-num/num-bigint
