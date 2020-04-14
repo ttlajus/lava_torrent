@@ -17,7 +17,7 @@ codecov = { repository = "ttlajus/lava_torrent" }
 itertools = "0.8.0"
 unicode-normalization = "0.1.8"
 conv = "0.3.3"
-rust-crypto = "0.2.36"
+sha-1 = "0.8.2"
 error-chain = "0.12.1"
 
 [dev-dependencies]

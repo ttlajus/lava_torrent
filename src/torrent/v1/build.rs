@@ -1,6 +1,5 @@
 use super::*;
-use crypto::digest::Digest;
-use crypto::sha1::Sha1;
+use sha1::{Digest, Sha1};
 use std::io::{BufReader, Read};
 use std::path::Component;
 use util;
@@ -413,21 +412,11 @@ impl TorrentBuilder {
         let mut pieces = Vec::with_capacity(util::u64_to_usize(length / piece_length + 1)?);
         let mut total_read = 0;
 
-        let mut hasher = Sha1::new();
-        loop {
-            if total_read >= length {
-                break;
-            } else {
-                let read = file.by_ref().take(piece_length).read_to_end(&mut piece)?;
-                total_read += util::usize_to_u64(read)?;
-            }
+        while total_read < length {
+            let read = file.by_ref().take(piece_length).read_to_end(&mut piece)?;
+            total_read += util::usize_to_u64(read)?;
 
-            // @todo: is this vector pre-filling avoidable?
-            let mut output = vec![0; PIECE_STRING_LENGTH];
-            hasher.input(&piece);
-            hasher.result(output.as_mut_slice());
-            pieces.push(output);
-            hasher.reset();
+            pieces.push(Sha1::digest(&piece).to_vec());
             piece.clear();
         }
 
@@ -445,13 +434,12 @@ impl TorrentBuilder {
         let mut pieces = Vec::with_capacity(util::u64_to_usize(total_length / piece_length + 1)?);
 
         let mut piece = Vec::new();
-        let mut hasher = Sha1::new();
         let mut bytes = Vec::with_capacity(util::u64_to_usize(piece_length)?);
         for (path, length) in entries {
             let mut file = BufReader::new(::std::fs::File::open(&path)?);
             let mut file_remaining = length;
 
-            loop {
+            while file_remaining > 0 {
                 // calculate the # of bytes to read in this iteration
                 let piece_filled = util::usize_to_u64(piece.len())?;
                 let piece_reamining = piece_length - piece_filled;
@@ -468,18 +456,8 @@ impl TorrentBuilder {
 
                 // if piece is completely filled, hash it
                 if piece.len() == util::u64_to_usize(piece_length)? {
-                    // @todo: is this vector pre-filling avoidable?
-                    let mut output = vec![0; PIECE_STRING_LENGTH];
-                    hasher.input(&piece);
-                    hasher.result(output.as_mut_slice());
-                    pieces.push(output);
-                    hasher.reset();
+                    pieces.push(Sha1::digest(&piece).to_vec());
                     piece.clear();
-                }
-
-                // done with current file
-                if file_remaining == 0 {
-                    break;
                 }
             }
 
@@ -493,12 +471,7 @@ impl TorrentBuilder {
         // if piece is empty then the total file size is divisible by the piece length
         // otherwise the last piece is partially filled and we have to hash it
         if !piece.is_empty() {
-            // @todo: is this vector pre-filling avoidable?
-            let mut output = vec![0; PIECE_STRING_LENGTH];
-            hasher.input(&piece);
-            hasher.result(output.as_mut_slice());
-            pieces.push(output);
-            hasher.reset();
+            pieces.push(Sha1::digest(&piece).to_vec());
             piece.clear();
         }
 

@@ -2,10 +2,9 @@
 //! related parsing/encoding/creation.
 
 use bencode::BencodeElem;
-use crypto::digest::Digest;
-use crypto::sha1::Sha1;
 use error::*;
 use itertools::Itertools;
+use sha1::{Digest, Sha1};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
@@ -202,9 +201,7 @@ impl Torrent {
     /// calculations will be performed. To avoid that, the
     /// caller should cache the return value as needed.
     pub fn info_hash(&self) -> String {
-        let mut hasher = Sha1::new();
-        hasher.input(&self.construct_info().encode());
-        hasher.result_str()
+        format!("{:x}", Sha1::digest(&self.construct_info().encode()))
     }
 
     /// Calculate the `Torrent`'s info hash as defined in
@@ -215,11 +212,7 @@ impl Torrent {
     /// calculations will be performed. To avoid that, the
     /// caller should cache the return value as needed.
     pub fn info_hash_bytes(&self) -> Vec<u8> {
-        let mut hasher = Sha1::new();
-        hasher.input(&self.construct_info().encode());
-        let mut bytes = vec![0; hasher.output_bytes()];
-        hasher.result(bytes.as_mut());
-        bytes
+        Sha1::digest(&self.construct_info().encode()).to_vec()
     }
 
     /// Calculate the `Torrent`'s magnet link as defined in

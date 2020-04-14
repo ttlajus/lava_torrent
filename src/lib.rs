@@ -99,8 +99,8 @@
 //! [bip-rs]: https://github.com/GGist/bip-rs
 
 extern crate conv;
-extern crate crypto;
 extern crate itertools;
+extern crate sha1;
 extern crate unicode_normalization;
 #[macro_use]
 extern crate error_chain;
