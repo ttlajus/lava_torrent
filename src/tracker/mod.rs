@@ -482,9 +482,9 @@ impl fmt::Display for TrackerResponse {
 
 impl fmt::Display for SwarmMetadata {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "-complete: {}\n", self.complete)?;
-        write!(f, "-incomplete: {}\n", self.incomplete)?;
-        write!(f, "-downloaded: {}\n", self.downloaded)?;
+        writeln!(f, "-complete: {}", self.complete)?;
+        writeln!(f, "-incomplete: {}", self.incomplete)?;
+        writeln!(f, "-downloaded: {}", self.downloaded)?;
 
         if let Some(ref fields) = self.extra_fields {
             write!(
