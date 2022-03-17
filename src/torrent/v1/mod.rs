@@ -232,27 +232,33 @@ impl Torrent {
     ///
     /// The `x.pe` parameter (for peer addresses) is currently not supported.
     pub fn magnet_link(&self) -> String {
-        if let Some(ref list) = self.announce_list {
-            format!(
-                "magnet:?xt=urn:btih:{}&dn={}{}",
-                self.info_hash(),
-                self.name,
-                list.iter().format_with("", |tier, f| f(&format_args!(
-                    "{}",
-                    tier.iter()
-                        .format_with("", |url, f| f(&format_args!("&tr={}", url)))
-                ))),
-            )
+        let tr = if let Some(ref list) = self.announce_list {
+            list.iter().format_with("", |tier, f| f(&format_args!(
+                "{}",
+                tier.iter()
+                    .format_with("", |url, f| f(&format_args!("&tr={}", url)))
+            ))).to_string()
         } else if let Some(ref announce) = self.announce {
             format!(
-                "magnet:?xt=urn:btih:{}&dn={}&tr={}",
-                self.info_hash(),
-                self.name,
+                "&tr={}",
                 announce,
             )
-        } else {
-            format!("magnet:?xt=urn:btih:{}&dn={}", self.info_hash(), self.name,)
-        }
+        } else {String::new()};
+
+        let ws = match self.extra_fields.as_ref().and_then(|fields| fields.get("url-list")) {
+            Some(BencodeElem::String(seed)) => format!("&ws={}", seed),
+            Some(BencodeElem::List(ref seeds)) =>
+                seeds.iter().format_with("", |url, f| f(&format_args!("&ws={}", url)))
+                    .to_string(),
+            _ => String::new()
+        };
+
+        format!("magnet:?xt=urn:btih:{}&dn={}{}{}",
+            self.info_hash(),
+            self.name,
+            tr,
+            ws,
+        )
     }
 
     /// Check if this torrent is private as defined in
