@@ -18,8 +18,11 @@ mod write;
 const PIECE_STRING_LENGTH: usize = 20;
 
 // The escaping rules for magnet URIs are not specified in BEP9,
-// so we simply escape '&' and space.
-const MAGNET_COMPONENT: &AsciiSet = &CONTROLS.add(b' ').add(b'&');
+// so we simply escape '&'. We do not escape space here, since
+// percent_encoding escapes it to '%20' instead of '+'.
+// Instead, we manually replace it with '+' later in the code.
+// This means that we do have to escape actual '+'s though!
+const MAGNET_COMPONENT: &AsciiSet = &CONTROLS.add(b'&').add(b'+');
 
 /// Corresponds to a bencode dictionary.
 pub type Dictionary = HashMap<String, BencodeElem>;
@@ -238,7 +241,12 @@ impl Torrent {
     /// The `x.pe` parameter (for peer addresses) is currently not supported.
     pub fn magnet_link(&self) -> String {
         fn encode_component(from: &str) -> String {
-            utf8_percent_encode(from, MAGNET_COMPONENT).to_string()
+            // percent_encoding escapes space as '%20', which is not accepted
+            // by clients such as transmission, so we escape it manually to '+'.
+            str::replace(
+                &utf8_percent_encode(from, MAGNET_COMPONENT).to_string(),
+                " ", "+"
+            )
         }
 
         let tr = if let Some(ref list) = self.announce_list {
@@ -579,8 +587,8 @@ mod torrent_tests {
         assert_eq!(
             torrent.magnet_link(),
             "magnet:?xt=urn:btih:074f42efaf8267f137f114f722d4e7d1dcbfbda5\
-             &dn=sample&tr=https://example.org/path?a=1%26b=hello%20world\
-             &ws=https://example.org/path?a=1%26b=hello%20world"
+             &dn=sample&tr=https://example.org/path?a=1%26b=hello+world\
+             &ws=https://example.org/path?a=1%26b=hello+world"
                 .to_owned()
         );
     }
