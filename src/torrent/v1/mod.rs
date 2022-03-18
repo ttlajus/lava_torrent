@@ -512,6 +512,80 @@ mod torrent_tests {
     }
 
     #[test]
+    fn magnet_link_with_web_seed() {
+        let torrent = Torrent {
+            announce: None,
+            announce_list: None,
+            length: 4,
+            files: None,
+            name: "sample".to_owned(),
+            piece_length: 2,
+            pieces: vec![vec![1, 2], vec![3, 4]],
+            extra_fields: Some(HashMap::from([
+                ("url-list".to_owned(), BencodeElem::String("https://example.org/path".to_owned()))
+            ])),
+            extra_info_fields: None,
+        };
+
+        assert_eq!(
+            torrent.magnet_link(),
+            "magnet:?xt=urn:btih:074f42efaf8267f137f114f722d4e7d1dcbfbda5\
+             &dn=sample&ws=https://example.org/path"
+                .to_owned()
+        );
+    }
+
+    #[test]
+    fn magnet_link_with_web_seeds() {
+        let torrent = Torrent {
+            announce: None,
+            announce_list: None,
+            length: 4,
+            files: None,
+            name: "sample".to_owned(),
+            piece_length: 2,
+            pieces: vec![vec![1, 2], vec![3, 4]],
+            extra_fields: Some(HashMap::from([("url-list".to_owned(), BencodeElem::List(vec![
+                BencodeElem::String("https://example.org/path1".to_owned()),
+                BencodeElem::String("https://example.org/path2".to_owned()),
+            ]))])),
+            extra_info_fields: None,
+        };
+
+        assert_eq!(
+            torrent.magnet_link(),
+            "magnet:?xt=urn:btih:074f42efaf8267f137f114f722d4e7d1dcbfbda5\
+             &dn=sample&ws=https://example.org/path1&ws=https://example.org/path2"
+                .to_owned()
+        );
+    }
+
+    #[test]
+    fn magnet_link_escape() {
+        let torrent = Torrent {
+            announce: Some("https://example.org/path?a=1&b=hello world".to_owned()),
+            announce_list: None,
+            length: 4,
+            files: None,
+            name: "sample".to_owned(),
+            piece_length: 2,
+            pieces: vec![vec![1, 2], vec![3, 4]],
+            extra_fields: Some(HashMap::from([
+                ("url-list".to_owned(), BencodeElem::String("https://example.org/path?a=1&b=hello world".to_owned()))
+            ])),
+            extra_info_fields: None,
+        };
+
+        assert_eq!(
+            torrent.magnet_link(),
+            "magnet:?xt=urn:btih:074f42efaf8267f137f114f722d4e7d1dcbfbda5\
+             &dn=sample&tr=https://example.org/path?a=1%26b=hello%20world\
+             &ws=https://example.org/path?a=1%26b=hello%20world"
+                .to_owned()
+        );
+    }
+
+    #[test]
     fn is_private_ok() {
         let torrent = Torrent {
             announce: Some("url".to_owned()),
