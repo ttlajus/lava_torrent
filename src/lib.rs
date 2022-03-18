@@ -100,6 +100,7 @@
 
 extern crate conv;
 extern crate itertools;
+extern crate percent_encoding;
 extern crate sha1;
 extern crate unicode_normalization;
 #[macro_use]

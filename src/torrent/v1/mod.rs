@@ -9,12 +9,17 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
+use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 
 mod build;
 mod read;
 mod write;
 
 const PIECE_STRING_LENGTH: usize = 20;
+
+// The escaping rules for magnet URIs are not specified in BEP9,
+// so we simply escape '&' and space.
+const MAGNET_COMPONENT: &AsciiSet = &CONTROLS.add(b' ').add(b'&');
 
 /// Corresponds to a bencode dictionary.
 pub type Dictionary = HashMap<String, BencodeElem>;
@@ -232,24 +237,30 @@ impl Torrent {
     ///
     /// The `x.pe` parameter (for peer addresses) is currently not supported.
     pub fn magnet_link(&self) -> String {
+        fn encode_component(from: &str) -> String {
+            utf8_percent_encode(from, MAGNET_COMPONENT).to_string()
+        }
+
         let tr = if let Some(ref list) = self.announce_list {
             list.iter().format_with("", |tier, f| f(&format_args!(
                 "{}",
                 tier.iter()
-                    .format_with("", |url, f| f(&format_args!("&tr={}", url)))
+                    .format_with("", |url, f| f(&format_args!("&tr={}", encode_component(url))))
             ))).to_string()
         } else if let Some(ref announce) = self.announce {
             format!(
                 "&tr={}",
-                announce,
+                encode_component(announce),
             )
         } else {String::new()};
 
         let ws = match self.extra_fields.as_ref().and_then(|fields| fields.get("url-list")) {
-            Some(BencodeElem::String(seed)) => format!("&ws={}", seed),
+            Some(BencodeElem::String(seed)) => format!("&ws={}", encode_component(seed)),
             Some(BencodeElem::List(ref seeds)) =>
-                seeds.iter().format_with("", |url, f| f(&format_args!("&ws={}", url)))
-                    .to_string(),
+                seeds.iter().format_with("", |elem, f| {match elem {
+                    BencodeElem::String(url) => f(&format_args!("&ws={}", encode_component(url))),
+                    _ => f(&format!("")),
+                }}).to_string(),
             _ => String::new()
         };
 
