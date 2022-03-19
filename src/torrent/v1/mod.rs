@@ -9,12 +9,20 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
+use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 
 mod build;
 mod read;
 mod write;
 
 const PIECE_STRING_LENGTH: usize = 20;
+
+// The escaping rules for magnet URIs are not specified in BEP9,
+// so we simply escape '&'. We do not escape space here, since
+// percent_encoding escapes it to '%20' instead of '+'.
+// Instead, we manually replace it with '+' later in the code.
+// This means that we do have to escape actual '+'s though!
+const MAGNET_COMPONENT: &AsciiSet = &CONTROLS.add(b'&').add(b'+');
 
 /// Corresponds to a bencode dictionary.
 pub type Dictionary = HashMap<String, BencodeElem>;
@@ -232,27 +240,44 @@ impl Torrent {
     ///
     /// The `x.pe` parameter (for peer addresses) is currently not supported.
     pub fn magnet_link(&self) -> String {
-        if let Some(ref list) = self.announce_list {
-            format!(
-                "magnet:?xt=urn:btih:{}&dn={}{}",
-                self.info_hash(),
-                self.name,
-                list.iter().format_with("", |tier, f| f(&format_args!(
-                    "{}",
-                    tier.iter()
-                        .format_with("", |url, f| f(&format_args!("&tr={}", url)))
-                ))),
+        fn encode_component(from: &str) -> String {
+            // percent_encoding escapes space as '%20', which is not accepted
+            // by clients such as transmission, so we escape it manually to '+'.
+            str::replace(
+                &utf8_percent_encode(from, MAGNET_COMPONENT).to_string(),
+                " ", "+"
             )
+        }
+
+        let tr = if let Some(ref list) = self.announce_list {
+            list.iter().format_with("", |tier, f| f(&format_args!(
+                "{}",
+                tier.iter()
+                    .format_with("", |url, f| f(&format_args!("&tr={}", encode_component(url))))
+            ))).to_string()
         } else if let Some(ref announce) = self.announce {
             format!(
-                "magnet:?xt=urn:btih:{}&dn={}&tr={}",
-                self.info_hash(),
-                self.name,
-                announce,
+                "&tr={}",
+                encode_component(announce),
             )
-        } else {
-            format!("magnet:?xt=urn:btih:{}&dn={}", self.info_hash(), self.name,)
-        }
+        } else {String::new()};
+
+        let ws = match self.extra_fields.as_ref().and_then(|fields| fields.get("url-list")) {
+            Some(BencodeElem::String(seed)) => format!("&ws={}", encode_component(seed)),
+            Some(BencodeElem::List(ref seeds)) =>
+                seeds.iter().format_with("", |elem, f| {match elem {
+                    BencodeElem::String(url) => f(&format_args!("&ws={}", encode_component(url))),
+                    _ => f(&format!("")),
+                }}).to_string(),
+            _ => String::new()
+        };
+
+        format!("magnet:?xt=urn:btih:{}&dn={}{}{}",
+            self.info_hash(),
+            self.name,
+            tr,
+            ws,
+        )
     }
 
     /// Check if this torrent is private as defined in
@@ -490,6 +515,80 @@ mod torrent_tests {
             torrent.magnet_link(),
             "magnet:?xt=urn:btih:074f42efaf8267f137f114f722d4e7d1dcbfbda5\
              &dn=sample&tr=url1&tr=url2&tr=url3"
+                .to_owned()
+        );
+    }
+
+    #[test]
+    fn magnet_link_with_web_seed() {
+        let torrent = Torrent {
+            announce: None,
+            announce_list: None,
+            length: 4,
+            files: None,
+            name: "sample".to_owned(),
+            piece_length: 2,
+            pieces: vec![vec![1, 2], vec![3, 4]],
+            extra_fields: Some(HashMap::from([
+                ("url-list".to_owned(), BencodeElem::String("https://example.org/path".to_owned()))
+            ])),
+            extra_info_fields: None,
+        };
+
+        assert_eq!(
+            torrent.magnet_link(),
+            "magnet:?xt=urn:btih:074f42efaf8267f137f114f722d4e7d1dcbfbda5\
+             &dn=sample&ws=https://example.org/path"
+                .to_owned()
+        );
+    }
+
+    #[test]
+    fn magnet_link_with_web_seeds() {
+        let torrent = Torrent {
+            announce: None,
+            announce_list: None,
+            length: 4,
+            files: None,
+            name: "sample".to_owned(),
+            piece_length: 2,
+            pieces: vec![vec![1, 2], vec![3, 4]],
+            extra_fields: Some(HashMap::from([("url-list".to_owned(), BencodeElem::List(vec![
+                BencodeElem::String("https://example.org/path1".to_owned()),
+                BencodeElem::String("https://example.org/path2".to_owned()),
+            ]))])),
+            extra_info_fields: None,
+        };
+
+        assert_eq!(
+            torrent.magnet_link(),
+            "magnet:?xt=urn:btih:074f42efaf8267f137f114f722d4e7d1dcbfbda5\
+             &dn=sample&ws=https://example.org/path1&ws=https://example.org/path2"
+                .to_owned()
+        );
+    }
+
+    #[test]
+    fn magnet_link_escape() {
+        let torrent = Torrent {
+            announce: Some("https://example.org/path?a=1&b=hello world".to_owned()),
+            announce_list: None,
+            length: 4,
+            files: None,
+            name: "sample".to_owned(),
+            piece_length: 2,
+            pieces: vec![vec![1, 2], vec![3, 4]],
+            extra_fields: Some(HashMap::from([
+                ("url-list".to_owned(), BencodeElem::String("https://example.org/path?a=1&b=hello world".to_owned()))
+            ])),
+            extra_info_fields: None,
+        };
+
+        assert_eq!(
+            torrent.magnet_link(),
+            "magnet:?xt=urn:btih:074f42efaf8267f137f114f722d4e7d1dcbfbda5\
+             &dn=sample&tr=https://example.org/path?a=1%26b=hello+world\
+             &ws=https://example.org/path?a=1%26b=hello+world"
                 .to_owned()
         );
     }
