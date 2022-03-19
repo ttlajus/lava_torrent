@@ -163,10 +163,10 @@ impl Peer {
     {
         let bytes = bytes.as_ref();
         if bytes.len() != 6 {
-            panic!(format!(
+            panic!(
                 "Peer::from_bytes() expects 6 bytes, {} received.",
                 bytes.len()
-            ))
+            )
         }
 
         let ip = Ipv4Addr::from(u32::from_be_bytes(bytes[..4].try_into().unwrap()));

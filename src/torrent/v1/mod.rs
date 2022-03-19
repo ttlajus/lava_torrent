@@ -248,7 +248,7 @@ impl Torrent {
             // by clients such as transmission, so we escape it manually to '+'.
             utf8_percent_encode(from, MAGNET_COMPONENT)
                 .to_string()
-                .replace(" ", "+")
+                .replace(' ', "+")
         }
 
         let tr = if let Some(ref list) = self.announce_list {
