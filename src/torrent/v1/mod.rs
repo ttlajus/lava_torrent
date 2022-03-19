@@ -4,12 +4,12 @@
 use bencode::BencodeElem;
 use error::*;
 use itertools::Itertools;
+use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use sha1::{Digest, Sha1};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
-use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 
 mod build;
 mod read;
@@ -245,34 +245,47 @@ impl Torrent {
             // by clients such as transmission, so we escape it manually to '+'.
             str::replace(
                 &utf8_percent_encode(from, MAGNET_COMPONENT).to_string(),
-                " ", "+"
+                " ",
+                "+",
             )
         }
 
         let tr = if let Some(ref list) = self.announce_list {
-            list.iter().format_with("", |tier, f| f(&format_args!(
-                "{}",
-                tier.iter()
-                    .format_with("", |url, f| f(&format_args!("&tr={}", encode_component(url))))
-            ))).to_string()
+            list.iter()
+                .format_with("", |tier, f| {
+                    f(&format_args!(
+                        "{}",
+                        tier.iter().format_with("", |url, f| f(&format_args!(
+                            "&tr={}",
+                            encode_component(url)
+                        )))
+                    ))
+                })
+                .to_string()
         } else if let Some(ref announce) = self.announce {
-            format!(
-                "&tr={}",
-                encode_component(announce),
-            )
-        } else {String::new()};
-
-        let ws = match self.extra_fields.as_ref().and_then(|fields| fields.get("url-list")) {
-            Some(BencodeElem::String(seed)) => format!("&ws={}", encode_component(seed)),
-            Some(BencodeElem::List(ref seeds)) =>
-                seeds.iter().format_with("", |elem, f| {match elem {
-                    BencodeElem::String(url) => f(&format_args!("&ws={}", encode_component(url))),
-                    _ => f(&format!("")),
-                }}).to_string(),
-            _ => String::new()
+            format!("&tr={}", encode_component(announce),)
+        } else {
+            String::new()
         };
 
-        format!("magnet:?xt=urn:btih:{}&dn={}{}{}",
+        let ws = match self
+            .extra_fields
+            .as_ref()
+            .and_then(|fields| fields.get("url-list"))
+        {
+            Some(BencodeElem::String(seed)) => format!("&ws={}", encode_component(seed)),
+            Some(BencodeElem::List(ref seeds)) => seeds
+                .iter()
+                .format_with("", |elem, f| match elem {
+                    BencodeElem::String(url) => f(&format_args!("&ws={}", encode_component(url))),
+                    _ => f(&format!("")),
+                })
+                .to_string(),
+            _ => String::new(),
+        };
+
+        format!(
+            "magnet:?xt=urn:btih:{}&dn={}{}{}",
             self.info_hash(),
             self.name,
             tr,
@@ -529,9 +542,10 @@ mod torrent_tests {
             name: "sample".to_owned(),
             piece_length: 2,
             pieces: vec![vec![1, 2], vec![3, 4]],
-            extra_fields: Some(HashMap::from([
-                ("url-list".to_owned(), BencodeElem::String("https://example.org/path".to_owned()))
-            ])),
+            extra_fields: Some(HashMap::from([(
+                "url-list".to_owned(),
+                BencodeElem::String("https://example.org/path".to_owned()),
+            )])),
             extra_info_fields: None,
         };
 
@@ -553,10 +567,13 @@ mod torrent_tests {
             name: "sample".to_owned(),
             piece_length: 2,
             pieces: vec![vec![1, 2], vec![3, 4]],
-            extra_fields: Some(HashMap::from([("url-list".to_owned(), BencodeElem::List(vec![
-                BencodeElem::String("https://example.org/path1".to_owned()),
-                BencodeElem::String("https://example.org/path2".to_owned()),
-            ]))])),
+            extra_fields: Some(HashMap::from([(
+                "url-list".to_owned(),
+                BencodeElem::List(vec![
+                    BencodeElem::String("https://example.org/path1".to_owned()),
+                    BencodeElem::String("https://example.org/path2".to_owned()),
+                ]),
+            )])),
             extra_info_fields: None,
         };
 
@@ -578,9 +595,10 @@ mod torrent_tests {
             name: "sample".to_owned(),
             piece_length: 2,
             pieces: vec![vec![1, 2], vec![3, 4]],
-            extra_fields: Some(HashMap::from([
-                ("url-list".to_owned(), BencodeElem::String("https://example.org/path?a=1&b=hello world".to_owned()))
-            ])),
+            extra_fields: Some(HashMap::from([(
+                "url-list".to_owned(),
+                BencodeElem::String("https://example.org/path?a=1&b=hello world".to_owned()),
+            )])),
             extra_info_fields: None,
         };
 
