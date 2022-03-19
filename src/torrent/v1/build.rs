@@ -16,9 +16,6 @@ impl TorrentBuilder {
     ///
     /// - A valid `piece_length` is larger than `0` AND is a power of `2`.
     ///
-    /// - Using a `path` containing hidden components will make `build()` return `Err`.
-    /// This is \*nix-specific. Hidden components are those that start with `.`.
-    ///
     /// - Paths with components exactly matching `..` are invalid.
     ///
     /// [`build()`]: #method.build
@@ -160,9 +157,6 @@ impl TorrentBuilder {
     ///
     /// # Notes
     /// - `path` must be absolute.
-    ///
-    /// - Using a `path` containing hidden components will make `build()` return `Err`.
-    /// This is \*nix-specific. Hidden components are those that start with `.`.
     ///
     /// - Paths with components exactly matching `..` are invalid.
     ///
@@ -310,22 +304,11 @@ impl TorrentBuilder {
 
     fn validate_path(&self) -> Result<()> {
         // detect path components exactly matching ".."
-        // also detect hidden component
         for component in self.path.components() {
-            match component {
-                Component::ParentDir => {
-                    bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
-                        r#"Root path contains components exactly matching ".."."#
-                    )));
-                }
-                Component::Normal(s) => {
-                    if s.to_string_lossy().starts_with('.') {
-                        bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
-                            "Root path contains hidden components."
-                        )));
-                    }
-                }
-                _ => (),
+            if component == Component::ParentDir {
+                bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
+                    r#"Root path contains components exactly matching ".."."#
+                )));
             }
         }
 
@@ -901,12 +884,7 @@ mod torrent_builder_tests {
         path.push("tests/files/.hidden");
         let builder = TorrentBuilder::new(path, 42);
 
-        match builder.validate_path() {
-            Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
-                assert_eq!(m, "Root path contains hidden components.");
-            }
-            _ => assert!(false),
-        }
+        assert!(builder.validate_path().is_ok());
     }
 
     #[test]

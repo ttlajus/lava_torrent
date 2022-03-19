@@ -2,7 +2,6 @@ extern crate lava_torrent;
 extern crate rand;
 
 use lava_torrent::bencode::BencodeElem;
-use lava_torrent::error::*;
 use lava_torrent::torrent::v1::{Integer, Torrent, TorrentBuilder};
 use rand::Rng;
 use std::path::PathBuf;
@@ -156,23 +155,4 @@ fn build_symbolic_link() {
         Torrent::read_from_file(output_name).unwrap(),
         Torrent::read_from_file("tests/samples/symlink.torrent").unwrap(),
     );
-}
-
-#[test]
-fn build_hidden_file() {
-    let result = TorrentBuilder::new(
-        PathBuf::from("tests/files/.hidden").canonicalize().unwrap(),
-        PIECE_LENGTH,
-    )
-    .set_announce(Some(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
-    ))
-    .build();
-
-    match result {
-        Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
-            assert_eq!(m, "Root path contains hidden components.");
-        }
-        _ => assert!(false),
-    }
 }
