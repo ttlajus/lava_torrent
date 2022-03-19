@@ -239,15 +239,16 @@ impl Torrent {
     /// won't contain any `tr` parameter.
     ///
     /// The `x.pe` parameter (for peer addresses) is currently not supported.
-    pub fn magnet_link(&self) -> String {
+    ///
+    /// `self.extra_fields["url-list"]` will be used to construct `ws` parameters.
+    /// It must be either a string or a list of strings.
+    pub fn magnet_link(&self) -> Result<String> {
         fn encode_component(from: &str) -> String {
             // percent_encoding escapes space as '%20', which is not accepted
             // by clients such as transmission, so we escape it manually to '+'.
-            str::replace(
-                &utf8_percent_encode(from, MAGNET_COMPONENT).to_string(),
-                " ",
-                "+",
-            )
+            utf8_percent_encode(from, MAGNET_COMPONENT)
+                .to_string()
+                .replace(" ", "+")
         }
 
         let tr = if let Some(ref list) = self.announce_list {
@@ -263,7 +264,7 @@ impl Torrent {
                 })
                 .to_string()
         } else if let Some(ref announce) = self.announce {
-            format!("&tr={}", encode_component(announce),)
+            format!("&tr={}", encode_component(announce))
         } else {
             String::new()
         };
@@ -273,24 +274,40 @@ impl Torrent {
             .as_ref()
             .and_then(|fields| fields.get("url-list"))
         {
-            Some(BencodeElem::String(seed)) => format!("&ws={}", encode_component(seed)),
-            Some(BencodeElem::List(ref seeds)) => seeds
+            Some(BencodeElem::String(seed)) => Some(vec![seed]),
+            Some(BencodeElem::List(ref seeds)) => Some(
+                seeds
+                    .iter()
+                    .map(|elem| match elem {
+                        BencodeElem::String(url) => Ok(url),
+                        _ => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                            r#""url-list" is a list but contains a non-string element."#,
+                        ))),
+                    })
+                    .collect::<Result<Vec<&String>>>()?,
+            ),
+            Some(_) => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
+                r#""url-list" is neither a string nor a list."#
+            ))),
+            None => None,
+        };
+        let ws = match ws {
+            Some(ws) => ws
                 .iter()
-                .format_with("", |elem, f| match elem {
-                    BencodeElem::String(url) => f(&format_args!("&ws={}", encode_component(url))),
-                    _ => f(&format!("")),
+                .format_with("", |&url, f| {
+                    f(&format_args!("&ws={}", encode_component(url)))
                 })
                 .to_string(),
-            _ => String::new(),
+            None => String::new(),
         };
 
-        format!(
+        Ok(format!(
             "magnet:?xt=urn:btih:{}&dn={}{}{}",
             self.info_hash(),
             self.name,
             tr,
             ws,
-        )
+        ))
     }
 
     /// Check if this torrent is private as defined in
@@ -500,7 +517,7 @@ mod torrent_tests {
         };
 
         assert_eq!(
-            torrent.magnet_link(),
+            torrent.magnet_link().unwrap(),
             "magnet:?xt=urn:btih:074f42efaf8267f137f114f722d4e7d1dcbfbda5\
              &dn=sample&tr=url"
                 .to_owned()
@@ -525,7 +542,7 @@ mod torrent_tests {
         };
 
         assert_eq!(
-            torrent.magnet_link(),
+            torrent.magnet_link().unwrap(),
             "magnet:?xt=urn:btih:074f42efaf8267f137f114f722d4e7d1dcbfbda5\
              &dn=sample&tr=url1&tr=url2&tr=url3"
                 .to_owned()
@@ -550,7 +567,7 @@ mod torrent_tests {
         };
 
         assert_eq!(
-            torrent.magnet_link(),
+            torrent.magnet_link().unwrap(),
             "magnet:?xt=urn:btih:074f42efaf8267f137f114f722d4e7d1dcbfbda5\
              &dn=sample&ws=https://example.org/path"
                 .to_owned()
@@ -578,7 +595,7 @@ mod torrent_tests {
         };
 
         assert_eq!(
-            torrent.magnet_link(),
+            torrent.magnet_link().unwrap(),
             "magnet:?xt=urn:btih:074f42efaf8267f137f114f722d4e7d1dcbfbda5\
              &dn=sample&ws=https://example.org/path1&ws=https://example.org/path2"
                 .to_owned()
@@ -603,7 +620,7 @@ mod torrent_tests {
         };
 
         assert_eq!(
-            torrent.magnet_link(),
+            torrent.magnet_link().unwrap(),
             "magnet:?xt=urn:btih:074f42efaf8267f137f114f722d4e7d1dcbfbda5\
              &dn=sample&tr=https://example.org/path?a=1%26b=hello+world\
              &ws=https://example.org/path?a=1%26b=hello+world"

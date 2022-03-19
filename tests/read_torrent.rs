@@ -65,7 +65,7 @@ fn read_from_bytes() {
         "778ce280b595e57780ff083f2eb6f897dfa4a4ee".to_owned()
     );
     assert_eq!(
-        parsed.magnet_link(),
+        parsed.magnet_link().unwrap(),
         "magnet:?xt=urn:btih:778ce280b595e57780ff083f2eb6f897dfa4a4ee\
          &dn=ubuntu-16.04.4-desktop-amd64.iso\
          &tr=http://torrent.ubuntu.com:6969/announce\
@@ -160,7 +160,7 @@ fn read_from_bytes_multiple_files() {
         "a2a8d9b1ba0b1ac3d1ffa8062e02c0f9c23de31a".to_owned()
     );
     assert_eq!(
-        parsed.magnet_link(),
+        parsed.magnet_link().unwrap(),
         "magnet:?xt=urn:btih:a2a8d9b1ba0b1ac3d1ffa8062e02c0f9c23de31a\
          &dn=tails-amd64-3.6.1\
          &tr=udp://tracker.torrent.eu.org:451\
