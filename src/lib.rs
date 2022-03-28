@@ -52,7 +52,7 @@
 //! [`bigint`] to represent bencode integers,
 //! `i64` is used in the current implementation. If a bencode integer larger than
 //! [`i64::max_value()`]
-//! is found, an `Error` will be returned.
+//! is found, a `LavaTorrentError` will be returned.
 //!
 //! 2. Several private methods will panic if something that "just won't happen"
 //! happens. For the purpose of full disclosure this behavior is mentioned here,
