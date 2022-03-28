@@ -44,7 +44,7 @@ impl TorrentBuilder {
     /// are valid.
     ///
     /// [last component]: https://doc.rust-lang.org/std/path/struct.Path.html#method.file_name
-    pub fn build(self) -> Result<Torrent> {
+    pub fn build(self) -> Result<Torrent, LavaTorrentError> {
         // delegate validation to other methods
         self.validate_announce()?;
         self.validate_announce_list()?;
@@ -242,12 +242,12 @@ impl TorrentBuilder {
         TorrentBuilder { is_private, ..self }
     }
 
-    fn validate_announce(&self) -> Result<()> {
+    fn validate_announce(&self) -> Result<(), LavaTorrentError> {
         match self.announce {
             Some(ref announce) => {
                 if announce.is_empty() {
-                    bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
-                        "TorrentBuilder has `announce` but its length is 0."
+                    Err(LavaTorrentError::TorrentBuilderFailure(Cow::Borrowed(
+                        "TorrentBuilder has `announce` but its length is 0.",
                     )))
                 } else {
                     Ok(())
@@ -257,26 +257,28 @@ impl TorrentBuilder {
         }
     }
 
-    fn validate_announce_list(&self) -> Result<()> {
+    fn validate_announce_list(&self) -> Result<(), LavaTorrentError> {
         if let Some(ref announce_list) = self.announce_list {
             if announce_list.is_empty() {
-                bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
-                    "TorrentBuilder has `announce_list` but it's empty."
-                )))
+                return Err(LavaTorrentError::TorrentBuilderFailure(Cow::Borrowed(
+                    "TorrentBuilder has `announce_list` but it's empty.",
+                )));
             } else {
                 for tier in announce_list {
                     if tier.is_empty() {
-                        bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
+                        return Err(LavaTorrentError::TorrentBuilderFailure(Cow::Borrowed(
                             "TorrentBuilder has `announce_list` but \
-                             one of its tiers is empty."
+                             one of its tiers is empty.",
                         )));
                     } else {
                         for url in tier {
                             if url.is_empty() {
-                                bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
-                                    "TorrentBuilder has `announce_list` but \
-                                     one of its tiers contains a 0-length url."
-                                )));
+                                return Err(LavaTorrentError::TorrentBuilderFailure(
+                                    Cow::Borrowed(
+                                        "TorrentBuilder has `announce_list` but \
+                                     one of its tiers contains a 0-length url.",
+                                    ),
+                                ));
                             }
                         }
                     }
@@ -288,12 +290,12 @@ impl TorrentBuilder {
         }
     }
 
-    fn validate_name(&self) -> Result<()> {
+    fn validate_name(&self) -> Result<(), LavaTorrentError> {
         if let Some(ref name) = self.name {
             if name.is_empty() {
-                bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
-                    "TorrentBuilder has `name` but its length is 0."
-                )))
+                return Err(LavaTorrentError::TorrentBuilderFailure(Cow::Borrowed(
+                    "TorrentBuilder has `name` but its length is 0.",
+                )));
             } else {
                 Ok(())
             }
@@ -302,55 +304,55 @@ impl TorrentBuilder {
         }
     }
 
-    fn validate_path(&self) -> Result<()> {
+    fn validate_path(&self) -> Result<(), LavaTorrentError> {
         // detect path components exactly matching ".."
         for component in self.path.components() {
             if component == Component::ParentDir {
-                bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
-                    r#"Root path contains components exactly matching ".."."#
+                return Err(LavaTorrentError::TorrentBuilderFailure(Cow::Borrowed(
+                    r#"Root path contains components exactly matching ".."."#,
                 )));
             }
         }
 
         if !self.path.is_absolute() {
-            bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
-                "TorrentBuilder has `path` but it is not absolute."
-            )))
+            return Err(LavaTorrentError::TorrentBuilderFailure(Cow::Borrowed(
+                "TorrentBuilder has `path` but it is not absolute.",
+            )));
         }
 
         if self.path.exists() {
             Ok(())
         } else {
-            bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
-                "TorrentBuilder has `path` but it does not point to anything."
-            )))
+            return Err(LavaTorrentError::TorrentBuilderFailure(Cow::Borrowed(
+                "TorrentBuilder has `path` but it does not point to anything.",
+            )));
         }
     }
 
-    fn validate_piece_length(&self) -> Result<()> {
+    fn validate_piece_length(&self) -> Result<(), LavaTorrentError> {
         if self.piece_length <= 0 {
-            bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
-                "TorrentBuilder has `piece_length` <= 0."
-            )))
+            return Err(LavaTorrentError::TorrentBuilderFailure(Cow::Borrowed(
+                "TorrentBuilder has `piece_length` <= 0.",
+            )));
         } else if (self.piece_length & (self.piece_length - 1)) != 0 {
             // bit trick to check if a number is a power of 2
             // found at: https://stackoverflow.com/a/600306
-            bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
-                "TorrentBuilder has `piece_length` that is not a power of 2."
-            )))
+            return Err(LavaTorrentError::TorrentBuilderFailure(Cow::Borrowed(
+                "TorrentBuilder has `piece_length` that is not a power of 2.",
+            )));
         } else {
             Ok(())
         }
     }
 
-    fn validate_extra_fields(&self) -> Result<()> {
+    fn validate_extra_fields(&self) -> Result<(), LavaTorrentError> {
         if let Some(ref extra_fields) = self.extra_fields {
             if extra_fields.is_empty() {
                 panic!("TorrentBuilder has `extra_fields` but it's empty.")
             } else {
                 for key in extra_fields.keys() {
                     if key.is_empty() {
-                        bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
+                        return Err(LavaTorrentError::TorrentBuilderFailure(Cow::Borrowed(
                             "TorrentBuilder has `extra_fields` but it contains a 0-length key.",
                         )));
                     }
@@ -362,14 +364,14 @@ impl TorrentBuilder {
         }
     }
 
-    fn validate_extra_info_fields(&self) -> Result<()> {
+    fn validate_extra_info_fields(&self) -> Result<(), LavaTorrentError> {
         if let Some(ref extra_info_fields) = self.extra_info_fields {
             if extra_info_fields.is_empty() {
                 panic!("TorrentBuilder has `extra_info_fields` but it's empty.")
             } else {
                 for key in extra_info_fields.keys() {
                     if key.is_empty() {
-                        bail!(ErrorKind::TorrentBuilderFailure(Cow::Borrowed(
+                        return Err(LavaTorrentError::TorrentBuilderFailure(Cow::Borrowed(
                             "TorrentBuilder has `extra_info_fields` but it contains a 0-length key."
                         )));
                     }
@@ -381,7 +383,10 @@ impl TorrentBuilder {
         }
     }
 
-    fn read_file<P>(path: P, piece_length: Integer) -> Result<(Integer, Vec<Piece>)>
+    fn read_file<P>(
+        path: P,
+        piece_length: Integer,
+    ) -> Result<(Integer, Vec<Piece>), LavaTorrentError>
     where
         P: AsRef<Path>,
     {
@@ -406,7 +411,10 @@ impl TorrentBuilder {
         Ok((util::u64_to_i64(length)?, pieces))
     }
 
-    fn read_dir<P>(path: P, piece_length: Integer) -> Result<(Integer, Vec<File>, Vec<Piece>)>
+    fn read_dir<P>(
+        path: P,
+        piece_length: Integer,
+    ) -> Result<(Integer, Vec<File>, Vec<Piece>), LavaTorrentError>
     where
         P: AsRef<Path>,
     {
@@ -736,7 +744,7 @@ mod torrent_builder_tests {
         let builder = TorrentBuilder::new("dir/", 42).set_announce(Some("".to_owned()));
 
         match builder.validate_announce() {
-            Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
+            Err(LavaTorrentError::TorrentBuilderFailure(m)) => {
                 assert_eq!(m, "TorrentBuilder has `announce` but its length is 0.");
             }
             _ => assert!(false),
@@ -770,7 +778,7 @@ mod torrent_builder_tests {
         let builder = TorrentBuilder::new("dir/", 42).set_announce_list(vec![]);
 
         match builder.validate_announce_list() {
-            Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
+            Err(LavaTorrentError::TorrentBuilderFailure(m)) => {
                 assert_eq!(m, "TorrentBuilder has `announce_list` but it's empty.");
             }
             _ => assert!(false),
@@ -783,7 +791,7 @@ mod torrent_builder_tests {
             .set_announce_list(vec![vec!["url2".to_owned()], vec![]]);
 
         match builder.validate_announce_list() {
-            Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => assert_eq!(
+            Err(LavaTorrentError::TorrentBuilderFailure(m)) => assert_eq!(
                 m,
                 "TorrentBuilder has `announce_list` but one of its tiers is empty."
             ),
@@ -797,7 +805,7 @@ mod torrent_builder_tests {
             .set_announce_list(vec![vec!["url2".to_owned()], vec!["".to_owned()]]);
 
         match builder.validate_announce_list() {
-            Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => assert_eq!(
+            Err(LavaTorrentError::TorrentBuilderFailure(m)) => assert_eq!(
                 m,
                 "TorrentBuilder has `announce_list` but one of its tiers contains a 0-length url."
             ),
@@ -831,7 +839,7 @@ mod torrent_builder_tests {
         let builder = TorrentBuilder::new("dir/", 42).set_name("".to_owned());
 
         match builder.validate_name() {
-            Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
+            Err(LavaTorrentError::TorrentBuilderFailure(m)) => {
                 assert_eq!(m, "TorrentBuilder has `name` but its length is 0.");
             }
             _ => assert!(false),
@@ -856,7 +864,7 @@ mod torrent_builder_tests {
         let builder = TorrentBuilder::new(path, 42);
 
         match builder.validate_path() {
-            Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => assert_eq!(
+            Err(LavaTorrentError::TorrentBuilderFailure(m)) => assert_eq!(
                 m,
                 "TorrentBuilder has `path` but it does not point to anything."
             ),
@@ -871,7 +879,7 @@ mod torrent_builder_tests {
         let builder = TorrentBuilder::new(path, 42);
 
         match builder.validate_path() {
-            Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
+            Err(LavaTorrentError::TorrentBuilderFailure(m)) => {
                 assert_eq!(m, r#"Root path contains components exactly matching ".."."#);
             }
             _ => assert!(false),
@@ -892,7 +900,7 @@ mod torrent_builder_tests {
         let builder = TorrentBuilder::new("target/", 42);
 
         match builder.validate_path() {
-            Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
+            Err(LavaTorrentError::TorrentBuilderFailure(m)) => {
                 assert_eq!(m, "TorrentBuilder has `path` but it is not absolute.");
             }
             _ => assert!(false),
@@ -913,7 +921,7 @@ mod torrent_builder_tests {
         let builder = TorrentBuilder::new("dir/", -1024);
 
         match builder.validate_piece_length() {
-            Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => {
+            Err(LavaTorrentError::TorrentBuilderFailure(m)) => {
                 assert_eq!(m, "TorrentBuilder has `piece_length` <= 0.");
             }
             _ => assert!(false),
@@ -925,7 +933,7 @@ mod torrent_builder_tests {
         let builder = TorrentBuilder::new("dir/", 1023);
 
         match builder.validate_piece_length() {
-            Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => assert_eq!(
+            Err(LavaTorrentError::TorrentBuilderFailure(m)) => assert_eq!(
                 m,
                 "TorrentBuilder has `piece_length` that is not a power of 2."
             ),
@@ -962,7 +970,7 @@ mod torrent_builder_tests {
             TorrentBuilder::new("target/", 42).add_extra_field("".to_owned(), bencode_elem!("v1"));
 
         match builder.validate_extra_fields() {
-            Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => assert_eq!(
+            Err(LavaTorrentError::TorrentBuilderFailure(m)) => assert_eq!(
                 m,
                 "TorrentBuilder has `extra_fields` but it contains a 0-length key."
             ),
@@ -999,7 +1007,7 @@ mod torrent_builder_tests {
             .add_extra_info_field("".to_owned(), bencode_elem!("v1"));
 
         match builder.validate_extra_info_fields() {
-            Err(Error(ErrorKind::TorrentBuilderFailure(m), _)) => assert_eq!(
+            Err(LavaTorrentError::TorrentBuilderFailure(m)) => assert_eq!(
                 m,
                 "TorrentBuilder has `extra_info_fields` but it contains a 0-length key."
             ),

@@ -1,35 +1,41 @@
-use error::*;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::path::{Path, PathBuf};
+use LavaTorrentError;
 
-pub(crate) fn u64_to_usize(src: u64) -> Result<usize> {
-    usize::try_from(src).chain_err(|| {
-        ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into usize.", src)))
+pub(crate) fn u64_to_usize(src: u64) -> Result<usize, LavaTorrentError> {
+    usize::try_from(src).map_err(|_| {
+        LavaTorrentError::FailedNumericConv(Cow::Owned(format!(
+            "[{}] does not fit into usize.",
+            src
+        )))
     })
 }
 
-pub(crate) fn usize_to_u64(src: usize) -> Result<u64> {
-    u64::try_from(src).chain_err(|| {
-        ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into u64.", src)))
+pub(crate) fn usize_to_u64(src: usize) -> Result<u64, LavaTorrentError> {
+    u64::try_from(src).map_err(|_| {
+        LavaTorrentError::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into u64.", src)))
     })
 }
 
-pub(crate) fn i64_to_usize(src: i64) -> Result<usize> {
-    usize::try_from(src).chain_err(|| {
-        ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into usize.", src)))
+pub(crate) fn i64_to_usize(src: i64) -> Result<usize, LavaTorrentError> {
+    usize::try_from(src).map_err(|_| {
+        LavaTorrentError::FailedNumericConv(Cow::Owned(format!(
+            "[{}] does not fit into usize.",
+            src
+        )))
     })
 }
 
-pub(crate) fn i64_to_u64(src: i64) -> Result<u64> {
-    u64::try_from(src).chain_err(|| {
-        ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into u64.", src)))
+pub(crate) fn i64_to_u64(src: i64) -> Result<u64, LavaTorrentError> {
+    u64::try_from(src).map_err(|_| {
+        LavaTorrentError::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into u64.", src)))
     })
 }
 
-pub(crate) fn u64_to_i64(src: u64) -> Result<i64> {
-    i64::try_from(src).chain_err(|| {
-        ErrorKind::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into i64.", src)))
+pub(crate) fn u64_to_i64(src: u64) -> Result<i64, LavaTorrentError> {
+    i64::try_from(src).map_err(|_| {
+        LavaTorrentError::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into i64.", src)))
     })
 }
 
@@ -39,7 +45,7 @@ pub(crate) fn u64_to_i64(src: u64) -> Result<i64> {
 // *nix hidden files/dirs are ignored
 //
 // returned vec is sorted by path
-pub(crate) fn list_dir<P>(path: P) -> Result<Vec<(PathBuf, u64)>>
+pub(crate) fn list_dir<P>(path: P) -> Result<Vec<(PathBuf, u64)>, LavaTorrentError>
 where
     P: AsRef<Path>,
 {
@@ -65,14 +71,14 @@ where
     Ok(entries)
 }
 
-pub(crate) fn last_component<P>(path: P) -> Result<String>
+pub(crate) fn last_component<P>(path: P) -> Result<String, LavaTorrentError>
 where
     P: AsRef<Path>,
 {
     let path = path.as_ref();
     match path.file_name() {
         Some(s) => Ok(s.to_string_lossy().into_owned()),
-        None => bail!(ErrorKind::InvalidArgument(Cow::Owned(format!(
+        None => Err(LavaTorrentError::InvalidArgument(Cow::Owned(format!(
             r#"[{}] ends in ".."."#,
             path.display()
         )))),
@@ -187,7 +193,7 @@ mod util_tests {
     #[test]
     fn last_component_err() {
         match last_component("/root/dir/..") {
-            Err(Error(ErrorKind::InvalidArgument(m), _)) => {
+            Err(LavaTorrentError::InvalidArgument(m)) => {
                 assert_eq!(m, r#"[/root/dir/..] ends in ".."."#,);
             }
             _ => assert!(false),
@@ -214,7 +220,7 @@ mod util_tests {
     #[test]
     fn i64_to_usize_err() {
         match i64_to_usize(-1) {
-            Err(Error(ErrorKind::FailedNumericConv(m), _)) => {
+            Err(LavaTorrentError::FailedNumericConv(m)) => {
                 assert_eq!(m, "[-1] does not fit into usize.");
             }
             _ => assert!(false),
@@ -229,7 +235,7 @@ mod util_tests {
     #[test]
     fn i64_to_u64_err() {
         match i64_to_u64(-1) {
-            Err(Error(ErrorKind::FailedNumericConv(m), _)) => {
+            Err(LavaTorrentError::FailedNumericConv(m)) => {
                 assert_eq!(m, "[-1] does not fit into u64.");
             }
             _ => assert!(false),
@@ -244,7 +250,7 @@ mod util_tests {
     #[test]
     fn u64_to_i64_err() {
         match u64_to_i64(u64::max_value()) {
-            Err(Error(ErrorKind::FailedNumericConv(m), _)) => {
+            Err(LavaTorrentError::FailedNumericConv(m)) => {
                 assert_eq!(m, format!("[{}] does not fit into i64.", u64::max_value()))
             }
             _ => assert!(false),

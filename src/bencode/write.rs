@@ -1,14 +1,14 @@
 //! Module for bencode-related encoding.
 
 use super::*;
-use error::*;
 use std::fs::File;
 use std::hash::BuildHasher;
 use std::io::{BufWriter, Write};
 use std::path::Path;
+use LavaTorrentError;
 
 /// Encode `string` and write the result to `dst`.
-pub fn write_string<S, W>(string: S, dst: &mut W) -> Result<()>
+pub fn write_string<S, W>(string: S, dst: &mut W) -> Result<(), LavaTorrentError>
 where
     S: AsRef<str>,
     W: Write,
@@ -21,7 +21,7 @@ where
 }
 
 /// Encode `bytes` and write the result to `dst`.
-pub fn write_bytes<B, W>(bytes: B, dst: &mut W) -> Result<()>
+pub fn write_bytes<B, W>(bytes: B, dst: &mut W) -> Result<(), LavaTorrentError>
 where
     B: AsRef<[u8]>,
     W: Write,
@@ -34,7 +34,7 @@ where
 }
 
 /// Encode `int` and write the result to `dst`.
-pub fn write_integer<W>(int: i64, dst: &mut W) -> Result<()>
+pub fn write_integer<W>(int: i64, dst: &mut W) -> Result<(), LavaTorrentError>
 where
     W: Write,
 {
@@ -45,7 +45,7 @@ where
 }
 
 /// Encode `list` and write the result to `dst`.
-pub fn write_list<L, W>(list: L, dst: &mut W) -> Result<()>
+pub fn write_list<L, W>(list: L, dst: &mut W) -> Result<(), LavaTorrentError>
 where
     L: AsRef<[BencodeElem]>,
     W: Write,
@@ -60,7 +60,10 @@ where
 }
 
 /// Encode `dict` and write the result to `dst`.
-pub fn write_dictionary<W, S>(dict: &HashMap<String, BencodeElem, S>, dst: &mut W) -> Result<()>
+pub fn write_dictionary<W, S>(
+    dict: &HashMap<String, BencodeElem, S>,
+    dst: &mut W,
+) -> Result<(), LavaTorrentError>
 where
     W: Write,
     S: BuildHasher,
@@ -83,7 +86,7 @@ where
 pub fn write_raw_dictionary<W, S>(
     dict: &HashMap<Vec<u8>, BencodeElem, S>,
     dst: &mut W,
-) -> Result<()>
+) -> Result<(), LavaTorrentError>
 where
     W: Write,
     S: BuildHasher,
@@ -163,7 +166,7 @@ where
 
 impl BencodeElem {
     /// Encode `self` and write the result to `dst`.
-    pub fn write_into<W>(&self, dst: &mut W) -> Result<()>
+    pub fn write_into<W>(&self, dst: &mut W) -> Result<(), LavaTorrentError>
     where
         W: Write,
     {
@@ -187,7 +190,7 @@ impl BencodeElem {
     /// Note: it is the client's responsibility to ensure
     /// that all directories in `path` actually exist (e.g.
     /// by calling [`create_dir_all`](https://doc.rust-lang.org/std/fs/fn.create_dir_all.html)).
-    pub fn write_into_file<P>(&self, path: P) -> Result<()>
+    pub fn write_into_file<P>(&self, path: P) -> Result<(), LavaTorrentError>
     where
         P: AsRef<Path>,
     {
