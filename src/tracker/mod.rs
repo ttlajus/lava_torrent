@@ -8,7 +8,6 @@
 //! pass the received responses to `lava_torrent` for parsing.
 
 use bencode::BencodeElem;
-use error::*;
 use itertools::Itertools;
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -16,6 +15,7 @@ use std::convert::TryInto;
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use torrent::v1::{Dictionary, Integer};
+use LavaTorrentError;
 
 /// Peer information returned in a tracker response.
 ///
@@ -105,7 +105,7 @@ impl Peer {
     ///
     /// If `dict` is missing any required field (e.g. `ip`),
     /// then `Err(error)` will be returned.
-    fn from_dict(mut dict: HashMap<String, BencodeElem>) -> Result<Peer> {
+    fn from_dict(mut dict: HashMap<String, BencodeElem>) -> Result<Peer, LavaTorrentError> {
         let id = match dict.remove("peer id") {
             Some(BencodeElem::String(string)) => Some(string),
             Some(BencodeElem::Bytes(bytes)) => Some(
@@ -115,36 +115,48 @@ impl Peer {
                     .format("")
                     .to_string(),
             ),
-            Some(_) => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""peer id" maps to neither a utf8 string nor a string of bytes."#
-            ))),
+            Some(_) => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""peer id" maps to neither a utf8 string nor a string of bytes."#,
+                )))
+            }
             None => None,
         };
         let ip = match dict.remove("ip") {
             Some(BencodeElem::String(ip)) => ip,
-            Some(_) => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""ip" does not map to a string (or maps to invalid UTF8)."#
-            ))),
-            None => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""ip" does not exist."#
-            ))),
+            Some(_) => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""ip" does not map to a string (or maps to invalid UTF8)."#,
+                )))
+            }
+            None => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""ip" does not exist."#,
+                )))
+            }
         };
         let port = match dict.remove("port") {
             Some(BencodeElem::Integer(port)) => port,
-            Some(_) => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""port" does not map to an integer."#
-            ))),
-            None => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""port" does not exist."#
-            ))),
+            Some(_) => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""port" does not map to an integer."#,
+                )))
+            }
+            None => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""port" does not exist."#,
+                )))
+            }
         };
         let extra_fields = if dict.is_empty() { None } else { Some(dict) };
 
         let ip = match ip.parse::<IpAddr>() {
             Ok(ip) => ip,
-            Err(_) => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""ip" is invalid."#
-            ))),
+            Err(_) => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""ip" is invalid."#,
+                )))
+            }
         };
 
         Ok(Peer {
@@ -185,84 +197,106 @@ impl TrackerResponse {
     ///
     /// If `bytes` is missing any required field (e.g. `interval`), or if any other
     /// error is encountered (e.g. `IOError`), then `Err(error)` will be returned.
-    pub fn from_bytes<B>(bytes: B) -> Result<TrackerResponse>
+    pub fn from_bytes<B>(bytes: B) -> Result<TrackerResponse, LavaTorrentError>
     where
         B: AsRef<[u8]>,
     {
         let mut parsed = BencodeElem::from_bytes(bytes)?;
         if parsed.len() != 1 {
-            bail!(ErrorKind::MalformedTorrent(Cow::Owned(format!(
+            return Err(LavaTorrentError::MalformedTorrent(Cow::Owned(format!(
                 "Tracker response should contain 1 and only 1 top-level element, {} found.",
                 parsed.len()
             ))));
         }
         let mut parsed = match parsed.remove(0) {
             BencodeElem::Dictionary(dict) => dict,
-            _ => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                "Tracker response doesn't contain a dictionary."
-            ))),
+            _ => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    "Tracker response doesn't contain a dictionary.",
+                )))
+            }
         };
 
         match parsed.remove("failure reason") {
             Some(BencodeElem::String(reason)) => return Ok(TrackerResponse::Failure { reason }),
-            Some(_) => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""failure reason" does not map to a string (or maps to invalid UTF8)."#
-            ))),
+            Some(_) => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""failure reason" does not map to a string (or maps to invalid UTF8)."#,
+                )))
+            }
             None => (),
         }
 
         let interval = match parsed.remove("interval") {
             Some(BencodeElem::Integer(interval)) => interval,
-            Some(_) => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""interval" does not map to an integer."#
-            ))),
-            None => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""interval" does not exist."#
-            ))),
+            Some(_) => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""interval" does not map to an integer."#,
+                )))
+            }
+            None => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""interval" does not exist."#,
+                )))
+            }
         };
         let peers = match parsed.remove("peers") {
             Some(BencodeElem::List(list)) => Self::extract_peers_from_list(list)?,
             Some(BencodeElem::Bytes(bytes)) => Self::extract_peers_from_bytes(bytes)?,
-            Some(_) => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""peers" does not map to a dict or a string of bytes."#
-            ))),
-            None => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""peers" does not exist."#
-            ))),
+            Some(_) => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""peers" does not map to a dict or a string of bytes."#,
+                )))
+            }
+            None => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""peers" does not exist."#,
+                )))
+            }
         };
         let warning = match parsed.remove("warning") {
             Some(BencodeElem::String(warning)) => Some(warning),
-            Some(_) => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""warning" does not map to a string (or maps to invalid UTF8)."#
-            ))),
+            Some(_) => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""warning" does not map to a string (or maps to invalid UTF8)."#,
+                )))
+            }
             None => None,
         };
         let min_interval = match parsed.remove("min interval") {
             Some(BencodeElem::Integer(min_interval)) => Some(min_interval),
-            Some(_) => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""min interval" does not map to an integer."#
-            ))),
+            Some(_) => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""min interval" does not map to an integer."#,
+                )))
+            }
             None => None,
         };
         let tracker_id = match parsed.remove("tracker id") {
             Some(BencodeElem::String(tracker_id)) => Some(tracker_id),
-            Some(_) => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""tracker id" does not map to a string (or maps to invalid UTF8)."#
-            ))),
+            Some(_) => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""tracker id" does not map to a string (or maps to invalid UTF8)."#,
+                )))
+            }
             None => None,
         };
         let complete = match parsed.remove("complete") {
             Some(BencodeElem::Integer(complete)) => Some(complete),
-            Some(_) => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""complete" does not map to an integer."#
-            ))),
+            Some(_) => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""complete" does not map to an integer."#,
+                )))
+            }
             None => None,
         };
         let incomplete = match parsed.remove("incomplete") {
             Some(BencodeElem::Integer(incomplete)) => Some(incomplete),
-            Some(_) => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""incomplete" does not map to an integer."#
-            ))),
+            Some(_) => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""incomplete" does not map to an integer."#,
+                )))
+            }
             None => None,
         };
         let extra_fields = if parsed.is_empty() {
@@ -283,22 +317,22 @@ impl TrackerResponse {
         })
     }
 
-    fn extract_peers_from_list(list: Vec<BencodeElem>) -> Result<Vec<Peer>> {
+    fn extract_peers_from_list(list: Vec<BencodeElem>) -> Result<Vec<Peer>, LavaTorrentError> {
         list.into_iter()
             .map(|elem| match elem {
                 BencodeElem::Dictionary(dict) => Ok(Peer::from_dict(dict)?),
-                _ => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                    r#""peers" contains a non-dictionary element."#
+                _ => Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""peers" contains a non-dictionary element."#,
                 ))),
             })
             .collect()
     }
 
-    fn extract_peers_from_bytes(bytes: Vec<u8>) -> Result<Vec<Peer>> {
+    fn extract_peers_from_bytes(bytes: Vec<u8>) -> Result<Vec<Peer>, LavaTorrentError> {
         if (bytes.len() % 6) != 0 {
-            bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#"Compact "peers" contains incorrect number of bytes"#
-            )))
+            return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                r#"Compact "peers" contains incorrect number of bytes"#,
+            )));
         }
 
         let n_peers = bytes.len() / 6;
@@ -315,33 +349,47 @@ impl SwarmMetadata {
     ///
     /// If `dict` is missing any required field (e.g. `complete`), then
     /// `Err(error)` will be returned.
-    fn from_dict(mut dict: HashMap<String, BencodeElem>) -> Result<SwarmMetadata> {
+    fn from_dict(
+        mut dict: HashMap<String, BencodeElem>,
+    ) -> Result<SwarmMetadata, LavaTorrentError> {
         let complete = match dict.remove("complete") {
             Some(BencodeElem::Integer(complete)) => complete,
-            Some(_) => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""complete" does not map to an integer."#
-            ))),
-            None => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""complete" does not exist."#
-            ))),
+            Some(_) => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""complete" does not map to an integer."#,
+                )))
+            }
+            None => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""complete" does not exist."#,
+                )))
+            }
         };
         let incomplete = match dict.remove("incomplete") {
             Some(BencodeElem::Integer(incomplete)) => incomplete,
-            Some(_) => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""incomplete" does not map to an integer."#
-            ))),
-            None => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""incomplete" does not exist."#
-            ))),
+            Some(_) => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""incomplete" does not map to an integer."#,
+                )))
+            }
+            None => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""incomplete" does not exist."#,
+                )))
+            }
         };
         let downloaded = match dict.remove("downloaded") {
             Some(BencodeElem::Integer(downloaded)) => downloaded,
-            Some(_) => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""downloaded" does not map to an integer."#
-            ))),
-            None => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""downloaded" does not exist."#
-            ))),
+            Some(_) => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""downloaded" does not map to an integer."#,
+                )))
+            }
+            None => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""downloaded" does not exist."#,
+                )))
+            }
         };
         let extra_fields = if dict.is_empty() { None } else { Some(dict) };
 
@@ -359,32 +407,38 @@ impl TrackerScrapeResponse {
     ///
     /// If `bytes` is missing any required field (e.g. `files`), or if any other
     /// error is encountered (e.g. `IOError`), then `Err(error)` will be returned.
-    pub fn from_bytes<B>(bytes: B) -> Result<TrackerScrapeResponse>
+    pub fn from_bytes<B>(bytes: B) -> Result<TrackerScrapeResponse, LavaTorrentError>
     where
         B: AsRef<[u8]>,
     {
         let mut parsed = BencodeElem::from_bytes(bytes)?;
         if parsed.len() != 1 {
-            bail!(ErrorKind::MalformedTorrent(Cow::Owned(format!(
+            return Err(LavaTorrentError::MalformedTorrent(Cow::Owned(format!(
                 "Tracker scrape response should contain 1 and only 1 top-level element, {} found.",
                 parsed.len()
             ))));
         }
         let mut parsed = match parsed.remove(0) {
             BencodeElem::Dictionary(dict) => dict,
-            _ => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                "Tracker scrape response doesn't contain a dictionary."
-            ))),
+            _ => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    "Tracker scrape response doesn't contain a dictionary.",
+                )))
+            }
         };
 
         let files = match parsed.remove("files") {
             Some(BencodeElem::RawDictionary(dict)) => dict,
-            Some(_) => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""files" does not map to a raw dict."#
-            ))),
-            None => bail!(ErrorKind::MalformedResponse(Cow::Borrowed(
-                r#""files" does not exist."#
-            ))),
+            Some(_) => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""files" does not map to a raw dict."#,
+                )))
+            }
+            None => {
+                return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
+                    r#""files" does not exist."#,
+                )))
+            }
         };
         let extra_fields = if parsed.is_empty() {
             None
@@ -396,12 +450,12 @@ impl TrackerScrapeResponse {
             .into_iter()
             .map(|(k, v)| match v {
                 BencodeElem::Dictionary(dict) => Ok((k, SwarmMetadata::from_dict(dict)?)),
-                _ => bail!(ErrorKind::MalformedResponse(Cow::Owned(format!(
+                _ => Err(LavaTorrentError::MalformedResponse(Cow::Owned(format!(
                     r#"swarm metadata for {} is not a dictionary."#,
                     k.iter().map(|b| format!("{:x}", b)).format("")
                 )))),
             })
-            .collect::<Result<HashMap<Vec<u8>, SwarmMetadata>>>()?;
+            .collect::<Result<HashMap<Vec<u8>, SwarmMetadata>, LavaTorrentError>>()?;
 
         Ok(TrackerScrapeResponse {
             files,

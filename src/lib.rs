@@ -102,9 +102,8 @@ extern crate conv;
 extern crate itertools;
 extern crate percent_encoding;
 extern crate sha1;
+extern crate thiserror;
 extern crate unicode_normalization;
-#[macro_use]
-extern crate error_chain;
 
 pub(crate) mod util;
 #[macro_use]
@@ -112,59 +111,45 @@ pub mod bencode;
 pub mod torrent;
 pub mod tracker;
 
+use thiserror::Error;
+
 /// Custom error.
 ///
-pub mod error {
-    error_chain! {
-        foreign_links {
-            Io(::std::io::Error)
-            #[doc = "IO error occurred. \
-            The bencode and the torrent may or may not be malformed \
-            (as we can't verify that)."];
-        }
+#[derive(Error, Debug)]
+pub enum LavaTorrentError {
+    #[doc = "IO error occurred. \
+    The bencode and the torrent may or may not be malformed \
+    (as we can't verify that)."]
+    #[error(transparent)]
+    Io(#[from] ::std::io::Error),
 
-        errors {
-            #[doc = "The bencode is found to be bad before we can parse \
-             the torrent, so the torrent may or may not be malformed. \
-             This is generally unexpected behavior and thus should be handled."]
-            MalformedBencode(reason: ::std::borrow::Cow<'static, str>) {
-                description("malformed bencode")
-                display("malformed bencode: {}", reason)
-            }
+    #[doc = "The bencode is found to be bad before we can parse \
+    the torrent, so the torrent may or may not be malformed. \
+    This is generally unexpected behavior and thus should be handled."]
+    #[error("malformed bencode: {0}")]
+    MalformedBencode(::std::borrow::Cow<'static, str>),
 
-            #[doc = "Bencode is fine, but parsed data is gibberish, so we \
-             can't extract a torrent from it."]
-            MalformedTorrent(reason: ::std::borrow::Cow<'static, str>) {
-                description("malformed torrent")
-                display("malformed torrent: {}", reason)
-            }
+    #[doc = "Bencode is fine, but parsed data is gibberish, so we \
+    can't extract a torrent from it."]
+    #[error("malformed torrent: {0}")]
+    MalformedTorrent(::std::borrow::Cow<'static, str>),
 
-            #[doc = "Bencode is fine, but parsed data is gibberish, so we \
-             can't extract a response from it."]
-            MalformedResponse(reason: ::std::borrow::Cow<'static, str>) {
-                description("malformed response")
-                display("malformed response: {}", reason)
-            }
+    #[doc = "Bencode is fine, but parsed data is gibberish, so we \
+    can't extract a response from it."]
+    #[error("malformed response: {0}")]
+    MalformedResponse(::std::borrow::Cow<'static, str>),
 
-            #[doc = "`TorrentBuilder` encounters problems when \
-             building `Torrent`. For instance, a field is set to \
-             an empty string by the caller."]
-            TorrentBuilderFailure(reason: ::std::borrow::Cow<'static, str>) {
-                description("failed to build torrent")
-                display("failed to build torrent: {}", reason)
-            }
+    #[doc = "`TorrentBuilder` encounters problems when \
+    building `Torrent`. For instance, a field is set to \
+    an empty string by the caller."]
+    #[error("failed to build torrent: {0}")]
+    TorrentBuilderFailure(::std::borrow::Cow<'static, str>),
 
-            #[doc = "An invalid argument is passed to a function."]
-            InvalidArgument(reason: ::std::borrow::Cow<'static, str>) {
-                description("invalid argument:")
-                display("invalid argument: {}", reason)
-            }
+    #[doc = "An invalid argument is passed to a function."]
+    #[error("invalid argument: {0}")]
+    InvalidArgument(::std::borrow::Cow<'static, str>),
 
-            #[doc = "Conversion between numeric types (e.g. `i64 -> u64`) has failed."]
-            FailedNumericConv(msg: ::std::borrow::Cow<'static, str>) {
-                description("numeric conversion failed:")
-                display("numeric conversion failed: {}", msg)
-            }
-        }
-    }
+    #[doc = "Conversion between numeric types (e.g. `i64 -> u64`) has failed."]
+    #[error("numeric conversion failed: {0}")]
+    FailedNumericConv(::std::borrow::Cow<'static, str>),
 }

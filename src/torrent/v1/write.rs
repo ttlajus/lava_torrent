@@ -1,6 +1,7 @@
 use super::*;
 use bencode::BencodeElem;
 use std::io::{BufWriter, Write};
+use LavaTorrentError;
 
 impl File {
     pub(crate) fn into_bencode_elem(self) -> BencodeElem {
@@ -27,7 +28,7 @@ impl File {
 
 impl Torrent {
     /// Encode `self` as bencode and write the result to `dst`.
-    pub fn write_into<W>(self, dst: &mut W) -> Result<()>
+    pub fn write_into<W>(self, dst: &mut W) -> Result<(), LavaTorrentError>
     where
         W: Write,
     {
@@ -102,7 +103,7 @@ impl Torrent {
     /// Note: it is the client's responsibility to ensure
     /// that all directories in `path` actually exist (e.g.
     /// by calling [`create_dir_all`](https://doc.rust-lang.org/std/fs/fn.create_dir_all.html)).
-    pub fn write_into_file<P>(self, path: P) -> Result<()>
+    pub fn write_into_file<P>(self, path: P) -> Result<(), LavaTorrentError>
     where
         P: AsRef<Path>,
     {
@@ -113,7 +114,7 @@ impl Torrent {
     }
 
     /// Encode `self` as bencode and return the result in a `Vec`.
-    pub fn encode(self) -> Result<Vec<u8>> {
+    pub fn encode(self) -> Result<Vec<u8>, LavaTorrentError> {
         let mut result = Vec::new();
         self.write_into(&mut result)?;
         Ok(result)

@@ -2,7 +2,6 @@
 //! related parsing/encoding/creation.
 
 use bencode::BencodeElem;
-use error::*;
 use itertools::Itertools;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use sha1::{Digest, Sha1};
@@ -10,6 +9,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
+use LavaTorrentError;
 
 mod build;
 mod read;
@@ -136,7 +136,7 @@ impl File {
     /// Otherwise an error would be returned.
     ///
     /// This method effectively appends/joins `self.path` to `parent`.
-    pub fn absolute_path<P>(&self, parent: P) -> Result<PathBuf>
+    pub fn absolute_path<P>(&self, parent: P) -> Result<PathBuf, LavaTorrentError>
     where
         P: AsRef<Path>,
     {
@@ -144,8 +144,8 @@ impl File {
         if result.is_absolute() {
             Ok(result)
         } else {
-            bail!(ErrorKind::InvalidArgument(Cow::Borrowed(
-                "Joined path is not absolute."
+            Err(LavaTorrentError::InvalidArgument(Cow::Borrowed(
+                "Joined path is not absolute.",
             )))
         }
     }
@@ -242,7 +242,7 @@ impl Torrent {
     ///
     /// `self.extra_fields["url-list"]` will be used to construct `ws` parameters.
     /// It must be either a string or a list of strings.
-    pub fn magnet_link(&self) -> Result<String> {
+    pub fn magnet_link(&self) -> Result<String, LavaTorrentError> {
         fn encode_component(from: &str) -> String {
             // percent_encoding escapes space as '%20', which is not accepted
             // by clients such as transmission, so we escape it manually to '+'.
@@ -280,15 +280,19 @@ impl Torrent {
                     .iter()
                     .map(|elem| match elem {
                         BencodeElem::String(url) => Ok(url),
-                        _ => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
-                            r#""url-list" is a list but contains a non-string element."#,
-                        ))),
+                        _ => {
+                            return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
+                                r#""url-list" is a list but contains a non-string element."#,
+                            )))
+                        }
                     })
-                    .collect::<Result<Vec<&String>>>()?,
+                    .collect::<Result<Vec<&String>, LavaTorrentError>>()?,
             ),
-            Some(_) => bail!(ErrorKind::MalformedTorrent(Cow::Borrowed(
-                r#""url-list" is neither a string nor a list."#
-            ))),
+            Some(_) => {
+                return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
+                    r#""url-list" is neither a string nor a list."#,
+                )))
+            }
             None => None,
         };
         let ws = match ws {
@@ -441,7 +445,7 @@ mod file_tests {
         };
 
         match file.absolute_path("root") {
-            Err(Error(ErrorKind::InvalidArgument(m), _)) => {
+            Err(LavaTorrentError::InvalidArgument(m)) => {
                 assert_eq!(m, "Joined path is not absolute.");
             }
             _ => assert!(false),

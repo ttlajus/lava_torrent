@@ -1,5 +1,4 @@
 use super::*;
-use error::*;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fs::File;
@@ -9,6 +8,7 @@ use std::path::Path;
 use unicode_normalization::UnicodeNormalization;
 use util;
 use util::ByteBuffer;
+use LavaTorrentError;
 
 impl BencodeElem {
     /// Parse `bytes` and return all `BencodeElem` found.
@@ -19,7 +19,7 @@ impl BencodeElem {
     /// If `bytes` contains any malformed bencode, or if any other
     /// error is encountered (e.g. `IOError`), then `Err(error)`
     /// will be returned.
-    pub fn from_bytes<B>(bytes: B) -> Result<Vec<BencodeElem>>
+    pub fn from_bytes<B>(bytes: B) -> Result<Vec<BencodeElem>, LavaTorrentError>
     where
         B: AsRef<[u8]>,
     {
@@ -42,7 +42,7 @@ impl BencodeElem {
     /// If the file at `path` contains any malformed bencode, or if any other
     /// error is encountered (e.g. `IOError`), then `Err(error)`
     /// will be returned.
-    pub fn from_file<P>(path: P) -> Result<Vec<BencodeElem>>
+    pub fn from_file<P>(path: P) -> Result<Vec<BencodeElem>, LavaTorrentError>
     where
         P: AsRef<Path>,
     {
@@ -53,16 +53,16 @@ impl BencodeElem {
         Self::from_bytes(bytes)
     }
 
-    fn peek_byte(bytes: &mut ByteBuffer) -> Result<u8> {
+    fn peek_byte(bytes: &mut ByteBuffer) -> Result<u8, LavaTorrentError> {
         match bytes.peek() {
             Some(&byte) => Ok(byte),
-            None => bail!(ErrorKind::MalformedBencode(Cow::Borrowed(
-                "Expected more bytes, but none found."
+            None => Err(LavaTorrentError::MalformedBencode(Cow::Borrowed(
+                "Expected more bytes, but none found.",
             ))),
         }
     }
 
-    fn parse(bytes: &mut ByteBuffer) -> Result<BencodeElem> {
+    fn parse(bytes: &mut ByteBuffer) -> Result<BencodeElem, LavaTorrentError> {
         match Self::peek_byte(bytes)? {
             DICTIONARY_PREFIX => {
                 bytes.advance(1);
@@ -80,17 +80,19 @@ impl BencodeElem {
         }
     }
 
-    fn decode_dictionary(bytes: &mut ByteBuffer) -> Result<BencodeElem> {
+    fn decode_dictionary(bytes: &mut ByteBuffer) -> Result<BencodeElem, LavaTorrentError> {
         let mut entries = Vec::new();
 
         while Self::peek_byte(bytes)? != DICTIONARY_POSTFIX {
             // more to parse
             match Self::decode_bytes(bytes) {
                 Ok(BencodeElem::Bytes(key)) => entries.push((key, Self::parse(bytes)?)),
-                Ok(_) => bail!(ErrorKind::MalformedBencode(Cow::Borrowed(
-                    "Non-string dictionary key."
-                ))),
-                Err(e) => bail!(e),
+                Ok(_) => {
+                    return Err(LavaTorrentError::MalformedBencode(Cow::Borrowed(
+                        "Non-string dictionary key.",
+                    )))
+                }
+                Err(e) => return Err(e),
             }
         }
         bytes.advance(1); // consume the postfix
@@ -100,8 +102,8 @@ impl BencodeElem {
             let (&(ref k1, _), &(ref k2, _)) = (&entries[i], &entries[j]);
             // "sorted as raw strings, not alphanumerics"
             if k1 > k2 {
-                bail!(ErrorKind::MalformedBencode(Cow::Borrowed(
-                    "A dictionary is not properly sorted."
+                return Err(LavaTorrentError::MalformedBencode(Cow::Borrowed(
+                    "A dictionary is not properly sorted.",
                 )));
             }
         }
@@ -124,7 +126,7 @@ impl BencodeElem {
         )))
     }
 
-    fn decode_list(bytes: &mut ByteBuffer) -> Result<BencodeElem> {
+    fn decode_list(bytes: &mut ByteBuffer) -> Result<BencodeElem, LavaTorrentError> {
         let mut list = Vec::new();
 
         while Self::peek_byte(bytes)? != LIST_POSTFIX {
@@ -136,42 +138,47 @@ impl BencodeElem {
         Ok(BencodeElem::List(list))
     }
 
-    fn decode_integer(bytes: &mut ByteBuffer, delimiter: u8) -> Result<BencodeElem> {
+    fn decode_integer(
+        bytes: &mut ByteBuffer,
+        delimiter: u8,
+    ) -> Result<BencodeElem, LavaTorrentError> {
         let old_pos = bytes.pos();
         let read: Vec<u8> = bytes.take_while(|&&b| b != delimiter).cloned().collect();
         let bytes_read = bytes.pos() - old_pos;
 
         if read.len() == bytes_read {
-            bail!(ErrorKind::MalformedBencode(Cow::Borrowed(
-                "Integer delimiter not found."
-            )));
+            Err(LavaTorrentError::MalformedBencode(Cow::Borrowed(
+                "Integer delimiter not found.",
+            )))
         } else {
             match String::from_utf8(read) {
                 Ok(int_string) => {
                     if int_string.starts_with("-0") {
-                        bail!(ErrorKind::MalformedBencode(Cow::Borrowed("-0 found.")));
+                        Err(LavaTorrentError::MalformedBencode(Cow::Borrowed(
+                            "-0 found.",
+                        )))
                     } else if (int_string.starts_with('0')) && (int_string.len() != 1) {
-                        bail!(ErrorKind::MalformedBencode(Cow::Borrowed(
-                            "Integer with leading zero(s) found."
-                        )));
+                        Err(LavaTorrentError::MalformedBencode(Cow::Borrowed(
+                            "Integer with leading zero(s) found.",
+                        )))
                     } else {
                         match int_string.parse() {
                             Ok(int) => Ok(BencodeElem::Integer(int)),
-                            Err(_) => bail!(ErrorKind::MalformedBencode(Cow::Owned(format!(
+                            Err(_) => Err(LavaTorrentError::MalformedBencode(Cow::Owned(format!(
                                 "Input contains invalid integer: {}.",
                                 int_string
                             )))),
                         }
                     }
                 }
-                Err(_) => bail!(ErrorKind::MalformedBencode(Cow::Borrowed(
-                    "Input contains invalid UTF-8."
+                Err(_) => Err(LavaTorrentError::MalformedBencode(Cow::Borrowed(
+                    "Input contains invalid UTF-8.",
                 ))),
             }
         }
     }
 
-    fn decode_string(bytes: &mut ByteBuffer) -> Result<BencodeElem> {
+    fn decode_string(bytes: &mut ByteBuffer) -> Result<BencodeElem, LavaTorrentError> {
         match Self::decode_bytes(bytes) {
             Ok(BencodeElem::Bytes(string_bytes)) => {
                 // Valid UTF8 strings are normalizd to NFC forms.
@@ -185,15 +192,15 @@ impl BencodeElem {
         }
     }
 
-    fn decode_bytes(bytes: &mut ByteBuffer) -> Result<BencodeElem> {
+    fn decode_bytes(bytes: &mut ByteBuffer) -> Result<BencodeElem, LavaTorrentError> {
         match Self::decode_integer(bytes, STRING_DELIMITER) {
             Ok(BencodeElem::Integer(len)) => {
                 if let Ok(len) = util::i64_to_usize(len) {
                     Ok(BencodeElem::Bytes(bytes.take(len).cloned().collect()))
                 } else {
-                    bail!(ErrorKind::MalformedBencode(Cow::Borrowed(
-                        "A string's length does not fit into `usize`."
-                    )));
+                    Err(LavaTorrentError::MalformedBencode(Cow::Borrowed(
+                        "A string's length does not fit into `usize`.",
+                    )))
                 }
             }
             Ok(_) => panic!("decode_integer() did not return an integer."),
@@ -223,7 +230,7 @@ mod bencode_elem_read_tests {
     fn peek_byte_err() {
         let bytes = "".as_bytes();
         match BencodeElem::peek_byte(&mut ByteBuffer::new(bytes)) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
+            Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Expected more bytes, but none found.");
             }
             _ => assert!(false),
@@ -252,7 +259,7 @@ mod bencode_elem_read_tests {
     fn decode_integer_invalid_int() {
         let bytes = "4ae".as_bytes();
         match BencodeElem::decode_integer(&mut ByteBuffer::new(bytes), INTEGER_POSTFIX) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
+            Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Input contains invalid integer: 4a.");
             }
             _ => assert!(false),
@@ -263,7 +270,7 @@ mod bencode_elem_read_tests {
     fn decode_integer_invalid_int_2() {
         let bytes = "--1e".as_bytes();
         match BencodeElem::decode_integer(&mut ByteBuffer::new(bytes), INTEGER_POSTFIX) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
+            Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Input contains invalid integer: --1.");
             }
             _ => assert!(false),
@@ -274,7 +281,7 @@ mod bencode_elem_read_tests {
     fn decode_integer_invalid_int_3() {
         let bytes = "03e".as_bytes();
         match BencodeElem::decode_integer(&mut ByteBuffer::new(bytes), INTEGER_POSTFIX) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
+            Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Integer with leading zero(s) found.");
             }
             _ => assert!(false),
@@ -285,7 +292,7 @@ mod bencode_elem_read_tests {
     fn decode_integer_invalid_int_4() {
         let bytes = "-0e".as_bytes();
         match BencodeElem::decode_integer(&mut ByteBuffer::new(bytes), INTEGER_POSTFIX) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => assert_eq!(m, "-0 found."),
+            Err(LavaTorrentError::MalformedBencode(m)) => assert_eq!(m, "-0 found."),
             _ => assert!(false),
         }
     }
@@ -294,7 +301,7 @@ mod bencode_elem_read_tests {
     fn decode_integer_invalid_int_5() {
         let bytes = "-01e".as_bytes();
         match BencodeElem::decode_integer(&mut ByteBuffer::new(bytes), INTEGER_POSTFIX) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => assert_eq!(m, "-0 found."),
+            Err(LavaTorrentError::MalformedBencode(m)) => assert_eq!(m, "-0 found."),
             _ => assert!(false),
         }
     }
@@ -303,7 +310,7 @@ mod bencode_elem_read_tests {
     fn decode_integer_overflow() {
         let bytes = "9223372036854775808e".as_bytes();
         match BencodeElem::decode_integer(&mut ByteBuffer::new(bytes), INTEGER_POSTFIX) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
+            Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Input contains invalid integer: 9223372036854775808.");
             }
             _ => assert!(false),
@@ -314,7 +321,7 @@ mod bencode_elem_read_tests {
     fn decode_integer_no_delimiter() {
         let bytes = "9223372036854775807".as_bytes();
         match BencodeElem::decode_integer(&mut ByteBuffer::new(bytes), INTEGER_POSTFIX) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
+            Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Integer delimiter not found.");
             }
             _ => assert!(false),
@@ -325,7 +332,7 @@ mod bencode_elem_read_tests {
     fn decode_integer_bad_utf8() {
         let bytes = vec![b'4', 0xff, 0xf8, INTEGER_POSTFIX];
         match BencodeElem::decode_integer(&mut ByteBuffer::new(&bytes), INTEGER_POSTFIX) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
+            Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Input contains invalid UTF-8.");
             }
             _ => assert!(false),
@@ -345,7 +352,7 @@ mod bencode_elem_read_tests {
     fn decode_string_invalid_len() {
         let bytes = "a:spam".as_bytes();
         match BencodeElem::decode_string(&mut ByteBuffer::new(bytes)) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
+            Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Input contains invalid integer: a.");
             }
             _ => assert!(false),
@@ -356,7 +363,7 @@ mod bencode_elem_read_tests {
     fn decode_string_no_len() {
         let bytes = ":spam".as_bytes();
         match BencodeElem::decode_string(&mut ByteBuffer::new(bytes)) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
+            Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Input contains invalid integer: .");
             }
             _ => assert!(false),
@@ -367,7 +374,7 @@ mod bencode_elem_read_tests {
     fn decode_string_negative_len() {
         let bytes = "-1:spam".as_bytes();
         match BencodeElem::decode_string(&mut ByteBuffer::new(bytes)) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
+            Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "A string's length does not fit into `usize`.");
             }
             _ => assert!(false),
@@ -378,7 +385,7 @@ mod bencode_elem_read_tests {
     fn decode_string_no_delimiter() {
         let bytes = "4spam".as_bytes();
         match BencodeElem::decode_string(&mut ByteBuffer::new(bytes)) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
+            Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Integer delimiter not found.");
             }
             _ => assert!(false),
@@ -389,7 +396,7 @@ mod bencode_elem_read_tests {
     fn decode_string_no_delimiter_2() {
         let bytes = "456".as_bytes();
         match BencodeElem::decode_string(&mut ByteBuffer::new(bytes)) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
+            Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Integer delimiter not found.");
             }
             _ => assert!(false),
@@ -436,7 +443,7 @@ mod bencode_elem_read_tests {
     fn decode_list_bad_structure() {
         let bytes = "4:spaml6:cheese4:eggse".as_bytes();
         match BencodeElem::decode_list(&mut ByteBuffer::new(bytes)) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
+            Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Expected more bytes, but none found.");
             }
             _ => assert!(false),
@@ -474,7 +481,7 @@ mod bencode_elem_read_tests {
     fn decode_dictionary_bad_structure() {
         let bytes = "3:cow3:moo4:spame".as_bytes();
         match BencodeElem::decode_dictionary(&mut ByteBuffer::new(bytes)) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
+            Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Integer delimiter not found.");
             }
             _ => assert!(false),
@@ -485,7 +492,7 @@ mod bencode_elem_read_tests {
     fn decode_dictionary_non_string_key_1() {
         let bytes = "i4e3:moo4:spam4:eggse".as_bytes();
         match BencodeElem::decode_dictionary(&mut ByteBuffer::new(bytes)) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
+            Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Input contains invalid integer: i4e3.");
             }
             _ => assert!(false),
@@ -496,7 +503,7 @@ mod bencode_elem_read_tests {
     fn decode_dictionary_not_sorted() {
         let bytes = "3:zoo3:moo4:spam4:eggse".as_bytes();
         match BencodeElem::decode_dictionary(&mut ByteBuffer::new(bytes)) {
-            Err(Error(ErrorKind::MalformedBencode(m), _)) => {
+            Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "A dictionary is not properly sorted.");
             }
             _ => assert!(false),
