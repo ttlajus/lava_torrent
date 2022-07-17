@@ -1,6 +1,6 @@
 [package]
 name = "lava_torrent"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["ttlajus <40629580+ttlajus@users.noreply.github.com>"]
 description = "A library for parsing/encoding bencode and .torrent files."
 repository = "https://github.com/ttlajus/lava_torrent"
