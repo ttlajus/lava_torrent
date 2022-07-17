@@ -26,6 +26,21 @@ let torrent = TorrentBuilder::new("dir/", 1048576).build().unwrap();
 torrent.write_into_file("sample.torrent").unwrap();
 ```
 
+Bencode (de)serialization.
+
+```rust
+use lava_torrent::bencode::BencodeElem;
+
+let bytes = "d4:spam4:eggse".as_bytes();
+let dict = BencodeElem::Dictionary([("spam".to_owned(), "eggs".into())].into());
+
+assert_eq!(BencodeElem::from_bytes(bytes).unwrap()[0], dict);
+assert_eq!(dict.encode(), bytes);
+
+assert!(dict.write_into_file("/tmp/foo").is_ok());
+assert_eq!(BencodeElem::from_file("/tmp/foo").unwrap()[0], dict);
+```
+
 ## *More Info*
 Please check the [documentation].
 

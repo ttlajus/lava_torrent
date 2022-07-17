@@ -21,6 +21,21 @@
 //! torrent.write_into_file("sample.torrent").unwrap();
 //! ```
 //!
+//! Bencode (de)serialization.
+//!
+//! ```no_run
+//! use lava_torrent::bencode::BencodeElem;
+//!
+//! let bytes = "d4:spam4:eggse".as_bytes();
+//! let dict = BencodeElem::Dictionary([("spam".to_owned(), "eggs".into())].into());
+//!
+//! assert_eq!(BencodeElem::from_bytes(bytes).unwrap()[0], dict);
+//! assert_eq!(dict.encode(), bytes);
+//!
+//! assert!(dict.write_into_file("/tmp/foo").is_ok());
+//! assert_eq!(BencodeElem::from_file("/tmp/foo").unwrap()[0], dict);
+//! ```
+//!
 //! # *Overview*
 //! - **It is not recommended to use [`lava_torrent`] in any critical system at this point.**
 //! - Currently, only [v1] torrents are supported. [Merkle tree torrents] can be supported
