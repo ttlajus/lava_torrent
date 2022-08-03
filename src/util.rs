@@ -1,7 +1,7 @@
+use conv::ValueFrom;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::path::{Path, PathBuf};
-use conv::ValueFrom;
 use LavaTorrentError;
 
 pub(crate) fn u64_to_usize(src: u64) -> Result<usize, LavaTorrentError> {
@@ -45,6 +45,7 @@ pub(crate) fn u64_to_f64(src: u64) -> Result<f64, LavaTorrentError> {
         LavaTorrentError::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into f64.", src)))
     })
 }
+
 // this method is recursive, i.e. entries in subdirectories
 // are also returned
 //

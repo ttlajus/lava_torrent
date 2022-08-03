@@ -116,11 +116,11 @@
 extern crate conv;
 extern crate itertools;
 extern crate percent_encoding;
+#[cfg(feature = "parallel_single_file_hashing")]
+extern crate rayon;
 extern crate sha1;
 extern crate thiserror;
 extern crate unicode_normalization;
-#[cfg(feature = "parallel_single_file_hashing" )]
-extern crate rayon;
 
 pub(crate) mod util;
 #[macro_use]
