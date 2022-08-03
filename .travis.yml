@@ -7,6 +7,10 @@ rust:
   - beta
   - stable
 
+script:
+  - cargo build --verbose --features parallel_single_file_hashing
+  - cargo test --verbose --features parallel_single_file_hashing 
+
 matrix:
   allow_failures:
     - rust: nightly
