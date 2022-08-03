@@ -1,4 +1,3 @@
-use conv::ValueFrom;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::path::{Path, PathBuf};
@@ -37,12 +36,6 @@ pub(crate) fn i64_to_u64(src: i64) -> Result<u64, LavaTorrentError> {
 pub(crate) fn u64_to_i64(src: u64) -> Result<i64, LavaTorrentError> {
     i64::try_from(src).map_err(|_| {
         LavaTorrentError::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into i64.", src)))
-    })
-}
-
-pub(crate) fn u64_to_f64(src: u64) -> Result<f64, LavaTorrentError> {
-    f64::value_from(src).map_err(|_| {
-        LavaTorrentError::FailedNumericConv(Cow::Owned(format!("[{}] does not fit into f64.", src)))
     })
 }
 

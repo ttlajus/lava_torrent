@@ -425,9 +425,7 @@ impl TorrentBuilder {
         let path = path.as_ref();
         let length = path.metadata()?.len();
         let piece_length = util::i64_to_u64(piece_length)?;
-        let pieces_total = util::u64_to_usize(
-            (util::u64_to_f64(length)? / util::u64_to_f64(piece_length)?).ceil() as u64,
-        )?;
+        let pieces_total = util::u64_to_usize((length + (piece_length - 1)) / piece_length)?;
         let mut pieces = vec![vec![]; pieces_total];
 
         pieces
