@@ -383,6 +383,7 @@ impl TorrentBuilder {
         }
     }
 
+    #[cfg(not(feature = "parallel_single_file_hashing"))]
     fn read_file<P>(
         path: P,
         piece_length: Integer,
@@ -407,6 +408,46 @@ impl TorrentBuilder {
             pieces.push(Sha1::digest(&piece).to_vec());
             piece.clear();
         }
+
+        Ok((util::u64_to_i64(length)?, pieces))
+    }
+
+    #[cfg(feature = "parallel_single_file_hashing")]
+    fn read_file<P>(
+        path: P,
+        piece_length: Integer,
+    ) -> Result<(Integer, Vec<Piece>), LavaTorrentError>
+    where
+        P: AsRef<Path>,
+    {
+        use rayon::prelude::*;
+
+        let path = path.as_ref();
+        let length = path.metadata()?.len();
+        let piece_length = util::i64_to_u64(piece_length)?;
+        let pieces_total = util::u64_to_usize(
+            (util::u64_to_f64(length)? / util::u64_to_f64(piece_length)?).ceil() as u64,
+        )?;
+        let mut pieces = vec![vec![]; pieces_total];
+
+        pieces
+            .par_iter_mut()
+            .enumerate()
+            .map(|(i, p)| {
+                let mut hash_piece = || {
+                    let mut file = BufReader::new(::std::fs::File::open(&path)?);
+                    let mut piece = Vec::with_capacity(util::u64_to_usize(piece_length)?);
+                    let i = util::usize_to_u64(i)?;
+                    let seek_pos = util::u64_to_i64(i * piece_length)?;
+                    file.seek_relative(seek_pos)?;
+                    file.take(piece_length).read_to_end(&mut piece)?;
+                    *p = Sha1::digest(&piece).to_vec();
+                    Ok(()) as Result<(), LavaTorrentError>
+                };
+
+                hash_piece()
+            })
+            .collect::<Result<Vec<_>, LavaTorrentError>>()?;
 
         Ok((util::u64_to_i64(length)?, pieces))
     }
