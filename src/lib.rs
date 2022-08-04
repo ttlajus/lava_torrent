@@ -48,7 +48,10 @@
 //! - bencode parsing/encoding (i.e. "bencoding/bdecoding") => [`BencodeElem`]
 //! - torrent parsing/encoding (based on [`BencodeElem`]) => [`Torrent`]
 //! - torrent creation => [`TorrentBuilder`]
-//! - tracker response parsing => [`tracker`] [experimental]
+//! - tracker response parsing => [`tracker`] (experimental)
+//!
+//! ## Feature flags
+//! - `parallel_single_file_hashing`: Enables internal parallel (via `rayon`) single file only hashing (e.g. `/tmp/file.img`).
 //!
 //! # *Correctness*
 //! [`lava_torrent`] is written without using any existing parser or parser generator.
