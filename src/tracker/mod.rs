@@ -1,4 +1,4 @@
-//! [Experimental] Module containing structs for tracker responses.
+//! \[Experimental\] Module containing structs for tracker responses.
 //!
 //! These structs are provided only for user convenience. Since they
 //! are experimental, they might be removed or replaced in the future.
