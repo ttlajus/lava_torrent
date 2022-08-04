@@ -50,6 +50,10 @@
 //! - torrent creation => [`TorrentBuilder`]
 //! - tracker response parsing => [`tracker`] \[experimental\]
 //!
+//! ## Feature Flags
+//! - `parallel_single_file_hashing`: enable parallel processing of pieces for
+//! single-file torrents  
+//!
 //! # *Correctness*
 //! [`lava_torrent`] is written without using any existing parser or parser generator.
 //! The [BitTorrent specification] is also rather vague on certain points. Thus, bugs
