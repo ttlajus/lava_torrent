@@ -209,7 +209,7 @@ impl Torrent {
     /// calculations will be performed. To avoid that, the
     /// caller should cache the return value as needed.
     pub fn info_hash(&self) -> String {
-        format!("{:x}", Sha1::digest(&self.construct_info().encode()))
+        format!("{:x}", Sha1::digest(self.construct_info().encode()))
     }
 
     /// Calculate the `Torrent`'s info hash as defined in
@@ -220,7 +220,7 @@ impl Torrent {
     /// calculations will be performed. To avoid that, the
     /// caller should cache the return value as needed.
     pub fn info_hash_bytes(&self) -> Vec<u8> {
-        Sha1::digest(&self.construct_info().encode()).to_vec()
+        Sha1::digest(self.construct_info().encode()).to_vec()
     }
 
     /// Calculate the `Torrent`'s magnet link as defined in

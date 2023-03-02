@@ -98,7 +98,7 @@ impl BencodeElem {
 
         // check that the dictionary is sorted
         for (i, j) in (1..entries.len()).enumerate() {
-            let (&(ref k1, _), &(ref k2, _)) = (&entries[i], &entries[j]);
+            let ((k1, _), (k2, _)) = (&entries[i], &entries[j]);
             // "sorted as raw strings, not alphanumerics"
             if k1 > k2 {
                 return Err(LavaTorrentError::MalformedBencode(Cow::Borrowed(

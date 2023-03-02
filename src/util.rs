@@ -67,7 +67,7 @@ where
         }
     }
 
-    entries.sort_by(|&(ref p1, _), &(ref p2, _)| p1.cmp(p2));
+    entries.sort_by(|(p1, _), (p2, _)| p1.cmp(p2));
     Ok(entries)
 }
 

@@ -396,7 +396,7 @@ impl TorrentBuilder {
         let piece_length = util::i64_to_u64(piece_length)?;
 
         // read file content + calculate pieces/hashs
-        let mut file = BufReader::new(::std::fs::File::open(&path)?);
+        let mut file = BufReader::new(::std::fs::File::open(path)?);
         let mut piece = Vec::with_capacity(util::u64_to_usize(piece_length)?);
         let mut pieces = Vec::with_capacity(util::u64_to_usize(length / piece_length + 1)?);
         let mut total_read = 0;
@@ -433,7 +433,7 @@ impl TorrentBuilder {
             .enumerate()
             .map(|(i, p)| {
                 let mut hash_piece = || {
-                    let mut file = BufReader::new(::std::fs::File::open(&path)?);
+                    let mut file = BufReader::new(::std::fs::File::open(path)?);
                     let mut piece = Vec::with_capacity(util::u64_to_usize(piece_length)?);
                     let i = util::usize_to_u64(i)?;
                     let seek_pos = util::u64_to_i64(i * piece_length)?;
