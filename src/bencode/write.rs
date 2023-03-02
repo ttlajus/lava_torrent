@@ -248,7 +248,7 @@ mod bencode_elem_write_tests {
         write_list(&vec![bencode_elem!(42), bencode_elem!("spam")], &mut vec).unwrap();
         assert_eq!(
             vec,
-            vec![b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e',]
+            vec![b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e']
         );
     }
 
@@ -300,7 +300,7 @@ mod bencode_elem_write_tests {
     fn encode_list_ok() {
         assert_eq!(
             encode_list(&vec![bencode_elem!(42), bencode_elem!("spam")]),
-            vec![b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e',],
+            vec![b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e'],
         )
     }
 
@@ -350,7 +350,7 @@ mod bencode_elem_write_tests {
         bencode_elem!([42, "spam"]).write_into(&mut vec).unwrap();
         assert_eq!(
             vec,
-            vec![b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e',]
+            vec![b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e']
         );
     }
 
@@ -391,7 +391,7 @@ mod bencode_elem_write_tests {
     fn bencode_elem_encode_list_ok() {
         assert_eq!(
             bencode_elem!([42, "spam"]).encode(),
-            vec![b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e',],
+            vec![b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e'],
         )
     }
 

@@ -89,7 +89,7 @@ impl BencodeElem {
                 Ok(_) => {
                     return Err(LavaTorrentError::MalformedBencode(Cow::Borrowed(
                         "Non-string dictionary key.",
-                    )))
+                    )));
                 }
                 Err(e) => return Err(e),
             }

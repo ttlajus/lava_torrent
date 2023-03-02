@@ -16,7 +16,7 @@ impl File {
             _ => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""files" contains a non-dictionary element."#,
-                )))
+                )));
             }
         }
     }
@@ -37,12 +37,12 @@ impl File {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""length" does not map to an integer."#,
-                )))
+                )));
             }
             None => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""length" does not exist."#,
-                )))
+                )));
             }
         }
     }
@@ -83,12 +83,12 @@ impl File {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""path" does not map to a list."#,
-                )))
+                )));
             }
             None => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""path" does not exist."#,
-                )))
+                )));
             }
         }
     }
@@ -187,12 +187,12 @@ impl Torrent {
                 Some(_) => {
                     return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                         r#""info" is not a dictionary."#,
-                    )))
+                    )));
                 }
                 None => {
                     return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                         r#""info" does not exist."#,
-                    )))
+                    )));
                 }
             }
         } else {
@@ -210,7 +210,7 @@ impl Torrent {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""announce" does not map to a string (or maps to invalid UTF8)."#,
-                )))
+                )));
             }
             None => Ok(None),
         }
@@ -231,7 +231,7 @@ impl Torrent {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""announce-list" does not map to a list."#,
-                )))
+                )));
             }
             // Since BEP 12 is an extension,
             // the existence of `announce-list` is not guaranteed.
@@ -249,7 +249,7 @@ impl Torrent {
                         _ => {
                             return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                                 r#"A tier within "announce-list" contains a non-string element."#,
-                            )))
+                            )));
                         }
                     }
                 }
@@ -258,7 +258,7 @@ impl Torrent {
             _ => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""announce-list" contains a non-list element."#,
-                )))
+                )));
             }
         }
     }
@@ -283,7 +283,7 @@ impl Torrent {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""files" does not map to a list."#,
-                )))
+                )));
             }
             None => Ok(None),
         }
@@ -306,7 +306,7 @@ impl Torrent {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""length" does not map to an integer."#,
-                )))
+                )));
             }
             None => {
                 if let Some(ref files) = *files {
@@ -339,12 +339,12 @@ impl Torrent {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""name" does not map to a string (or maps to invalid UTF8)."#,
-                )))
+                )));
             }
             None => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""name" does not exist."#,
-                )))
+                )));
             }
         }
     }
@@ -365,12 +365,12 @@ impl Torrent {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""piece length" does not map to an integer."#,
-                )))
+                )));
             }
             None => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""piece length" does not exist."#,
-                )))
+                )));
             }
         }
     }
@@ -399,12 +399,12 @@ impl Torrent {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""pieces" does not map to a sequence of bytes."#,
-                )))
+                )));
             }
             None => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""pieces" does not exist."#,
-                )))
+                )));
             }
         }
     }

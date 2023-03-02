@@ -118,7 +118,7 @@ impl Peer {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""peer id" maps to neither a utf8 string nor a string of bytes."#,
-                )))
+                )));
             }
             None => None,
         };
@@ -127,12 +127,12 @@ impl Peer {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""ip" does not map to a string (or maps to invalid UTF8)."#,
-                )))
+                )));
             }
             None => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""ip" does not exist."#,
-                )))
+                )));
             }
         };
         let port = match dict.remove("port") {
@@ -140,12 +140,12 @@ impl Peer {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""port" does not map to an integer."#,
-                )))
+                )));
             }
             None => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""port" does not exist."#,
-                )))
+                )));
             }
         };
         let extra_fields = if dict.is_empty() { None } else { Some(dict) };
@@ -155,7 +155,7 @@ impl Peer {
             Err(_) => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""ip" is invalid."#,
-                )))
+                )));
             }
         };
 
@@ -213,7 +213,7 @@ impl TrackerResponse {
             _ => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     "Tracker response doesn't contain a dictionary.",
-                )))
+                )));
             }
         };
 
@@ -222,7 +222,7 @@ impl TrackerResponse {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""failure reason" does not map to a string (or maps to invalid UTF8)."#,
-                )))
+                )));
             }
             None => (),
         }
@@ -232,12 +232,12 @@ impl TrackerResponse {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""interval" does not map to an integer."#,
-                )))
+                )));
             }
             None => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""interval" does not exist."#,
-                )))
+                )));
             }
         };
         let peers = match parsed.remove("peers") {
@@ -246,12 +246,12 @@ impl TrackerResponse {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""peers" does not map to a dict or a string of bytes."#,
-                )))
+                )));
             }
             None => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""peers" does not exist."#,
-                )))
+                )));
             }
         };
         let warning = match parsed.remove("warning") {
@@ -259,7 +259,7 @@ impl TrackerResponse {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""warning" does not map to a string (or maps to invalid UTF8)."#,
-                )))
+                )));
             }
             None => None,
         };
@@ -268,7 +268,7 @@ impl TrackerResponse {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""min interval" does not map to an integer."#,
-                )))
+                )));
             }
             None => None,
         };
@@ -277,7 +277,7 @@ impl TrackerResponse {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""tracker id" does not map to a string (or maps to invalid UTF8)."#,
-                )))
+                )));
             }
             None => None,
         };
@@ -286,7 +286,7 @@ impl TrackerResponse {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""complete" does not map to an integer."#,
-                )))
+                )));
             }
             None => None,
         };
@@ -295,7 +295,7 @@ impl TrackerResponse {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""incomplete" does not map to an integer."#,
-                )))
+                )));
             }
             None => None,
         };
@@ -357,12 +357,12 @@ impl SwarmMetadata {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""complete" does not map to an integer."#,
-                )))
+                )));
             }
             None => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""complete" does not exist."#,
-                )))
+                )));
             }
         };
         let incomplete = match dict.remove("incomplete") {
@@ -370,12 +370,12 @@ impl SwarmMetadata {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""incomplete" does not map to an integer."#,
-                )))
+                )));
             }
             None => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""incomplete" does not exist."#,
-                )))
+                )));
             }
         };
         let downloaded = match dict.remove("downloaded") {
@@ -383,12 +383,12 @@ impl SwarmMetadata {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""downloaded" does not map to an integer."#,
-                )))
+                )));
             }
             None => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""downloaded" does not exist."#,
-                )))
+                )));
             }
         };
         let extra_fields = if dict.is_empty() { None } else { Some(dict) };
@@ -423,7 +423,7 @@ impl TrackerScrapeResponse {
             _ => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     "Tracker scrape response doesn't contain a dictionary.",
-                )))
+                )));
             }
         };
 
@@ -432,12 +432,12 @@ impl TrackerScrapeResponse {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""files" does not map to a raw dict."#,
-                )))
+                )));
             }
             None => {
                 return Err(LavaTorrentError::MalformedResponse(Cow::Borrowed(
                     r#""files" does not exist."#,
-                )))
+                )));
             }
         };
         let extra_fields = if parsed.is_empty() {

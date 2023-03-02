@@ -283,7 +283,7 @@ impl Torrent {
                         _ => {
                             return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                                 r#""url-list" is a list but contains a non-string element."#,
-                            )))
+                            )));
                         }
                     })
                     .collect::<Result<Vec<&String>, LavaTorrentError>>()?,
@@ -291,7 +291,7 @@ impl Torrent {
             Some(_) => {
                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                     r#""url-list" is neither a string nor a list."#,
-                )))
+                )));
             }
             None => None,
         };
