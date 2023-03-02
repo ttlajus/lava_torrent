@@ -63,8 +63,7 @@ impl File {
                             // "Path components exactly matching '.' and '..'
                             // must be sanitized. This sanitizing step must
                             // happen after normalizing overlong UTF-8 encodings."
-                            // Rust rejects overlong encodings, and NFC
-                            // normalization is performed when parsing bencode.
+                            // Rust rejects overlong encodings, so no need to normalize.
                             if (component == ".") || (component == "..") {
                                 return Err(LavaTorrentError::MalformedTorrent(Cow::Borrowed(
                                     r#""path" contains "." or ".."."#,

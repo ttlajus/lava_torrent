@@ -5,7 +5,6 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 use std::iter::FromIterator;
 use std::path::Path;
-use unicode_normalization::UnicodeNormalization;
 use util;
 use util::ByteBuffer;
 use LavaTorrentError;
@@ -109,11 +108,10 @@ impl BencodeElem {
         }
 
         // convert to Dictionary if possible
-        // in which case keys are normalized to NFC forms
         let mut entries2 = Vec::new();
         for (k, v) in &entries {
             match String::from_utf8(k.to_owned()) {
-                Ok(s) => entries2.push((s.chars().nfc().collect(), v.to_owned())),
+                Ok(s) => entries2.push((s, v.to_owned())),
                 Err(_) => {
                     return Ok(BencodeElem::RawDictionary(HashMap::from_iter(
                         entries.into_iter(),
@@ -180,13 +178,10 @@ impl BencodeElem {
 
     fn decode_string(bytes: &mut ByteBuffer) -> Result<BencodeElem, LavaTorrentError> {
         match Self::decode_bytes(bytes) {
-            Ok(BencodeElem::Bytes(string_bytes)) => {
-                // Valid UTF8 strings are normalizd to NFC forms.
-                match String::from_utf8(string_bytes) {
-                    Ok(string) => Ok(BencodeElem::String(string.chars().nfc().collect())),
-                    Err(e) => Ok(BencodeElem::Bytes(e.into_bytes())),
-                }
-            }
+            Ok(BencodeElem::Bytes(string_bytes)) => match String::from_utf8(string_bytes) {
+                Ok(string) => Ok(BencodeElem::String(string)),
+                Err(e) => Ok(BencodeElem::Bytes(e.into_bytes())),
+            },
             Ok(_) => panic!("decode_bytes() did not return bytes."),
             Err(e) => Err(e),
         }

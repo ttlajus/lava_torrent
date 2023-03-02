@@ -124,7 +124,6 @@ extern crate percent_encoding;
 extern crate rayon;
 extern crate sha1;
 extern crate thiserror;
-extern crate unicode_normalization;
 
 pub(crate) mod util;
 #[macro_use]
