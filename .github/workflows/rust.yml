@@ -39,3 +39,19 @@ jobs:
       run: cargo test --all-targets --all-features --verbose
     - name: Test Release
       run: cargo test --release --all-targets --all-features --verbose
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Update Rust
+      run: rustup update stable
+    - name: Install cargo-llvm-cov
+      uses: taiki-e/install-action@cargo-llvm-cov
+    - name: Generate code coverage
+      run: cargo llvm-cov --all-targets --all-features --workspace --lcov --output-path lcov.info
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: lcov.info
+        fail_ci_if_error: true
