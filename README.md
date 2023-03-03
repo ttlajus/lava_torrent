@@ -1,7 +1,7 @@
 # lava_torrent
 
 [![crates.io](https://img.shields.io/crates/v/lava_torrent.svg)](https://crates.io/crates/lava_torrent)
-[![Build Status](https://travis-ci.org/ttlajus/lava_torrent.svg?branch=master)](https://travis-ci.org/ttlajus/lava_torrent)
+[![Build Status](https://github.com/ttlajus/lava_torrent/actions/workflows/rust.yml/badge.svg)](https://github.com/ttlajus/lava_torrent/actions/workflows/rust.yml)
 [![codecov](https://codecov.io/gh/ttlajus/lava_torrent/branch/master/graph/badge.svg)](https://codecov.io/gh/ttlajus/lava_torrent)
 
 `lava_torrent` is a library for parsing/encoding/creating bencode and *.torrent* files.
