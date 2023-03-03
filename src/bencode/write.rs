@@ -224,14 +224,14 @@ mod bencode_elem_write_tests {
     #[test]
     fn write_string_ok() {
         let mut vec = Vec::new();
-        write_string(&"spam".to_owned(), &mut vec).unwrap();
+        write_string("spam", &mut vec).unwrap();
         assert_eq!(vec, "4:spam".as_bytes().to_vec());
     }
 
     #[test]
     fn write_bytes_ok() {
         let mut vec = Vec::new();
-        write_bytes(&[0x01, 0x02, 0x03, 0x04], &mut vec).unwrap();
+        write_bytes([0x01, 0x02, 0x03, 0x04], &mut vec).unwrap();
         assert_eq!(vec, vec![b'4', b':', 0x01, 0x02, 0x03, 0x04]);
     }
 
@@ -277,16 +277,13 @@ mod bencode_elem_write_tests {
 
     #[test]
     fn encode_string_ok() {
-        assert_eq!(
-            encode_string(&"spam".to_owned()),
-            "4:spam".as_bytes().to_vec(),
-        )
+        assert_eq!(encode_string("spam"), "4:spam".as_bytes().to_vec(),)
     }
 
     #[test]
     fn encode_bytes_ok() {
         assert_eq!(
-            encode_bytes(&[0x01, 0x02, 0x03, 0x04]),
+            encode_bytes([0x01, 0x02, 0x03, 0x04]),
             vec![b'4', b':', 0x01, 0x02, 0x03, 0x04],
         )
     }
@@ -299,7 +296,7 @@ mod bencode_elem_write_tests {
     #[test]
     fn encode_list_ok() {
         assert_eq!(
-            encode_list(&vec![bencode_elem!(42), bencode_elem!("spam")]),
+            encode_list(vec![bencode_elem!(42), bencode_elem!("spam")]),
             vec![b'l', b'i', b'4', b'2', b'e', b'4', b':', b's', b'p', b'a', b'm', b'e'],
         )
     }

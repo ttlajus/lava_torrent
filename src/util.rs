@@ -196,7 +196,7 @@ mod util_tests {
             Err(LavaTorrentError::InvalidArgument(m)) => {
                 assert_eq!(m, r#"[/root/dir/..] ends in ".."."#,);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -223,7 +223,7 @@ mod util_tests {
             Err(LavaTorrentError::FailedNumericConv(m)) => {
                 assert_eq!(m, "[-1] does not fit into usize.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -238,7 +238,7 @@ mod util_tests {
             Err(LavaTorrentError::FailedNumericConv(m)) => {
                 assert_eq!(m, "[-1] does not fit into u64.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -253,7 +253,7 @@ mod util_tests {
             Err(LavaTorrentError::FailedNumericConv(m)) => {
                 assert_eq!(m, format!("[{}] does not fit into i64.", u64::max_value()))
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 }

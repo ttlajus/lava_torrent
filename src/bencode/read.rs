@@ -228,7 +228,7 @@ mod bencode_elem_read_tests {
             Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Expected more bytes, but none found.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -257,7 +257,7 @@ mod bencode_elem_read_tests {
             Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Input contains invalid integer: 4a.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -268,7 +268,7 @@ mod bencode_elem_read_tests {
             Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Input contains invalid integer: --1.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -279,7 +279,7 @@ mod bencode_elem_read_tests {
             Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Integer with leading zero(s) found.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -288,7 +288,7 @@ mod bencode_elem_read_tests {
         let bytes = "-0e".as_bytes();
         match BencodeElem::decode_integer(&mut ByteBuffer::new(bytes), INTEGER_POSTFIX) {
             Err(LavaTorrentError::MalformedBencode(m)) => assert_eq!(m, "-0 found."),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -297,7 +297,7 @@ mod bencode_elem_read_tests {
         let bytes = "-01e".as_bytes();
         match BencodeElem::decode_integer(&mut ByteBuffer::new(bytes), INTEGER_POSTFIX) {
             Err(LavaTorrentError::MalformedBencode(m)) => assert_eq!(m, "-0 found."),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -308,7 +308,7 @@ mod bencode_elem_read_tests {
             Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Input contains invalid integer: 9223372036854775808.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -319,7 +319,7 @@ mod bencode_elem_read_tests {
             Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Integer delimiter not found.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -330,7 +330,7 @@ mod bencode_elem_read_tests {
             Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Input contains invalid UTF-8.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -350,7 +350,7 @@ mod bencode_elem_read_tests {
             Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Input contains invalid integer: a.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -361,7 +361,7 @@ mod bencode_elem_read_tests {
             Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Input contains invalid integer: .");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -372,7 +372,7 @@ mod bencode_elem_read_tests {
             Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "A string's length does not fit into `usize`.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -383,7 +383,7 @@ mod bencode_elem_read_tests {
             Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Integer delimiter not found.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -394,7 +394,7 @@ mod bencode_elem_read_tests {
             Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Integer delimiter not found.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -441,7 +441,7 @@ mod bencode_elem_read_tests {
             Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Expected more bytes, but none found.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -479,7 +479,7 @@ mod bencode_elem_read_tests {
             Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Integer delimiter not found.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -490,7 +490,7 @@ mod bencode_elem_read_tests {
             Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "Input contains invalid integer: i4e3.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -501,7 +501,7 @@ mod bencode_elem_read_tests {
             Err(LavaTorrentError::MalformedBencode(m)) => {
                 assert_eq!(m, "A dictionary is not properly sorted.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 

@@ -451,7 +451,7 @@ mod file_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""files" contains a non-dictionary element."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -469,7 +469,7 @@ mod file_read_tests {
 
         match File::extract_file_length(&mut dict) {
             Err(LavaTorrentError::MalformedTorrent(m)) => assert_eq!(m, r#""length" < 0."#),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -482,7 +482,7 @@ mod file_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""length" does not map to an integer."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -494,7 +494,7 @@ mod file_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""length" does not exist."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -520,7 +520,7 @@ mod file_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""path" does not map to a list."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -532,7 +532,7 @@ mod file_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""path" does not exist."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -544,7 +544,7 @@ mod file_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""path" maps to a 0-length list."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -565,7 +565,7 @@ mod file_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""path" contains a non-string element."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -586,7 +586,7 @@ mod file_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""path" contains "." or ".."."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -607,7 +607,7 @@ mod file_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""path" contains "." or ".."."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -675,7 +675,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, "Total piece length 4 < torrent's length 6.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -695,7 +695,7 @@ mod torrent_read_tests {
 
         match torrent.validate() {
             Err(LavaTorrentError::MalformedTorrent(m)) => assert_eq!(m, r#""length" <= 0."#),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -717,7 +717,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, "Torrent's total piece length overflowed in usize.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -765,7 +765,7 @@ mod torrent_read_tests {
                 m,
                 "Torrent should contain 1 and only 1 top-level element, 2 found."
             ),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -778,7 +778,7 @@ mod torrent_read_tests {
                 m,
                 "Torrent should contain 1 and only 1 top-level element, 0 found."
             ),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -790,7 +790,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, "Torrent's top-level element is not a dictionary.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -804,7 +804,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""info" does not exist."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -818,7 +818,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""info" is not a dictionary."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -855,7 +855,7 @@ mod torrent_read_tests {
                 m,
                 r#""announce" does not map to a string (or maps to invalid UTF8)."#
             ),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -876,7 +876,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""announce-list" contains a non-list element."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -892,7 +892,7 @@ mod torrent_read_tests {
                 m,
                 r#"A tier within "announce-list" contains a non-string element."#
             ),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -929,7 +929,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""announce-list" does not map to a list."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -969,7 +969,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""files" does not map to a list."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -987,7 +987,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""files" maps to an empty list."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -1012,7 +1012,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#"Both "length" and "files" exist."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -1025,7 +1025,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""length" does not map to an integer."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -1037,7 +1037,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#"Neither "length" nor "files" exists."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -1073,7 +1073,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#"Torrent's length overflowed in i64."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -1103,7 +1103,7 @@ mod torrent_read_tests {
                 m,
                 r#""name" does not map to a string (or maps to invalid UTF8)."#
             ),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -1115,7 +1115,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""name" does not exist."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -1135,7 +1135,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""piece length" does not map to an integer."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -1147,7 +1147,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""piece length" does not exist."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -1160,7 +1160,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""piece length" <= 0."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -1198,7 +1198,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""pieces" does not map to a sequence of bytes."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -1210,7 +1210,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""pieces" does not exist."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -1223,7 +1223,7 @@ mod torrent_read_tests {
             Err(LavaTorrentError::MalformedTorrent(m)) => {
                 assert_eq!(m, r#""pieces" maps to an empty sequence."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -1248,7 +1248,7 @@ mod torrent_read_tests {
                     PIECE_STRING_LENGTH,
                 )
             ),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 

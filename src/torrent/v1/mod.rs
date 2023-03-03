@@ -448,7 +448,7 @@ mod file_tests {
             Err(LavaTorrentError::InvalidArgument(m)) => {
                 assert_eq!(m, "Joined path is not absolute.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 }

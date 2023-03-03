@@ -786,7 +786,7 @@ mod torrent_builder_tests {
             Err(LavaTorrentError::TorrentBuilderFailure(m)) => {
                 assert_eq!(m, "TorrentBuilder has `announce` but its length is 0.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -820,7 +820,7 @@ mod torrent_builder_tests {
             Err(LavaTorrentError::TorrentBuilderFailure(m)) => {
                 assert_eq!(m, "TorrentBuilder has `announce_list` but it's empty.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -834,7 +834,7 @@ mod torrent_builder_tests {
                 m,
                 "TorrentBuilder has `announce_list` but one of its tiers is empty."
             ),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -848,7 +848,7 @@ mod torrent_builder_tests {
                 m,
                 "TorrentBuilder has `announce_list` but one of its tiers contains a 0-length url."
             ),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -881,7 +881,7 @@ mod torrent_builder_tests {
             Err(LavaTorrentError::TorrentBuilderFailure(m)) => {
                 assert_eq!(m, "TorrentBuilder has `name` but its length is 0.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -907,7 +907,7 @@ mod torrent_builder_tests {
                 m,
                 "TorrentBuilder has `path` but it does not point to anything."
             ),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -921,7 +921,7 @@ mod torrent_builder_tests {
             Err(LavaTorrentError::TorrentBuilderFailure(m)) => {
                 assert_eq!(m, r#"Root path contains components exactly matching ".."."#);
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -942,7 +942,7 @@ mod torrent_builder_tests {
             Err(LavaTorrentError::TorrentBuilderFailure(m)) => {
                 assert_eq!(m, "TorrentBuilder has `path` but it is not absolute.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -963,7 +963,7 @@ mod torrent_builder_tests {
             Err(LavaTorrentError::TorrentBuilderFailure(m)) => {
                 assert_eq!(m, "TorrentBuilder has `piece_length` <= 0.");
             }
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -976,7 +976,7 @@ mod torrent_builder_tests {
                 m,
                 "TorrentBuilder has `piece_length` that is not a power of 2."
             ),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -1013,7 +1013,7 @@ mod torrent_builder_tests {
                 m,
                 "TorrentBuilder has `extra_fields` but it contains a 0-length key."
             ),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
@@ -1050,7 +1050,7 @@ mod torrent_builder_tests {
                 m,
                 "TorrentBuilder has `extra_info_fields` but it contains a 0-length key."
             ),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
