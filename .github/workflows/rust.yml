@@ -1,0 +1,41 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-Dwarnings"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      run: cargo build --all-targets --all-features --verbose
+    - name: Build Release
+      run: cargo build --release --all-targets --all-features --verbose
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Clippy
+      run: cargo clippy --all-targets --all-features
+    - name: Clippy Release
+      run: cargo clippy --release --all-targets --all-features
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup
+      run: mkdir tests/tmp
+    - name: Test
+      run: cargo test --all-targets --all-features --verbose
+    - name: Test Release
+      run: cargo test --release --all-targets --all-features --verbose
