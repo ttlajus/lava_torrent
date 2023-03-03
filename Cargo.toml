@@ -9,10 +9,6 @@ keywords = ["bittorrent", "bencode"]
 categories = ["parsing", "encoding"]
 license = "MIT OR Apache-2.0"
 
-[badges]
-travis-ci = { repository = "ttlajus/lava_torrent" }
-codecov = { repository = "ttlajus/lava_torrent" }
-
 [features]
 default = []
 parallel_single_file_hashing = ["rayon"]
