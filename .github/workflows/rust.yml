@@ -36,9 +36,9 @@ jobs:
     - name: Setup
       run: mkdir tests/tmp
     - name: Test
-      run: cargo test --all-targets --all-features --verbose
+      run: cargo test --all-features --verbose
     - name: Test Release
-      run: cargo test --release --all-targets --all-features --verbose
+      run: cargo test --release --all-features --verbose
 
   coverage:
     runs-on: ubuntu-latest
