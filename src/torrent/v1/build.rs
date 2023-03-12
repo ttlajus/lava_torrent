@@ -493,7 +493,7 @@ impl TorrentBuilder {
 
             files.push(File {
                 length: util::u64_to_i64(length)?,
-                path: PathBuf::from(util::last_component(path)?),
+                path,
                 extra_fields: None,
             });
         }
@@ -1080,5 +1080,23 @@ mod torrent_builder_tests {
                 ],
             ]
         );
+    }
+
+    #[test]
+    fn relative_file_paths() {
+        let torrent = TorrentBuilder::new(std::fs::canonicalize("tests").unwrap(), 64)
+            .build()
+            .unwrap();
+        let name = PathBuf::from(torrent.name);
+        for file in torrent.files.unwrap() {
+            if file.path.extension().map_or(false, |ex| ex == "rs") {
+                continue;
+            }
+            let parent = file.path.parent().unwrap();
+            assert!(
+                parent == std::fs::canonicalize(name.join(Path::new("files"))).unwrap()
+                    || parent == std::fs::canonicalize(name.join(Path::new("samples"))).unwrap()
+            );
+        }
     }
 }
