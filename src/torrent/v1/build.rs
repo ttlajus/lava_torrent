@@ -458,15 +458,16 @@ impl TorrentBuilder {
         P: AsRef<Path>,
     {
         let piece_length = util::i64_to_u64(piece_length)?;
-        let entries = util::list_dir(path)?;
+        let entries = util::list_dir(&path)?;
         let total_length = entries.iter().fold(0, |acc, &(_, len)| acc + len);
         let mut files = Vec::with_capacity(entries.len());
         let mut pieces = Vec::with_capacity(util::u64_to_usize(total_length / piece_length + 1)?);
 
         let mut piece = Vec::new();
         let mut bytes = Vec::with_capacity(util::u64_to_usize(piece_length)?);
-        for (path, length) in entries {
-            let mut file = BufReader::new(::std::fs::File::open(&path)?);
+
+        for (entry_path, length) in entries {
+            let mut file = BufReader::new(::std::fs::File::open(&entry_path)?);
             let mut file_remaining = length;
 
             while file_remaining > 0 {
@@ -491,9 +492,17 @@ impl TorrentBuilder {
                 }
             }
 
+            let path = if let Some(parent) = path.as_ref().parent() {
+                // Unwrap is fine here since the path is by defintion
+                // a parent to the entry_path and the path is canonicalized
+                // before this call. Thus this should never fail.
+                entry_path.strip_prefix(parent).unwrap().to_path_buf()
+            } else {
+                entry_path
+            };
             files.push(File {
                 length: util::u64_to_i64(length)?,
-                path: PathBuf::from(util::last_component(path)?),
+                path,
                 extra_fields: None,
             });
         }
@@ -1080,5 +1089,24 @@ mod torrent_builder_tests {
                 ],
             ]
         );
+    }
+
+    #[test]
+    fn relative_file_paths() {
+        let torrent = TorrentBuilder::new(std::fs::canonicalize("tests").unwrap(), 64)
+            .build()
+            .unwrap();
+        let name = PathBuf::from(torrent.name);
+        for file in torrent.files.unwrap() {
+            assert!(file.path.is_relative());
+            if file.path.extension().map_or(false, |ex| ex == "rs") {
+                continue;
+            }
+            let parent = file.path.parent().unwrap();
+            assert!(
+                parent == name.join(Path::new("files"))
+                    || parent == name.join(Path::new("samples"))
+            );
+        }
     }
 }
