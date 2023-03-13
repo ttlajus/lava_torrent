@@ -1,7 +1,6 @@
 use super::*;
 use sha1::{Digest, Sha1};
 use std::io::{BufReader, Read};
-use std::path::Component;
 use util;
 
 impl TorrentBuilder {
@@ -12,11 +11,7 @@ impl TorrentBuilder {
     /// to be invalid, calling [`build()`] later will fail.
     ///
     /// # Notes
-    /// - `path` must be absolute.
-    ///
     /// - A valid `piece_length` is larger than `0` AND is a power of `2`.
-    ///
-    /// - Paths with components exactly matching `..` are invalid.
     ///
     /// [`build()`]: #method.build
     pub fn new<P>(path: P, piece_length: Integer) -> TorrentBuilder
@@ -54,6 +49,9 @@ impl TorrentBuilder {
         self.validate_extra_fields()?;
         self.validate_extra_info_fields()?;
 
+        // canonicalize path as it can be neither absolute nor canonicalized
+        let canonicalized_path = self.path.canonicalize()?;
+
         // if `name` is not yet set, set it to the last component of `path`
         let name = if let Some(name) = self.name {
             name
@@ -70,8 +68,7 @@ impl TorrentBuilder {
         }
 
         // delegate the actual file reading to other methods
-        let canonicalized_path = self.path.canonicalize()?;
-        if self.path.metadata()?.is_dir() {
+        if canonicalized_path.metadata()?.is_dir() {
             let (length, files, pieces) = Self::read_dir(canonicalized_path, self.piece_length)?;
 
             Ok(Torrent {
@@ -154,11 +151,6 @@ impl TorrentBuilder {
     /// The caller has to ensure that `path` is valid, as
     /// this method does not validate its value. If `path`
     /// turns out to be invalid, calling [`build()`] later will fail.
-    ///
-    /// # Notes
-    /// - `path` must be absolute.
-    ///
-    /// - Paths with components exactly matching `..` are invalid.
     ///
     /// [`build()`]: #method.build
     pub fn set_path<P>(self, path: P) -> TorrentBuilder
@@ -305,21 +297,6 @@ impl TorrentBuilder {
     }
 
     fn validate_path(&self) -> Result<(), LavaTorrentError> {
-        // detect path components exactly matching ".."
-        for component in self.path.components() {
-            if component == Component::ParentDir {
-                return Err(LavaTorrentError::TorrentBuilderFailure(Cow::Borrowed(
-                    r#"Root path contains components exactly matching ".."."#,
-                )));
-            }
-        }
-
-        if !self.path.is_absolute() {
-            return Err(LavaTorrentError::TorrentBuilderFailure(Cow::Borrowed(
-                "TorrentBuilder has `path` but it is not absolute.",
-            )));
-        }
-
         if self.path.exists() {
             Ok(())
         } else {
@@ -918,14 +895,9 @@ mod torrent_builder_tests {
     fn validate_path_has_invalid_component() {
         let mut path = PathBuf::from(".").canonicalize().unwrap();
         path.push("target/..");
-        let builder = TorrentBuilder::new(path, 42);
 
-        match builder.validate_path() {
-            Err(LavaTorrentError::TorrentBuilderFailure(m)) => {
-                assert_eq!(m, r#"Root path contains components exactly matching ".."."#);
-            }
-            _ => panic!(),
-        }
+        let builder = TorrentBuilder::new(path, 42);
+        assert!(builder.validate_path().is_ok())
     }
 
     #[test]
@@ -940,13 +912,7 @@ mod torrent_builder_tests {
     #[test]
     fn validate_path_not_absolute() {
         let builder = TorrentBuilder::new("target/", 42);
-
-        match builder.validate_path() {
-            Err(LavaTorrentError::TorrentBuilderFailure(m)) => {
-                assert_eq!(m, "TorrentBuilder has `path` but it is not absolute.");
-            }
-            _ => panic!(),
-        }
+        assert!(builder.validate_path().is_ok())
     }
 
     #[test]
