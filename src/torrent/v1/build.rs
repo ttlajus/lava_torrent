@@ -465,7 +465,6 @@ impl TorrentBuilder {
 
         let mut piece = Vec::new();
         let mut bytes = Vec::with_capacity(util::u64_to_usize(piece_length)?);
-
         for (entry_path, length) in entries {
             let mut file = BufReader::new(::std::fs::File::open(&entry_path)?);
             let mut file_remaining = length;
@@ -492,17 +491,12 @@ impl TorrentBuilder {
                 }
             }
 
-            let path = if let Some(parent) = path.as_ref().parent() {
-                // Unwrap is fine here since the path is by defintion
-                // a parent to the entry_path and the path is canonicalized
-                // before this call. Thus this should never fail.
-                entry_path.strip_prefix(parent).unwrap().to_path_buf()
-            } else {
-                entry_path
-            };
+            // Unwrap is fine here since path is by definition
+            // a parent to entry_path and path is canonicalized
+            // before this call. Thus this should never fail.
             files.push(File {
                 length: util::u64_to_i64(length)?,
-                path,
+                path: entry_path.strip_prefix(&path).unwrap().to_path_buf(),
                 extra_fields: None,
             });
         }
@@ -1089,24 +1083,5 @@ mod torrent_builder_tests {
                 ],
             ]
         );
-    }
-
-    #[test]
-    fn relative_file_paths() {
-        let torrent = TorrentBuilder::new(std::fs::canonicalize("tests").unwrap(), 64)
-            .build()
-            .unwrap();
-        let name = PathBuf::from(torrent.name);
-        for file in torrent.files.unwrap() {
-            assert!(file.path.is_relative());
-            if file.path.extension().map_or(false, |ex| ex == "rs") {
-                continue;
-            }
-            let parent = file.path.parent().unwrap();
-            assert!(
-                parent == name.join(Path::new("files"))
-                    || parent == name.join(Path::new("samples"))
-            );
-        }
     }
 }

@@ -188,3 +188,24 @@ fn build_symbolic_link() {
         Torrent::read_from_file("tests/samples/symlink.torrent").unwrap(),
     );
 }
+
+#[test]
+fn build_nested_dir_ok() {
+    let output_name = rand_file_name() + ".torrent";
+
+    TorrentBuilder::new(
+        PathBuf::from("tests/nested").canonicalize().unwrap(),
+        PIECE_LENGTH,
+    )
+    .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1678689103))
+    .build()
+    .unwrap()
+    .write_into_file(&output_name)
+    .unwrap();
+
+    // compare against a sample file created by qBittorrent
+    assert_eq!(
+        Torrent::read_from_file(output_name).unwrap(),
+        Torrent::read_from_file("tests/samples/nested.torrent").unwrap(),
+    );
+}
