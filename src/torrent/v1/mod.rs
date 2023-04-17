@@ -98,6 +98,9 @@ pub struct Torrent {
 ///  (e.g. [`set_announce()`]). Fields can be updated in the same way.
 ///
 /// # Notes
+///
+/// ## Hidden Files
+///
 /// **\*nix hidden files/dirs are ignored.**
 ///
 /// Reasoning:
@@ -112,11 +115,20 @@ pub struct Torrent {
 /// Therefore these files are ignored for now.
 /// Clients like Deluge and qBittorrent also ignore hidden entries.
 ///
+/// ## Parallel Hashing
+///
+/// By default, pieces are hashed in parallel. The default level of
+/// parallelism is equal to the number of physical cores. To adjust
+/// the parallelism level or to force single-threaded hashing, use
+/// [`set_num_threads()`]. Note that this setting is **specific to
+/// each builder and not global**.
+///
 /// [`Torrent::read_from_file()`]: struct.Torrent.html#method.read_from_file
 /// [`Torrent::read_from_bytes()`]: struct.Torrent.html#method.read_from_bytes
 /// [`new()`]: #method.new
 /// [`set_announce()`]: #method.set_announce
 /// [BEP 47]: http://bittorrent.org/beps/bep_0047.html
+/// [`set_num_threads()`]: #method.set_num_threads
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct TorrentBuilder {
     announce: Option<String>,
@@ -127,6 +139,7 @@ pub struct TorrentBuilder {
     extra_fields: Option<Dictionary>,
     extra_info_fields: Option<Dictionary>,
     is_private: bool,
+    num_threads: usize,
 }
 
 impl File {

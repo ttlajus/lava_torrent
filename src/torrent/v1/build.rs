@@ -1,6 +1,8 @@
 use super::*;
+use rayon::prelude::*;
 use sha1::{Digest, Sha1};
-use std::io::{BufReader, Read};
+use std::io::{BufReader, Read, Seek};
+use std::sync::Arc;
 use util;
 
 impl TorrentBuilder {
@@ -67,9 +69,20 @@ impl TorrentBuilder {
                 .insert("private".to_owned(), BencodeElem::Integer(1));
         }
 
+        // determine the # of threads to use
+        let num_threads = if self.num_threads == 0 {
+            num_cpus::get_physical()
+        } else {
+            self.num_threads
+        };
+
         // delegate the actual file reading to other methods
         if canonicalized_path.metadata()?.is_dir() {
-            let (length, files, pieces) = Self::read_dir(canonicalized_path, self.piece_length)?;
+            let (length, files, pieces) = if num_threads == 1 {
+                Self::read_dir(canonicalized_path, self.piece_length)?
+            } else {
+                Self::read_dir_parallel(canonicalized_path, self.piece_length, num_threads)?
+            };
 
             Ok(Torrent {
                 announce: self.announce,
@@ -83,7 +96,11 @@ impl TorrentBuilder {
                 extra_info_fields,
             })
         } else {
-            let (length, pieces) = Self::read_file(canonicalized_path, self.piece_length)?;
+            let (length, pieces) = if num_threads == 1 {
+                Self::read_file(canonicalized_path, self.piece_length)?
+            } else {
+                Self::read_file_parallel(canonicalized_path, self.piece_length, num_threads)?
+            };
 
             Ok(Torrent {
                 announce: self.announce,
@@ -234,6 +251,19 @@ impl TorrentBuilder {
         TorrentBuilder { is_private, ..self }
     }
 
+    /// Change the number of threads used when hashing pieces.
+    ///
+    /// If set to 0, the number of threads used will be equal to the number
+    /// of physical cores. **This is also the default behavior.**
+    ///
+    /// Set this to 1 if you prefer single-threaded hashing.
+    pub fn set_num_threads(self, num_threads: usize) -> TorrentBuilder {
+        TorrentBuilder {
+            num_threads,
+            ..self
+        }
+    }
+
     fn validate_announce(&self) -> Result<(), LavaTorrentError> {
         match self.announce {
             Some(ref announce) => {
@@ -360,7 +390,6 @@ impl TorrentBuilder {
         }
     }
 
-    #[cfg(not(feature = "parallel_single_file_hashing"))]
     fn read_file<P>(
         path: P,
         piece_length: Integer,
@@ -389,40 +418,42 @@ impl TorrentBuilder {
         Ok((util::u64_to_i64(length)?, pieces))
     }
 
-    #[cfg(feature = "parallel_single_file_hashing")]
-    fn read_file<P>(
+    fn read_file_parallel<P>(
         path: P,
         piece_length: Integer,
+        num_threads: usize,
     ) -> Result<(Integer, Vec<Piece>), LavaTorrentError>
     where
         P: AsRef<Path>,
     {
-        use rayon::prelude::*;
-
         let path = path.as_ref();
         let length = path.metadata()?.len();
-        let piece_length = util::i64_to_u64(piece_length)?;
-        let pieces_total = util::u64_to_usize((length + (piece_length - 1)) / piece_length)?;
-        let mut pieces = vec![vec![]; pieces_total];
+        let piece_length_u64 = util::i64_to_u64(piece_length)?;
+        let piece_length_usize = util::u64_to_usize(piece_length_u64)?;
+        let pieces_total = (length + (piece_length_u64 - 1)) / piece_length_u64;
 
-        pieces
-            .par_iter_mut()
-            .enumerate()
-            .map(|(i, p)| {
-                let mut hash_piece = || {
-                    let mut file = BufReader::new(::std::fs::File::open(path)?);
-                    let mut piece = Vec::with_capacity(util::u64_to_usize(piece_length)?);
-                    let i = util::usize_to_u64(i)?;
-                    let seek_pos = util::u64_to_i64(i * piece_length)?;
-                    file.seek_relative(seek_pos)?;
-                    file.take(piece_length).read_to_end(&mut piece)?;
-                    *p = Sha1::digest(&piece).to_vec();
-                    Ok(()) as Result<(), LavaTorrentError>
-                };
+        let thread_pool = rayon::ThreadPoolBuilder::new()
+            .num_threads(num_threads)
+            .build()
+            .map_err(|e| {
+                LavaTorrentError::TorrentBuilderFailure(Cow::Owned(format!(
+                    "failed to create rayon thread pool: {}",
+                    e
+                )))
+            })?;
 
-                hash_piece()
-            })
-            .collect::<Result<Vec<_>, LavaTorrentError>>()?;
+        let pieces = thread_pool.install(|| {
+            (0_u64..pieces_total)
+                .into_par_iter()
+                .map(|i| {
+                    let mut file = ::std::fs::File::open(path)?;
+                    let mut piece = Vec::with_capacity(piece_length_usize);
+                    file.seek(std::io::SeekFrom::Start(i * piece_length_u64))?;
+                    file.take(piece_length_u64).read_to_end(&mut piece)?;
+                    Ok(Sha1::digest(&piece).to_vec())
+                })
+                .collect::<Result<Vec<Vec<u8>>, LavaTorrentError>>()
+        })?;
 
         Ok((util::u64_to_i64(length)?, pieces))
     }
@@ -449,11 +480,11 @@ impl TorrentBuilder {
             while file_remaining > 0 {
                 // calculate the # of bytes to read in this iteration
                 let piece_filled = util::usize_to_u64(piece.len())?;
-                let piece_reamining = piece_length - piece_filled;
-                let to_read = if file_remaining < piece_reamining {
+                let piece_remaining = piece_length - piece_filled;
+                let to_read = if file_remaining < piece_remaining {
                     file_remaining
                 } else {
-                    piece_reamining
+                    piece_remaining
                 };
 
                 // read bytes
@@ -487,6 +518,101 @@ impl TorrentBuilder {
 
         Ok((util::u64_to_i64(total_length)?, files, pieces))
     }
+
+    // To parallelize read_dir(), we first find the chunk(s) of file(s) that belong to
+    // each piece. Then we can process the pieces in parallel. For example, suppose
+    // the piece length is 256B, we might get:
+    //     piece #1 => [(file #1, 0..256)]
+    //     piece #2 => [(file #1, 256..281), (file #2, 0..231)]
+    //     ...
+    // In other words, we generate the jobs first and then hand out the jobs to threads.
+    //
+    // @todo: The current implementation is not very memory efficient for a large dir.
+    // In the future it might be wise to switch to an iterator-based implementation.
+    fn read_dir_parallel<P>(
+        path: P,
+        piece_length: Integer,
+        num_threads: usize,
+    ) -> Result<(Integer, Vec<File>, Vec<Piece>), LavaTorrentError>
+    where
+        P: AsRef<Path>,
+    {
+        let piece_length_u64 = util::i64_to_u64(piece_length)?;
+        let piece_length_usize = util::u64_to_usize(piece_length_u64)?;
+        let entries = util::list_dir(&path)?;
+        let total_length = entries.iter().fold(0, |acc, &(_, len)| acc + len);
+        let mut pieces = vec![vec![]; util::u64_to_usize(total_length / piece_length_u64 + 1)?];
+        let mut files = Vec::with_capacity(entries.len());
+
+        // find each piece's chunks
+        let mut pieces_iter = pieces.iter_mut();
+        let mut piece = pieces_iter.next().unwrap();
+        let mut piece_remaining = piece_length_u64;
+
+        for (entry_path, length) in entries {
+            let entry_path = Arc::new(entry_path);
+            let mut file_remaining = length;
+
+            while file_remaining > 0 {
+                // rotate to next piece when appropriate
+                if piece_remaining == 0 {
+                    piece = pieces_iter.next().unwrap();
+                    piece_remaining = piece_length_u64;
+                }
+
+                // calculate the # of bytes to allocate in this iteration
+                let to_allocate = if file_remaining < piece_remaining {
+                    file_remaining
+                } else {
+                    piece_remaining
+                };
+
+                // save chunk as (file path, start pos in file, chunk length)
+                piece.push((entry_path.clone(), length - file_remaining, to_allocate));
+
+                // update counters
+                piece_remaining -= to_allocate;
+                file_remaining -= to_allocate;
+            }
+
+            // Unwrap is fine here since path is by definition
+            // a parent to entry_path and path is canonicalized
+            // before this call. Thus this should never fail.
+            files.push(File {
+                length: util::u64_to_i64(length)?,
+                path: entry_path.strip_prefix(&path).unwrap().to_path_buf(),
+                extra_fields: None,
+            });
+        }
+
+        // hash the pieces
+        let thread_pool = rayon::ThreadPoolBuilder::new()
+            .num_threads(num_threads)
+            .build()
+            .map_err(|e| {
+                LavaTorrentError::TorrentBuilderFailure(Cow::Owned(format!(
+                    "failed to create rayon thread pool: {}",
+                    e
+                )))
+            })?;
+
+        let pieces = thread_pool.install(|| {
+            pieces
+                .into_par_iter()
+                .map(|chunks| {
+                    let mut bytes = Vec::with_capacity(piece_length_usize);
+                    for (file, offset, len) in chunks {
+                        let mut file = ::std::fs::File::open(file.as_ref())?;
+                        file.seek(std::io::SeekFrom::Start(offset))?;
+                        file.take(len).read_to_end(&mut bytes)?;
+                    }
+                    Ok(Sha1::digest(&bytes).to_vec())
+                })
+                .collect::<Result<Vec<Vec<u8>>, LavaTorrentError>>()
+        })?;
+
+        Ok((util::u64_to_i64(total_length)?, files, pieces))
+    }
 }
 
 #[cfg(test)]
@@ -494,8 +620,9 @@ mod torrent_builder_tests {
     // @note: `build()` is not tested here as it is
     // best left to integration tests (in `tests/`)
     //
-    // `read_dir()` is also not tested here, as it is
-    // implicitly tested with `build()`
+    // `read_dir()` and `read_dir_parallel()` are also
+    // not tested here, as they are implicitly tested
+    // with `build()`
     use super::*;
     use std::iter::FromIterator;
 
@@ -1027,6 +1154,35 @@ mod torrent_builder_tests {
     fn read_file_ok() {
         // byte_sequence contains 256 bytes ranging from 0x0 to 0xff
         let (length, pieces) = TorrentBuilder::read_file("tests/files/byte_sequence", 64).unwrap();
+        assert_eq!(length, 256);
+        assert_eq!(
+            pieces,
+            vec![
+                vec![
+                    198, 19, 141, 81, 79, 250, 33, 53, 191, 206, 14, 208, 184, 250, 198, 86, 105,
+                    145, 126, 199,
+                ],
+                vec![
+                    8, 244, 44, 162, 89, 207, 18, 29, 46, 169, 205, 139, 108, 91, 36, 200, 109,
+                    115, 61, 183,
+                ],
+                vec![
+                    156, 122, 162, 177, 31, 39, 9, 152, 166, 59, 27, 23, 149, 207, 243, 137, 10,
+                    78, 181, 111,
+                ],
+                vec![
+                    185, 161, 57, 156, 18, 128, 41, 140, 193, 70, 116, 118, 156, 255, 135, 160,
+                    167, 133, 230, 171,
+                ],
+            ]
+        );
+    }
+
+    #[test]
+    fn read_file_parallel_ok() {
+        // byte_sequence contains 256 bytes ranging from 0x0 to 0xff
+        let (length, pieces) =
+            TorrentBuilder::read_file_parallel("tests/files/byte_sequence", 64, 3).unwrap();
         assert_eq!(length, 256);
         assert_eq!(
             pieces,

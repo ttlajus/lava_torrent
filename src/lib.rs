@@ -51,8 +51,7 @@
 //! - tracker response parsing => [`tracker`] \[experimental\]
 //!
 //! ## Feature Flags
-//! - `parallel_single_file_hashing`: enable parallel processing of pieces for
-//! single-file torrents  
+//! None at the moment.
 //!
 //! # *Correctness*
 //! [`lava_torrent`] is written without using any existing parser or parser generator.
@@ -120,7 +119,6 @@
 extern crate conv;
 extern crate itertools;
 extern crate percent_encoding;
-#[cfg(feature = "parallel_single_file_hashing")]
 extern crate rayon;
 extern crate sha1;
 extern crate thiserror;
