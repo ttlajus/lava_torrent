@@ -139,35 +139,35 @@ pub enum LavaTorrentError {
     The bencode and the torrent may or may not be malformed \
     (as we can't verify that)."]
     #[error(transparent)]
-    Io(#[from] ::std::io::Error),
+    Io(#[from] std::io::Error),
 
     #[doc = "The bencode is found to be bad before we can parse \
     the torrent, so the torrent may or may not be malformed. \
     This is generally unexpected behavior and thus should be handled."]
     #[error("malformed bencode: {0}")]
-    MalformedBencode(::std::borrow::Cow<'static, str>),
+    MalformedBencode(std::borrow::Cow<'static, str>),
 
     #[doc = "Bencode is fine, but parsed data is gibberish, so we \
     can't extract a torrent from it."]
     #[error("malformed torrent: {0}")]
-    MalformedTorrent(::std::borrow::Cow<'static, str>),
+    MalformedTorrent(std::borrow::Cow<'static, str>),
 
     #[doc = "Bencode is fine, but parsed data is gibberish, so we \
     can't extract a response from it."]
     #[error("malformed response: {0}")]
-    MalformedResponse(::std::borrow::Cow<'static, str>),
+    MalformedResponse(std::borrow::Cow<'static, str>),
 
     #[doc = "`TorrentBuilder` encounters problems when \
     building `Torrent`. For instance, a field is set to \
     an empty string by the caller."]
     #[error("failed to build torrent: {0}")]
-    TorrentBuilderFailure(::std::borrow::Cow<'static, str>),
+    TorrentBuilderFailure(std::borrow::Cow<'static, str>),
 
     #[doc = "An invalid argument is passed to a function."]
     #[error("invalid argument: {0}")]
-    InvalidArgument(::std::borrow::Cow<'static, str>),
+    InvalidArgument(std::borrow::Cow<'static, str>),
 
     #[doc = "Conversion between numeric types (e.g. `i64 -> u64`) has failed."]
     #[error("numeric conversion failed: {0}")]
-    FailedNumericConv(::std::borrow::Cow<'static, str>),
+    FailedNumericConv(std::borrow::Cow<'static, str>),
 }

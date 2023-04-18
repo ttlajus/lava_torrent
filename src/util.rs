@@ -249,9 +249,9 @@ mod util_tests {
 
     #[test]
     fn u64_to_i64_err() {
-        match u64_to_i64(u64::max_value()) {
+        match u64_to_i64(u64::MAX) {
             Err(LavaTorrentError::FailedNumericConv(m)) => {
-                assert_eq!(m, format!("[{}] does not fit into i64.", u64::max_value()))
+                assert_eq!(m, format!("[{}] does not fit into i64.", u64::MAX))
             }
             _ => panic!(),
         }

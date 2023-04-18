@@ -41,7 +41,7 @@ fn read_from_bytes() {
                 / f64::value_from(parsed.piece_length).unwrap())
             .ceil())
         .abs()
-            < std::f64::EPSILON
+            < f64::EPSILON
     );
     assert_eq!(
         parsed.extra_fields,
@@ -136,7 +136,7 @@ fn read_from_bytes_multiple_files() {
                 / f64::value_from(parsed.piece_length).unwrap())
             .ceil())
         .abs()
-            < std::f64::EPSILON
+            < f64::EPSILON
     );
     assert_eq!(
         parsed.extra_fields,

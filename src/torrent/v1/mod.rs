@@ -76,7 +76,7 @@ pub struct Torrent {
     pub name: String,
     /// Block size in bytes.
     pub piece_length: Integer,
-    /// SHA1 hashs of each block.
+    /// SHA1 hashes of each block.
     pub pieces: Vec<Piece>,
     /// Top-level fields not defined in [BEP 3](http://bittorrent.org/beps/bep_0003.html).
     pub extra_fields: Option<Dictionary>,
@@ -168,7 +168,7 @@ impl Torrent {
     /// Construct the `info` dict based on the fields of `self`.
     ///
     /// Certain operations on torrents, such as calculating info
-    /// hashs, require the extracted `info` dict. This
+    /// hashes, require the extracted `info` dict. This
     /// convenience method does that.
     ///
     /// Note that the `info` dict
@@ -382,7 +382,7 @@ impl fmt::Display for Torrent {
                 "-announce-list: [{}]",
                 tiers.iter().format_with(", ", |tier, f| f(&format_args!(
                     "[{}]",
-                    ::itertools::join(tier, ", ")
+                    itertools::join(tier, ", ")
                 )))
             )?;
         }

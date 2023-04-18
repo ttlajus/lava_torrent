@@ -401,8 +401,8 @@ impl TorrentBuilder {
         let length = path.metadata()?.len();
         let piece_length = util::i64_to_u64(piece_length)?;
 
-        // read file content + calculate pieces/hashs
-        let mut file = BufReader::new(::std::fs::File::open(path)?);
+        // read file content + calculate pieces/hashes
+        let mut file = BufReader::new(std::fs::File::open(path)?);
         let mut piece = Vec::with_capacity(util::u64_to_usize(piece_length)?);
         let mut pieces = Vec::with_capacity(util::u64_to_usize(length / piece_length + 1)?);
         let mut total_read = 0;
@@ -446,7 +446,7 @@ impl TorrentBuilder {
             (0_u64..pieces_total)
                 .into_par_iter()
                 .map(|i| {
-                    let mut file = ::std::fs::File::open(path)?;
+                    let mut file = std::fs::File::open(path)?;
                     let mut piece = Vec::with_capacity(piece_length_usize);
                     file.seek(std::io::SeekFrom::Start(i * piece_length_u64))?;
                     file.take(piece_length_u64).read_to_end(&mut piece)?;
@@ -474,7 +474,7 @@ impl TorrentBuilder {
         let mut piece = Vec::new();
         let mut bytes = Vec::with_capacity(util::u64_to_usize(piece_length)?);
         for (entry_path, length) in entries {
-            let mut file = BufReader::new(::std::fs::File::open(&entry_path)?);
+            let mut file = BufReader::new(std::fs::File::open(&entry_path)?);
             let mut file_remaining = length;
 
             while file_remaining > 0 {
@@ -602,7 +602,7 @@ impl TorrentBuilder {
                 .map(|chunks| {
                     let mut bytes = Vec::with_capacity(piece_length_usize);
                     for (file, offset, len) in chunks {
-                        let mut file = ::std::fs::File::open(file.as_ref())?;
+                        let mut file = std::fs::File::open(file.as_ref())?;
                         file.seek(std::io::SeekFrom::Start(offset))?;
                         file.take(len).read_to_end(&mut bytes)?;
                     }

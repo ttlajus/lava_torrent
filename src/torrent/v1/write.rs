@@ -107,7 +107,7 @@ impl Torrent {
     where
         P: AsRef<Path>,
     {
-        let file = ::std::fs::File::create(&path)?;
+        let file = std::fs::File::create(&path)?;
         self.write_into(&mut BufWriter::new(&file))?;
         file.sync_all()?;
         Ok(())
