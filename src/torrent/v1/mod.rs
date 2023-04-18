@@ -1,7 +1,8 @@
 //! Module for `.torrent` files ([v1](http://bittorrent.org/beps/bep_0003.html))
 //! related parsing/encoding/creation.
 
-use bencode::BencodeElem;
+use crate::bencode::BencodeElem;
+use crate::LavaTorrentError;
 use itertools::Itertools;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use sha1::{Digest, Sha1};
@@ -9,7 +10,6 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
-use LavaTorrentError;
 
 mod build;
 mod read;

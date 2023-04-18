@@ -1,7 +1,7 @@
 use super::*;
-use bencode::BencodeElem;
+use crate::bencode::BencodeElem;
+use crate::LavaTorrentError;
 use std::io::{BufWriter, Write};
-use LavaTorrentError;
 
 impl File {
     pub(crate) fn into_bencode_elem(self) -> BencodeElem {

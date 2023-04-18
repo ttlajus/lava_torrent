@@ -1,7 +1,7 @@
+use crate::LavaTorrentError;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::path::{Path, PathBuf};
-use LavaTorrentError;
 
 pub(crate) fn u64_to_usize(src: u64) -> Result<usize, LavaTorrentError> {
     usize::try_from(src).map_err(|_| {

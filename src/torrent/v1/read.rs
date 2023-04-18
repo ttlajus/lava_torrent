@@ -1,9 +1,9 @@
 use super::*;
-use bencode::BencodeElem;
+use crate::bencode::BencodeElem;
+use crate::util;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use util;
 
 impl File {
     fn extract_file(elem: BencodeElem) -> Result<File, LavaTorrentError> {

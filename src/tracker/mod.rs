@@ -7,15 +7,15 @@
 //! with trackers. Users will have to send requests themselves and
 //! pass the received responses to `lava_torrent` for parsing.
 
-use bencode::BencodeElem;
+use crate::bencode::BencodeElem;
+use crate::torrent::v1::{Dictionary, Integer};
+use crate::LavaTorrentError;
 use itertools::Itertools;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use torrent::v1::{Dictionary, Integer};
-use LavaTorrentError;
 
 /// Peer information returned in a tracker response.
 ///

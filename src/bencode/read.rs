@@ -1,13 +1,13 @@
 use super::*;
+use crate::util;
+use crate::util::ByteBuffer;
+use crate::LavaTorrentError;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::iter::FromIterator;
 use std::path::Path;
-use util;
-use util::ByteBuffer;
-use LavaTorrentError;
 
 impl BencodeElem {
     /// Parse `bytes` and return all `BencodeElem` found.

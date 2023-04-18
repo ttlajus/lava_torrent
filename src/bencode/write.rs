@@ -1,11 +1,11 @@
 //! Module for bencode-related encoding.
 
 use super::*;
+use crate::LavaTorrentError;
 use std::fs::File;
 use std::hash::BuildHasher;
 use std::io::{BufWriter, Write};
 use std::path::Path;
-use LavaTorrentError;
 
 /// Encode `string` and write the result to `dst`.
 pub fn write_string<S, W>(string: S, dst: &mut W) -> Result<(), LavaTorrentError>

@@ -1,9 +1,9 @@
 use super::*;
+use crate::util;
 use rayon::prelude::*;
 use sha1::{Digest, Sha1};
 use std::io::{BufReader, Read, Seek};
 use std::sync::Arc;
-use util;
 
 impl TorrentBuilder {
     /// Create a new `TorrentBuilder` with required fields set.
