@@ -430,7 +430,7 @@ impl TorrentBuilder {
         let length = path.metadata()?.len();
         let piece_length_u64 = util::i64_to_u64(piece_length)?;
         let piece_length_usize = util::u64_to_usize(piece_length_u64)?;
-        let pieces_total = (length + (piece_length_u64 - 1)) / piece_length_u64;
+        let n_pieces = (length + (piece_length_u64 - 1)) / piece_length_u64;
 
         let thread_pool = rayon::ThreadPoolBuilder::new()
             .num_threads(num_threads)
@@ -443,7 +443,7 @@ impl TorrentBuilder {
             })?;
 
         let pieces = thread_pool.install(|| {
-            (0_u64..pieces_total)
+            (0_u64..n_pieces)
                 .into_par_iter()
                 .map(|i| {
                     let mut file = std::fs::File::open(path)?;
@@ -541,7 +541,8 @@ impl TorrentBuilder {
         let piece_length_usize = util::u64_to_usize(piece_length_u64)?;
         let entries = util::list_dir(&path)?;
         let total_length = entries.iter().fold(0, |acc, &(_, len)| acc + len);
-        let mut pieces = vec![vec![]; util::u64_to_usize(total_length / piece_length_u64 + 1)?];
+        let n_pieces = (total_length + (piece_length_u64 - 1)) / piece_length_u64;
+        let mut pieces = vec![vec![]; util::u64_to_usize(n_pieces)?];
         let mut files = Vec::with_capacity(entries.len());
 
         // find each piece's chunks
