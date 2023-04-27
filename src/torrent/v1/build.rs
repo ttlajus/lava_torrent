@@ -1497,8 +1497,7 @@ mod torrent_builder_tests {
 
     #[test]
     fn validate_path_ok() {
-        let mut path = PathBuf::from(".").canonicalize().unwrap();
-        path.push("target");
+        let path = PathBuf::from("./target");
         let builder = TorrentBuilder::new(&path, 42);
 
         builder.validate_path().unwrap();
@@ -1508,8 +1507,7 @@ mod torrent_builder_tests {
 
     #[test]
     fn validate_path_does_not_exist() {
-        let mut path = PathBuf::from(".").canonicalize().unwrap();
-        path.push("dir");
+        let path = PathBuf::from("./dir");
         let builder = TorrentBuilder::new(path, 42);
 
         match builder.validate_path() {
@@ -1523,8 +1521,7 @@ mod torrent_builder_tests {
 
     #[test]
     fn validate_path_has_invalid_component() {
-        let mut path = PathBuf::from(".").canonicalize().unwrap();
-        path.push("target/..");
+        let path = PathBuf::from("./target/..");
 
         let builder = TorrentBuilder::new(path, 42);
         assert!(builder.validate_path().is_ok())
@@ -1532,8 +1529,7 @@ mod torrent_builder_tests {
 
     #[test]
     fn validate_path_has_hidden_component() {
-        let mut path = PathBuf::from(".").canonicalize().unwrap();
-        path.push("tests/files/.hidden");
+        let path = PathBuf::from("./tests/files/.hidden");
         let builder = TorrentBuilder::new(path, 42);
 
         assert!(builder.validate_path().is_ok());

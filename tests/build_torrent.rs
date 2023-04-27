@@ -19,9 +19,7 @@ fn build_single_file_ok() {
     let output_name = rand_file_name() + ".torrent";
 
     TorrentBuilder::new(
-        PathBuf::from("tests/files/tails-amd64-3.6.1.torrent")
-            .canonicalize()
-            .unwrap(),
+        PathBuf::from("tests/files/tails-amd64-3.6.1.torrent"),
         PIECE_LENGTH,
     )
     .set_announce(Some(
@@ -51,9 +49,7 @@ fn build_single_file_non_blocking_ok() {
     let output_name = rand_file_name() + ".torrent";
 
     let build = TorrentBuilder::new(
-        PathBuf::from("tests/files/tails-amd64-3.6.1.torrent")
-            .canonicalize()
-            .unwrap(),
+        PathBuf::from("tests/files/tails-amd64-3.6.1.torrent"),
         PIECE_LENGTH,
     )
     .set_announce(Some(
@@ -93,9 +89,7 @@ fn build_single_file_non_blocking_ok() {
 #[test]
 fn build_single_file_non_blocking_cancel() {
     let build = TorrentBuilder::new(
-        PathBuf::from("tests/files/tails-amd64-3.6.1.torrent")
-            .canonicalize()
-            .unwrap(),
+        PathBuf::from("tests/files/tails-amd64-3.6.1.torrent"),
         PIECE_LENGTH,
     )
     .set_num_threads(1)
@@ -117,9 +111,7 @@ fn build_single_file_parallel_ok() {
     let output_name = rand_file_name() + ".torrent";
 
     TorrentBuilder::new(
-        PathBuf::from("tests/files/tails-amd64-3.6.1.torrent")
-            .canonicalize()
-            .unwrap(),
+        PathBuf::from("tests/files/tails-amd64-3.6.1.torrent"),
         PIECE_LENGTH,
     )
     .set_announce(Some(
@@ -148,9 +140,7 @@ fn build_single_file_parallel_non_blocking_ok() {
     let output_name = rand_file_name() + ".torrent";
 
     let build = TorrentBuilder::new(
-        PathBuf::from("tests/files/tails-amd64-3.6.1.torrent")
-            .canonicalize()
-            .unwrap(),
+        PathBuf::from("tests/files/tails-amd64-3.6.1.torrent"),
         PIECE_LENGTH,
     )
     .set_announce(Some(
@@ -189,9 +179,7 @@ fn build_single_file_parallel_non_blocking_ok() {
 #[test]
 fn build_single_file_parallel_non_blocking_cancel() {
     let build = TorrentBuilder::new(
-        PathBuf::from("tests/files/tails-amd64-3.6.1.torrent")
-            .canonicalize()
-            .unwrap(),
+        PathBuf::from("tests/files/tails-amd64-3.6.1.torrent"),
         PIECE_LENGTH,
     )
     .build_non_blocking()
@@ -211,24 +199,21 @@ fn build_single_file_parallel_non_blocking_cancel() {
 fn build_multi_file_ok() {
     let output_name = rand_file_name() + ".torrent";
 
-    TorrentBuilder::new(
-        PathBuf::from("tests/files").canonicalize().unwrap(),
-        PIECE_LENGTH,
-    )
-    .set_announce(Some(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
-    ))
-    .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607302))
-    .add_extra_field(
-        "encoding".to_owned(),
-        BencodeElem::String("UTF-8".to_owned()),
-    )
-    .add_extra_info_field("private".to_owned(), BencodeElem::Integer(0))
-    .set_num_threads(1)
-    .build()
-    .unwrap()
-    .write_into_file(&output_name)
-    .unwrap();
+    TorrentBuilder::new(PathBuf::from("tests/files"), PIECE_LENGTH)
+        .set_announce(Some(
+            "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
+        ))
+        .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607302))
+        .add_extra_field(
+            "encoding".to_owned(),
+            BencodeElem::String("UTF-8".to_owned()),
+        )
+        .add_extra_info_field("private".to_owned(), BencodeElem::Integer(0))
+        .set_num_threads(1)
+        .build()
+        .unwrap()
+        .write_into_file(&output_name)
+        .unwrap();
 
     // compare against a sample file created by Deluge
     assert_eq!(
@@ -241,22 +226,19 @@ fn build_multi_file_ok() {
 fn build_multi_file_non_blocking_ok() {
     let output_name = rand_file_name() + ".torrent";
 
-    let build = TorrentBuilder::new(
-        PathBuf::from("tests/files").canonicalize().unwrap(),
-        PIECE_LENGTH,
-    )
-    .set_announce(Some(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
-    ))
-    .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607302))
-    .add_extra_field(
-        "encoding".to_owned(),
-        BencodeElem::String("UTF-8".to_owned()),
-    )
-    .add_extra_info_field("private".to_owned(), BencodeElem::Integer(0))
-    .set_num_threads(1)
-    .build_non_blocking()
-    .unwrap();
+    let build = TorrentBuilder::new(PathBuf::from("tests/files"), PIECE_LENGTH)
+        .set_announce(Some(
+            "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
+        ))
+        .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607302))
+        .add_extra_field(
+            "encoding".to_owned(),
+            BencodeElem::String("UTF-8".to_owned()),
+        )
+        .add_extra_info_field("private".to_owned(), BencodeElem::Integer(0))
+        .set_num_threads(1)
+        .build_non_blocking()
+        .unwrap();
 
     let mut prev_progress = 0;
     while !build.is_finished() {
@@ -281,13 +263,10 @@ fn build_multi_file_non_blocking_ok() {
 
 #[test]
 fn build_multi_file_non_blocking_cancel() {
-    let build = TorrentBuilder::new(
-        PathBuf::from("tests/files").canonicalize().unwrap(),
-        PIECE_LENGTH,
-    )
-    .set_num_threads(1)
-    .build_non_blocking()
-    .unwrap();
+    let build = TorrentBuilder::new(PathBuf::from("tests/files"), PIECE_LENGTH)
+        .set_num_threads(1)
+        .build_non_blocking()
+        .unwrap();
 
     build.cancel();
 
@@ -303,23 +282,20 @@ fn build_multi_file_non_blocking_cancel() {
 fn build_multi_file_parallel_ok() {
     let output_name = rand_file_name() + ".torrent";
 
-    TorrentBuilder::new(
-        PathBuf::from("tests/files").canonicalize().unwrap(),
-        PIECE_LENGTH,
-    )
-    .set_announce(Some(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
-    ))
-    .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607302))
-    .add_extra_field(
-        "encoding".to_owned(),
-        BencodeElem::String("UTF-8".to_owned()),
-    )
-    .add_extra_info_field("private".to_owned(), BencodeElem::Integer(0))
-    .build()
-    .unwrap()
-    .write_into_file(&output_name)
-    .unwrap();
+    TorrentBuilder::new(PathBuf::from("tests/files"), PIECE_LENGTH)
+        .set_announce(Some(
+            "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
+        ))
+        .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607302))
+        .add_extra_field(
+            "encoding".to_owned(),
+            BencodeElem::String("UTF-8".to_owned()),
+        )
+        .add_extra_info_field("private".to_owned(), BencodeElem::Integer(0))
+        .build()
+        .unwrap()
+        .write_into_file(&output_name)
+        .unwrap();
 
     // compare against a sample file created by Deluge
     assert_eq!(
@@ -332,21 +308,18 @@ fn build_multi_file_parallel_ok() {
 fn build_multi_file_parallel_non_blocking_ok() {
     let output_name = rand_file_name() + ".torrent";
 
-    let build = TorrentBuilder::new(
-        PathBuf::from("tests/files").canonicalize().unwrap(),
-        PIECE_LENGTH,
-    )
-    .set_announce(Some(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
-    ))
-    .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607302))
-    .add_extra_field(
-        "encoding".to_owned(),
-        BencodeElem::String("UTF-8".to_owned()),
-    )
-    .add_extra_info_field("private".to_owned(), BencodeElem::Integer(0))
-    .build_non_blocking()
-    .unwrap();
+    let build = TorrentBuilder::new(PathBuf::from("tests/files"), PIECE_LENGTH)
+        .set_announce(Some(
+            "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
+        ))
+        .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607302))
+        .add_extra_field(
+            "encoding".to_owned(),
+            BencodeElem::String("UTF-8".to_owned()),
+        )
+        .add_extra_info_field("private".to_owned(), BencodeElem::Integer(0))
+        .build_non_blocking()
+        .unwrap();
 
     let mut prev_progress = 0;
     while !build.is_finished() {
@@ -371,12 +344,9 @@ fn build_multi_file_parallel_non_blocking_ok() {
 
 #[test]
 fn build_multi_file_parallel_non_blocking_cancel() {
-    let build = TorrentBuilder::new(
-        PathBuf::from("tests/files").canonicalize().unwrap(),
-        PIECE_LENGTH,
-    )
-    .build_non_blocking()
-    .unwrap();
+    let build = TorrentBuilder::new(PathBuf::from("tests/files"), PIECE_LENGTH)
+        .build_non_blocking()
+        .unwrap();
 
     build.cancel();
 
@@ -393,9 +363,7 @@ fn build_with_name() {
     let output_name = rand_file_name() + ".torrent";
 
     TorrentBuilder::new(
-        PathBuf::from("tests/files/tails-amd64-3.6.1.torrent")
-            .canonicalize()
-            .unwrap(),
+        PathBuf::from("tests/files/tails-amd64-3.6.1.torrent"),
         PIECE_LENGTH,
     )
     .set_announce(Some(
@@ -417,23 +385,20 @@ fn build_with_name() {
 fn build_private() {
     let output_name = rand_file_name() + ".torrent";
 
-    TorrentBuilder::new(
-        PathBuf::from("tests/files").canonicalize().unwrap(),
-        PIECE_LENGTH,
-    )
-    .set_announce(Some(
-        "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
-    ))
-    .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607445))
-    .add_extra_field(
-        "encoding".to_owned(),
-        BencodeElem::String("UTF-8".to_owned()),
-    )
-    .set_privacy(true)
-    .build()
-    .unwrap()
-    .write_into_file(&output_name)
-    .unwrap();
+    TorrentBuilder::new(PathBuf::from("tests/files"), PIECE_LENGTH)
+        .set_announce(Some(
+            "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
+        ))
+        .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1523607445))
+        .add_extra_field(
+            "encoding".to_owned(),
+            BencodeElem::String("UTF-8".to_owned()),
+        )
+        .set_privacy(true)
+        .build()
+        .unwrap()
+        .write_into_file(&output_name)
+        .unwrap();
 
     // compare against a sample file created by Deluge
     assert_eq!(
@@ -445,12 +410,8 @@ fn build_private() {
 #[test]
 fn build_symbolic_link() {
     let output_name = rand_file_name() + ".torrent";
-    // `canonicalize()` follows symbolic links, so we have to do a
-    // `push()` separately to avoid that resolution
-    let mut path = PathBuf::from("tests/files").canonicalize().unwrap();
-    path.push("symlink");
 
-    TorrentBuilder::new(path, PIECE_LENGTH)
+    TorrentBuilder::new(PathBuf::from("tests/files/symlink"), PIECE_LENGTH)
         .set_announce(Some(
             "udp://tracker.coppersurfer.tk:6969/announce".to_owned(),
         ))
@@ -476,15 +437,12 @@ fn build_symbolic_link() {
 fn build_nested_dir_ok() {
     let output_name = rand_file_name() + ".torrent";
 
-    TorrentBuilder::new(
-        PathBuf::from("tests/nested").canonicalize().unwrap(),
-        PIECE_LENGTH,
-    )
-    .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1678689103))
-    .build()
-    .unwrap()
-    .write_into_file(&output_name)
-    .unwrap();
+    TorrentBuilder::new(PathBuf::from("tests/nested"), PIECE_LENGTH)
+        .add_extra_field("creation date".to_owned(), BencodeElem::Integer(1678689103))
+        .build()
+        .unwrap()
+        .write_into_file(&output_name)
+        .unwrap();
 
     // compare against a sample file created by qBittorrent
     assert_eq!(
