@@ -596,14 +596,15 @@ impl TorrentBuilder {
     where
         P: AsRef<Path>,
     {
-        let piece_length = util::i64_to_u64(piece_length)?;
+        let piece_length_u64 = util::i64_to_u64(piece_length)?;
+        let piece_length_usize = util::i64_to_usize(piece_length)?;
         let entries = util::list_dir(&path)?;
         let total_length = entries.iter().fold(0, |acc, &(_, len)| acc + len);
         let mut files = Vec::with_capacity(entries.len());
-        let mut pieces = Vec::with_capacity(util::u64_to_usize(total_length / piece_length + 1)?);
+        let mut piece = Vec::with_capacity(piece_length_usize);
+        let mut pieces =
+            Vec::with_capacity(util::u64_to_usize(total_length / piece_length_u64 + 1)?);
 
-        let mut piece = Vec::new();
-        let mut bytes = Vec::with_capacity(util::u64_to_usize(piece_length)?);
         for (entry_path, length) in entries {
             let mut file = BufReader::new(std::fs::File::open(&entry_path)?);
             let mut file_remaining = length;
@@ -611,7 +612,7 @@ impl TorrentBuilder {
             while file_remaining > 0 {
                 // calculate the # of bytes to read in this iteration
                 let piece_filled = util::usize_to_u64(piece.len())?;
-                let piece_remaining = piece_length - piece_filled;
+                let piece_remaining = piece_length_u64 - piece_filled;
                 let to_read = if file_remaining < piece_remaining {
                     file_remaining
                 } else {
@@ -619,12 +620,11 @@ impl TorrentBuilder {
                 };
 
                 // read bytes
-                file.by_ref().take(to_read).read_to_end(&mut bytes)?;
-                piece.append(&mut bytes);
+                file.by_ref().take(to_read).read_to_end(&mut piece)?;
                 file_remaining -= to_read;
 
                 // if piece is completely filled, hash it
-                if piece.len() == util::u64_to_usize(piece_length)? {
+                if piece.len() == piece_length_usize {
                     pieces.push(Sha1::digest(&piece).to_vec());
                     piece.clear();
                 }
@@ -841,16 +841,16 @@ impl TorrentBuilder {
     where
         P: AsRef<Path>,
     {
-        let piece_length = util::i64_to_u64(piece_length)?;
+        let piece_length_u64 = util::i64_to_u64(piece_length)?;
+        let piece_length_usize = util::i64_to_usize(piece_length)?;
         let entries = util::list_dir(&path)?;
         let total_length = entries.iter().fold(0, |acc, &(_, len)| acc + len);
-        let n_pieces = (total_length + (piece_length - 1)) / piece_length;
+        let n_pieces = (total_length + (piece_length_u64 - 1)) / piece_length_u64;
         let mut files = Vec::with_capacity(entries.len());
+        let mut piece = Vec::with_capacity(piece_length_usize);
         let mut pieces = Vec::with_capacity(util::u64_to_usize(n_pieces)?);
         torrent_build.set_piece_total(n_pieces);
 
-        let mut piece = Vec::new();
-        let mut bytes = Vec::with_capacity(util::u64_to_usize(piece_length)?);
         for (entry_path, length) in entries {
             let mut file = BufReader::new(std::fs::File::open(&entry_path)?);
             let mut file_remaining = length;
@@ -864,7 +864,7 @@ impl TorrentBuilder {
 
                 // calculate the # of bytes to read in this iteration
                 let piece_filled = util::usize_to_u64(piece.len())?;
-                let piece_remaining = piece_length - piece_filled;
+                let piece_remaining = piece_length_u64 - piece_filled;
                 let to_read = if file_remaining < piece_remaining {
                     file_remaining
                 } else {
@@ -872,12 +872,11 @@ impl TorrentBuilder {
                 };
 
                 // read bytes
-                file.by_ref().take(to_read).read_to_end(&mut bytes)?;
-                piece.append(&mut bytes);
+                file.by_ref().take(to_read).read_to_end(&mut piece)?;
                 file_remaining -= to_read;
 
                 // if piece is completely filled, hash it
-                if piece.len() == util::u64_to_usize(piece_length)? {
+                if piece.len() == piece_length_usize {
                     pieces.push(Sha1::digest(&piece).to_vec());
                     piece.clear();
                     torrent_build.inc_piece_processed();
