@@ -48,7 +48,7 @@
 //! - bencode parsing/encoding (i.e. "bencoding/bdecoding") => [`BencodeElem`]
 //! - torrent parsing/encoding (based on [`BencodeElem`]) => [`Torrent`]
 //! - torrent creation => [`TorrentBuilder`]
-//! - tracker response parsing => [`tracker`] \[experimental\]
+//! - tracker response parsing => [`tracker`]
 //!
 //! ## Feature Flags
 //! None at the moment.
