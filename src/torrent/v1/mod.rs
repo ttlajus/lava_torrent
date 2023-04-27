@@ -10,6 +10,9 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, AtomicU64};
+use std::sync::Arc;
+use std::thread::JoinHandle;
 
 mod build;
 mod read;
@@ -140,6 +143,26 @@ pub struct TorrentBuilder {
     extra_info_fields: Option<Dictionary>,
     is_private: bool,
     num_threads: usize,
+}
+
+/// Handle for non-blocking torrent builds.
+///
+/// See [`TorrentBuilder::build_non_blocking()`] for an example.
+///
+/// [`TorrentBuilder::build_non_blocking()`]: struct.TorrentBuilder.html#method.build_non_blocking
+#[derive(Debug)]
+pub struct TorrentBuild {
+    n_piece_processed: Arc<AtomicU64>,
+    n_piece_total: Arc<AtomicU64>,
+    is_canceled: Arc<AtomicBool>,
+    builder_thread: JoinHandle<Result<Torrent, LavaTorrentError>>,
+}
+
+#[derive(Clone, Debug)]
+struct TorrentBuildInternal {
+    n_piece_processed: Arc<AtomicU64>,
+    n_piece_total: Arc<AtomicU64>,
+    is_canceled: Arc<AtomicBool>,
 }
 
 impl File {
