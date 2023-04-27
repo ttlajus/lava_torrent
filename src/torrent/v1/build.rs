@@ -13,8 +13,7 @@ impl TorrentBuilder {
     /// does not validate its inputs. If they turn out
     /// to be invalid, calling [`build()`] later will fail.
     ///
-    /// # Notes
-    /// - A valid `piece_length` is larger than `0` AND is a power of `2`.
+    /// NOTE: **A valid `piece_length` is larger than `0` AND is a power of `2`.**
     ///
     /// [`build()`]: #method.build
     pub fn new<P>(path: P, piece_length: Integer) -> TorrentBuilder
