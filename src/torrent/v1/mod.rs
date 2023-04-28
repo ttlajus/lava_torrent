@@ -155,7 +155,7 @@ pub struct TorrentBuild {
     n_piece_processed: Arc<AtomicU64>,
     n_piece_total: Arc<AtomicU64>,
     is_canceled: Arc<AtomicBool>,
-    builder_thread: JoinHandle<Result<Torrent, LavaTorrentError>>,
+    builder_thread: Option<JoinHandle<Result<Torrent, LavaTorrentError>>>,
 }
 
 #[derive(Clone, Debug)]

@@ -243,7 +243,7 @@ impl TorrentBuilder {
             n_piece_processed,
             n_piece_total,
             is_canceled,
-            builder_thread,
+            builder_thread: Some(builder_thread),
         })
     }
 
@@ -1071,14 +1071,9 @@ impl TorrentBuild {
     /// [`Err(LavaTorrentError::TorrentBuilderFailure)`], but it's also possible
     /// for you to get an `Ok(torrent)` (if you cancel after all pieces have been hashed).
     ///
-    /// Due to how `TorrentBuild` is implemented, [`Drop`] is not implemented for it.
-    /// You might want to call `cancel()` manually in the containing struct's [`Drop`]
-    /// implementation (if there is one).
-    ///
     /// [`drop()`]: https://doc.rust-lang.org/std/mem/fn.drop.html
     /// [`get_output()`]: #method.get_output
     /// [`Err(LavaTorrentError::TorrentBuilderFailure)`]: ../../enum.LavaTorrentError.html#variant.TorrentBuilderFailure
-    /// [`Drop`]: https://doc.rust-lang.org/std/ops/trait.Drop.html
     pub fn cancel(&self) {
         self.is_canceled.store(true, Ordering::Release)
     }
@@ -1089,8 +1084,8 @@ impl TorrentBuild {
     /// use [`is_finished()`] to check if the build has finished.
     ///
     /// [`is_finished()`]: #method.is_finished
-    pub fn get_output(self) -> Result<Torrent, LavaTorrentError> {
-        self.builder_thread.join().map_err(|e| {
+    pub fn get_output(mut self) -> Result<Torrent, LavaTorrentError> {
+        self.builder_thread.take().unwrap().join().map_err(|e| {
             LavaTorrentError::TorrentBuilderFailure(Cow::Owned(format!(
                 "builder thread has unexpectedly panicked: {:?}",
                 e
@@ -1100,7 +1095,7 @@ impl TorrentBuild {
 
     /// Check if the torrent build has finished.
     pub fn is_finished(&self) -> bool {
-        self.builder_thread.is_finished()
+        self.builder_thread.as_ref().unwrap().is_finished()
     }
 }
 
@@ -1115,6 +1110,12 @@ impl TorrentBuildInternal {
 
     fn is_canceled(&self) -> bool {
         self.is_canceled.load(Ordering::Acquire)
+    }
+}
+
+impl Drop for TorrentBuild {
+    fn drop(&mut self) {
+        self.cancel()
     }
 }
 
