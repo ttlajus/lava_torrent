@@ -146,10 +146,10 @@ mod util_tests {
         assert_eq!(
             list_dir("tests/files").unwrap(),
             vec![
-                PathBuf::from("tests/files/byte_sequence"),
-                PathBuf::from("tests/files/symlink"),
-                PathBuf::from("tests/files/tails-amd64-3.6.1.torrent"),
-                PathBuf::from("tests/files/ubuntu-16.04.4-desktop-amd64.iso.torrent"),
+                "tests/files/byte_sequence",
+                "tests/files/symlink",
+                "tests/files/tails-amd64-3.6.1.torrent",
+                "tests/files/ubuntu-16.04.4-desktop-amd64.iso.torrent",
                 // no [.hidden]
             ]
             .iter()
@@ -164,11 +164,11 @@ mod util_tests {
         assert_eq!(
             list_dir("src/torrent").unwrap(),
             vec![
-                PathBuf::from("src/torrent/mod.rs"),
-                PathBuf::from("src/torrent/v1/build.rs"),
-                PathBuf::from("src/torrent/v1/mod.rs"),
-                PathBuf::from("src/torrent/v1/read.rs"),
-                PathBuf::from("src/torrent/v1/write.rs"),
+                "src/torrent/mod.rs",
+                "src/torrent/v1/build.rs",
+                "src/torrent/v1/mod.rs",
+                "src/torrent/v1/read.rs",
+                "src/torrent/v1/write.rs",
             ]
             .iter()
             .map(PathBuf::from)

@@ -1497,18 +1497,15 @@ mod torrent_builder_tests {
 
     #[test]
     fn validate_path_ok() {
-        let path = PathBuf::from("./target");
-        let builder = TorrentBuilder::new(&path, 42);
-
+        let builder = TorrentBuilder::new("./target", 42);
         builder.validate_path().unwrap();
         // validation methods should not modify builder
-        assert_eq!(builder, TorrentBuilder::new(path, 42));
+        assert_eq!(builder, TorrentBuilder::new("./target", 42));
     }
 
     #[test]
     fn validate_path_does_not_exist() {
-        let path = PathBuf::from("./dir");
-        let builder = TorrentBuilder::new(path, 42);
+        let builder = TorrentBuilder::new("./dir", 42);
 
         match builder.validate_path() {
             Err(LavaTorrentError::TorrentBuilderFailure(m)) => assert_eq!(
@@ -1521,17 +1518,13 @@ mod torrent_builder_tests {
 
     #[test]
     fn validate_path_has_invalid_component() {
-        let path = PathBuf::from("./target/..");
-
-        let builder = TorrentBuilder::new(path, 42);
+        let builder = TorrentBuilder::new("./target/..", 42);
         assert!(builder.validate_path().is_ok())
     }
 
     #[test]
     fn validate_path_has_hidden_component() {
-        let path = PathBuf::from("./tests/files/.hidden");
-        let builder = TorrentBuilder::new(path, 42);
-
+        let builder = TorrentBuilder::new("./tests/files/.hidden", 42);
         assert!(builder.validate_path().is_ok());
     }
 
