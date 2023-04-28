@@ -64,7 +64,7 @@ fn build_single_file_non_blocking_ok() {
         assert!(prev_progress <= curr_progress);
         prev_progress = curr_progress;
     }
-    assert_eq!(prev_progress, 100);
+    assert_eq!(build.get_progress(), 100);
 
     build
         .get_output()
@@ -145,7 +145,7 @@ fn build_single_file_parallel_non_blocking_ok() {
         assert!(prev_progress <= curr_progress);
         prev_progress = curr_progress;
     }
-    assert_eq!(prev_progress, 100);
+    assert_eq!(build.get_progress(), 100);
 
     build
         .get_output()
@@ -227,7 +227,7 @@ fn build_multi_file_non_blocking_ok() {
         assert!(prev_progress <= curr_progress);
         prev_progress = curr_progress;
     }
-    assert_eq!(prev_progress, 100);
+    assert_eq!(build.get_progress(), 100);
 
     build
         .get_output()
@@ -308,7 +308,7 @@ fn build_multi_file_parallel_non_blocking_ok() {
         assert!(prev_progress <= curr_progress);
         prev_progress = curr_progress;
     }
-    assert_eq!(prev_progress, 100);
+    assert_eq!(build.get_progress(), 100);
 
     build
         .get_output()
