@@ -1062,6 +1062,20 @@ impl TorrentBuild {
         (n_piece_processed * 100 / n_piece_total) as u8
     }
 
+    /// Get the number of pieces that have been processed so far.
+    pub fn get_n_piece_processed(&self) -> u64 {
+        self.n_piece_processed.load(Ordering::Acquire)
+    }
+
+    /// Get the total number of pieces to be processed.
+    ///
+    /// Note that 0 will be returned in at least 2 cases:
+    /// - the torrent contains only empty files/dirs
+    /// - the actual value has not been calculated yet
+    pub fn get_n_piece_total(&self) -> u64 {
+        self.n_piece_total.load(Ordering::Acquire)
+    }
+
     /// Cancel the torrent build.
     ///
     /// `cancel()` does not consume the `TorrentBuild`. If you want, you can call
