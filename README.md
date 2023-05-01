@@ -6,6 +6,10 @@
 
 `lava_torrent` is a library for parsing/encoding/creating bencode and *.torrent* files.
 
+**NOTE: `lava_torrent` is now in maintenance mode.**
+Bugs will still be fixed, but no new features will be released.
+If you need something, feel free to fork.
+
 ## *Quick Start*
 Read a torrent ([v1]) and print it and its info hash.
 

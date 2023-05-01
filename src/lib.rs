@@ -38,8 +38,6 @@
 //!
 //! # *Overview*
 //! - **It is not recommended to use [`lava_torrent`] in any critical system at this point.**
-//! - Currently, only [v1] torrents are supported. [Merkle tree torrents] can be supported
-//! if there's enough demand. [v2] torrents might be supported once it's stabilized.
 //! - Methods for parsing and encoding are generally bound to structs (i.e. they are
 //! "associated methods"). Methods that are general enough are placed at the module-level (e.g.
 //! [`lava_torrent::bencode::write::encode_bytes()`]).
@@ -84,24 +82,11 @@
 //! - [BEP 12]
 //! - [BEP 27]
 //!
-//! # *Other Stuff*
-//! - Feature Request: To request a feature please open a GitHub issue (please
-//! try to request only 1 feature per issue).
-//! - Contribution: PR is always welcome.
-//! - What's with "lava": Originally I intended to start a project for downloading/crawling
-//! stuff. When downloading files, a stream of bits will be moving around--like lava.
-//! - Other "lava" crates: The landscape for downloading/crawling stuff is fairly mature
-//! at this point, which means reinventing the wheels now is rather pointless... So this
-//! might be the only crate published under the "lava" name.
-//! - Similar crates: [bip-rs]
-//!
 //! [`lava_torrent`]: index.html
 //! [Apache 2.0]: https://www.apache.org/licenses/LICENSE-2.0
 //! [MIT]: https://opensource.org/licenses/MIT
 //! [profiling]: https://github.com/ttlajus/lava_torrent/wiki/Performance
 //! [v1]: http://bittorrent.org/beps/bep_0003.html
-//! [Merkle tree torrents]: http://bittorrent.org/beps/bep_0030.html
-//! [v2]: http://bittorrent.org/beps/bep_0052.html
 //! [`lava_torrent::bencode::write::encode_bytes()`]: bencode/write/fn.encode_bytes.html
 //! [`BencodeElem`]: bencode/enum.BencodeElem.html
 //! [`Torrent`]: torrent/v1/struct.Torrent.html
@@ -114,7 +99,6 @@
 //! [BEP 9]: http://bittorrent.org/beps/bep_0009.html
 //! [BEP 12]: http://bittorrent.org/beps/bep_0012.html
 //! [BEP 27]: http://bittorrent.org/beps/bep_0027.html
-//! [bip-rs]: https://github.com/GGist/bip-rs
 
 extern crate conv;
 extern crate itertools;
